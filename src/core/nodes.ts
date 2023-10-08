@@ -4,6 +4,9 @@ import { buildObject } from "./endpoint";
 
 const log = debug("nodes");
 
+export const setSource = Symbol("_setSource");
+export const getNodeValue = Symbol("_getNodeValue");
+
 /** A data node for constructing a request. */
 export class ReqNode {
   [key: string]: any;
@@ -29,12 +32,12 @@ export class ReqNode {
   }
 
   /** Sets a source node for this request node. */
-  _setSource(hash: string, path: string) {
+  [setSource](hash: string, path: string) {
     this.#sources[hash] = path;
   }
 
   /** Retrieve value of a node. */
-  _getNodeValue(responses: Responses) {
+  [getNodeValue](responses: Responses) {
     const endpointHash = this.#getSourceHash(responses);
     if (endpointHash) {
       const resPath = this.#sources[endpointHash]!;

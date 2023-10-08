@@ -1,5 +1,5 @@
 import { describe, it } from "node:test";
-import { ReqNode, ResNode } from "../nodes";
+import { ReqNode, ResNode, getNodeValue } from "../nodes";
 import assert from "node:assert";
 
 describe("#nodes", () => {
@@ -16,7 +16,7 @@ describe("#nodes", () => {
     describe("when the node value is not an object", () => {
       it("should save the value as the default", () => {
         const testNode = new ReqNode({ val: 40, hash: "some-hash" });
-        assert.equal(testNode._getNodeValue({}), 40);
+        assert.equal(testNode[getNodeValue]({}), 40);
       });
     });
 
@@ -27,7 +27,7 @@ describe("#nodes", () => {
       });
 
       it("should reconstruct the object as node value", () => {
-        assert.deepEqual(testNode._getNodeValue({}), testVal);
+        assert.deepEqual(testNode[getNodeValue]({}), testVal);
       });
     });
   });

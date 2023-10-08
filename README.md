@@ -65,7 +65,3 @@ const chain = chainflow();
 
 chain.post(user).post(role).post(project, { count: 2 }).post(submission).run();
 ```
-
-# Caveats
-
-Payloads used with this lib are unable to contain keys with the name `_setSource` or `_getNodeValue` as these are currently reserved for lib operations.

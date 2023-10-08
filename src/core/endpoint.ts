@@ -1,6 +1,6 @@
 import { hashEndpoint } from "../utils/hash.js";
 import { Responses } from "./chainflow.js";
-import { ReqNode, ResNode } from "./nodes.js";
+import { ReqNode, ResNode, getNodeValue, setSource } from "./nodes.js";
 import debug from "debug";
 
 const log = debug("endpoint");
@@ -26,10 +26,6 @@ export class Endpoint {
     return hashEndpoint({ route: this.#route, method: this.#method });
   }
 
-  // get req() {
-  //   return this.#req;
-  // }
-
   set req(payload: any) {
     const hash = this.getHash();
     Object.entries(payload).forEach(([key, val]) => {
@@ -41,10 +37,6 @@ export class Endpoint {
     });
   }
 
-  // get res() {
-  //   return this.#res;
-  // }
-
   set res(payload: any) {
     const hash = this.getHash();
     Object.entries(payload).forEach(([key, val]) => {
@@ -55,6 +47,10 @@ export class Endpoint {
         path: key,
       });
     });
+  }
+
+  get res() {
+    return this.#res;
   }
 
   /** Calls this endpoint with provided responses */
@@ -99,14 +95,14 @@ export const buildObject = (
   responses: Responses
 ) => {
   return Object.entries(nodes).reduce((acc, [key, val]) => {
-    acc[key] = val._getNodeValue(responses);
+    acc[key] = val[getNodeValue](responses);
     return acc;
   }, {} as any);
 };
 
 /** Link a Response node to a Request node */
 const link = (dest: ReqNode, source: ResNode) => {
-  dest._setSource(source.hash, source.path);
+  dest[setSource](source.hash, source.path);
   log(
     `Linked ResNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest.hash}"`
   );
