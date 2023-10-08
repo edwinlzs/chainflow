@@ -36,7 +36,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - run: echo "Running unit tests..."
+      - run: echo "This job's status is ${{ job.status }}"
+      
       - name: Run unit tests
-        run: echo "Running unit tests..."
-        run: echo "This job's status is ${{ job.status }}"
         run: pnpm run test
