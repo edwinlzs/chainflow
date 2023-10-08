@@ -7,45 +7,49 @@ const log = debug("endpoint");
 
 export type ReqNodes = { [nodeName: string]: ReqNode };
 
+/**
+ * Manages request and response nodes,
+ * as well as calls to that endpoint
+ */
 export class Endpoint {
-  _route: string;
-  _method: string;
-  _req: { [key: string]: ReqNode } = {};
-  _res: { [key: string]: ResNode } = {};
+  #route: string;
+  #method: string;
+  #req: { [key: string]: ReqNode } = {};
+  #res: { [key: string]: ResNode } = {};
 
   constructor({ route, method }: { route: string; method: string }) {
-    this._route = route;
-    this._method = method;
+    this.#route = route;
+    this.#method = method;
   }
 
   getHash() {
-    return hashEndpoint({ route: this._route, method: this._method });
+    return hashEndpoint({ route: this.#route, method: this.#method });
   }
 
-  get req() {
-    return this._req;
-  }
+  // get req() {
+  //   return this.#req;
+  // }
 
   set req(payload: any) {
     const hash = this.getHash();
     Object.entries(payload).forEach(([key, val]) => {
       log(`Creating ReqNode for hash "${hash}" with key "${key}"`);
-      this._req[key] = new ReqNode({
+      this.#req[key] = new ReqNode({
         val,
         hash,
       });
     });
   }
 
-  get res() {
-    return this._res;
-  }
+  // get res() {
+  //   return this.#res;
+  // }
 
   set res(payload: any) {
     const hash = this.getHash();
     Object.entries(payload).forEach(([key, val]) => {
       log(`Creating ResNode for hash "${hash}" with path "${key}"`);
-      this._res[key] = new ResNode({
+      this.#res[key] = new ResNode({
         val,
         hash,
         path: key,
@@ -55,7 +59,7 @@ export class Endpoint {
 
   /** Calls this endpoint with provided responses */
   async call(responses: any): Promise<any> {
-    const payload = this.#constructPayload(responses);
+    const payload = this.#buildPayload(responses);
     log(
       `Calling API with hash "${this.getHash()}" and payload ${JSON.stringify(
         payload
@@ -75,12 +79,12 @@ export class Endpoint {
       nodes: ReqNodes
     ) => void
   ) {
-    setter(link, this._req);
+    setter(link, this.#req);
   }
 
-  /** Constructs the request payload */
-  #constructPayload(responses: Responses) {
-    return buildObject(this._req, responses);
+  /** Builds the request payload */
+  #buildPayload(responses: Responses) {
+    return buildObject(this.#req, responses);
   }
 }
 
@@ -95,15 +99,15 @@ export const buildObject = (
   responses: Responses
 ) => {
   return Object.entries(nodes).reduce((acc, [key, val]) => {
-    acc[key] = val.getNodeValue(responses);
+    acc[key] = val._getNodeValue(responses);
     return acc;
   }, {} as any);
 };
 
 /** Link a Response node to a Request node */
 const link = (dest: ReqNode, source: ResNode) => {
-  dest._sources[source._hash] = source._path;
+  dest._setSource(source.hash, source.path);
   log(
-    `Linked ResNode with hash "${source._hash}" and path "${source._path}" to ReqNode with hash "${dest._hash}"`
+    `Linked ResNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest.hash}"`
   );
 };

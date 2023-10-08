@@ -12,31 +12,34 @@ describe("#nodes", () => {
     },
   };
 
-  describe("creating a ReqNode", () => {
+  describe("ReqNode", () => {
     describe("when the node value is not an object", () => {
       it("should save the value as the default", () => {
         const testNode = new ReqNode({ val: 40, hash: "some-hash" });
-        assert.equal(testNode._hash, "some-hash");
-        assert.equal(testNode._default, 40);
+        assert.equal(testNode._getNodeValue({}), 40);
       });
     });
 
     describe("when the node value is an object", () => {
       const testNode = new ReqNode({ val: testVal, hash: "some-hash" });
-      it("should save the object info within the node", () => {
-        assert.ok(testNode._object);
+      it("should save the object info as children within the node", () => {
+        assert.deepEqual(Object.keys(testNode), Object.keys(testVal));
       });
 
       it("should reconstruct the object as node value", () => {
-        assert.deepEqual(testNode.getNodeValue({}), testVal);
+        assert.deepEqual(testNode._getNodeValue({}), testVal);
       });
     });
   });
 
-  describe("creating a ResNode", () => {
+  describe("ResNode", () => {
     it("should save the object path to access the node", () => {
-      const testNode = new ResNode({ val: testVal, hash: "some-hash", path: "some-path" });
-      assert.equal(testNode._path, "some-path");
+      const testNode = new ResNode({
+        val: testVal,
+        hash: "some-hash",
+        path: "some-path",
+      });
+      assert.equal(testNode.path, "some-path");
     });
-  })
+  });
 });
