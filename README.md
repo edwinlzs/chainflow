@@ -4,16 +4,6 @@ Manage dynamically generated datasets/payloads that can be used to call endpoint
 
 Payload chaining to complete a series of actions in a business-centric manner.
 
-# Tasks
-
-- [ ] Unit Tests
-- [ ] Param Handling
-- [ ] Endpoint Call Opts
-- [ ] Headers Handling
-- [ ] Cookies Handling
-- [ ] Github Actions
-- [ ] OS License
-
 # Use Case
 
 ### Examples
