@@ -57,7 +57,9 @@ export class Endpoint {
   async call(responses: any): Promise<any> {
     const payload = this.#constructPayload(responses);
     log(
-      `Calling API with hash "${this.getHash()}" and payload ${JSON.stringify(payload)}`
+      `Calling API with hash "${this.getHash()}" and payload ${JSON.stringify(
+        payload
+      )}`
     );
     // await fetch(this.hash.route, {
     //   method: this.hash.method,
@@ -78,64 +80,24 @@ export class Endpoint {
 
   /** Constructs the request payload */
   #constructPayload(responses: Responses) {
-    return Object.entries(this._req).reduce((acc, [key, val]) => {
-      acc[key] = getNodeValue(val as ReqNode, responses);
-      return acc;
-    }, {} as any);
+    return buildObject(this._req, responses);
   }
 }
 
-/** Retrieve value of a node */
-const getNodeValue = (val: ReqNode, responses: Responses) => {
-  const endpointHash = getSourceHash(val, responses);
-  if (endpointHash) {
-    const resPath = val._sources[endpointHash]!;
-    const resPayload = responses[endpointHash]![0];
-
-    log(
-      `Retrieving value for ReqNode with hash "${
-        val._hash
-      }" from response payload ${JSON.stringify(
-        resPayload
-      )} via path "${resPath}"`
-    );
-
-    const resVal = accessSource(resPayload, resPath);
-
-    if (resVal) {
-      return resVal;
-    }
-  }
-
-  return val._default;
-};
-
-/** Retrieves a matching endpoint hash from this node's sources, if any */
-const getSourceHash = (node: ReqNode, responses: Responses) => {
-  const sourceEndpointHashes = Object.keys(node._sources);
-  const availEndpointHashes = Object.keys(responses);
-  return sourceEndpointHashes.find((hash) =>
-    availEndpointHashes.includes(hash)
-  );
-};
-
-/** Access the source node value in a response payload */
-const accessSource = (payload: any, path: string): any => {
-  const accessors = path.split(".");
-  let resVal = payload;
-
-  if (!accessors) {
-    return null;
-  }
-
-  let i = 0;
-  while (i < accessors.length && resVal) {
-    let accessor = accessors[i]!;
-    resVal = resVal[accessor];
-    i += 1;
-  }
-
-  return resVal;
+/**
+ * Builds a JSON object from defined request nodes and
+ * available responses as potential sources.
+ */
+export const buildObject = (
+  nodes: {
+    [key: string]: ReqNode;
+  },
+  responses: Responses
+) => {
+  return Object.entries(nodes).reduce((acc, [key, val]) => {
+    acc[key] = val.getNodeValue(responses);
+    return acc;
+  }, {} as any);
 };
 
 /** Link a Response node to a Request node */

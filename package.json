@@ -1,10 +1,10 @@
 {
-  "name": "chainflow",
+  "name": "chainflows",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
     "demo": "set DEBUG=* & tsc && node ./dist/demo/index.js"
   },
   "keywords": [],
@@ -13,6 +13,8 @@
   "devDependencies": {
     "@types/debug": "^4.1.9",
     "@types/node": "^20.8.3",
+    "glob": "^10.3.10",
+    "tsx": "^3.13.0",
     "typescript": "^5.2.2"
   },
   "dependencies": {
