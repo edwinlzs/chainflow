@@ -10,15 +10,17 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@types/debug": "^4.1.9",
-    "@types/node": "^20.8.3",
-    "glob": "^10.3.10",
-    "tsx": "^3.13.0",
-    "typescript": "^5.2.2"
-  },
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.1.0",
     "debug": "^4.3.4"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.9",
+    "@types/node": "^20.8.3",
+    "eslint": "^8.51.0",
+    "glob": "^10.3.10",
+    "husky": "^8.0.3",
+    "tsx": "^3.13.0",
+    "typescript": "^5.2.2"
   }
 }
