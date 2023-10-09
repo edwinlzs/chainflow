@@ -5,7 +5,6 @@ import { role, user } from "./setup.js";
 
 // create the chains
 role.post?.set((link, { name }: ReqNodes) => {
-  console.log(JSON.stringify(user.post, null, 2))
   name && link(name, user.post?.res.name);
 });
 

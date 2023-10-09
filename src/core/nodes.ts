@@ -86,7 +86,7 @@ export class ReqNode {
 
     let i = 0;
     while (i < accessors.length && resVal) {
-      let accessor = accessors[i]!;
+      const accessor = accessors[i]!;
       resVal = resVal[accessor];
       i += 1;
     }
