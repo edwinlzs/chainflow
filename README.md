@@ -1,10 +1,12 @@
-# Goal
+# Chainflows
+
+## Goal
 
 Manage dynamically generated datasets/payloads that can be used to call endpoints.
 
 Payload chaining to complete a series of actions in a business-centric manner.
 
-# Use Case
+## Use Case
 
 ### Examples
 
@@ -17,7 +19,7 @@ Example of a chain
 5. Create Submission 1 (POST `/submission`) with Project 1, User 1
 6. Create Submission 2 (POST `/submission`) with Project 2, User 1
 
-# Code
+## Code
 
 `links.ts`
 
@@ -29,8 +31,11 @@ const { role, project, submission } = generateRoutes();
 
 /// Set up links between endpoints
 role.post.set(function ({ name, type }) {
-  link(name, user.post.res.name); // name should now be passed from user to role
-  assign(type, ["ENGINEER", "ARCHITECT", "BUILDER"]); // type will be randomly selected from value pool
+  // indicate name should be passed from user to role
+  link(name, user.post.res.name);
+  
+  // specify pool of values for type
+  assign(type, ["ENGINEER", "ARCHITECT", "BUILDER"]);
 });
 
 project.post.set(function ({ createdBy }) {

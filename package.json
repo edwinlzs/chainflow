@@ -4,21 +4,36 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "commitlint": "commitlint --edit",
+    "lint": "eslint ./src/ --ext .ts",
+    "lint:fix": "eslint ./src/ --ext .ts --fix",
+    "markdownlint": "markdownlint **/*.md --ignore node_modules",
+    "postinstall": "husky install",
     "test": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
     "demo": "set DEBUG=* & tsc && node ./dist/demo/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@types/debug": "^4.1.9",
-    "@types/node": "^20.8.3",
-    "glob": "^10.3.10",
-    "tsx": "^3.13.0",
-    "typescript": "^5.2.2"
-  },
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.1.0",
     "debug": "^4.3.4"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.2",
+    "@commitlint/config-conventional": "^17.7.0",
+    "@types/debug": "^4.1.9",
+    "@types/node": "^20.8.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "glob": "^10.3.10",
+    "husky": "^8.0.3",
+    "markdownlint-cli": "^0.37.0",
+    "prettier": "^3.0.3",
+    "tsx": "^3.13.0",
+    "typescript": "^5.2.2"
   }
 }

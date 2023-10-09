@@ -1,4 +1,4 @@
-import { Endpoint } from "./endpoint.js";
+import { Endpoint } from './endpoint.js';
 
 export class Route {
   [method: string]: Endpoint;

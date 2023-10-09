@@ -1,8 +1,8 @@
-import { Endpoint } from "../core/endpoint.js";
-import { Route } from "../core/route.js";
-import debug from "debug";
+import { Endpoint } from '../core/endpoint.js';
+import { Route } from '../core/route.js';
+import debug from 'debug';
 
-export const log = debug("routegen");
+export const log = debug('routegen');
 
 /** Given an API spec, generate route objects */
 export const generateRoutes = (spec: any) => {
@@ -18,8 +18,7 @@ export const generateRoutes = (spec: any) => {
           methods[method] = endpoint;
         });
       }
-      Object.keys(methods).length > 0 &&
-        (routes[getRouteName(route)] = new Route(methods));
+      Object.keys(methods).length > 0 && (routes[getRouteName(route)] = new Route(methods));
     });
   }
 
@@ -28,18 +27,16 @@ export const generateRoutes = (spec: any) => {
 
 /** Creates route name to be stored in routes object */
 const getRouteName = (route: string): string => {
-  if (route.charAt(0) === "/") {
+  if (route.charAt(0) === '/') {
     route = route.slice(1);
   }
-  const parts = route.split("/");
-  if (parts.length === 0) return "root";
+  const parts = route.split('/');
+  if (parts.length === 0) return 'root';
   if (parts.length > 1) {
     return [
       parts[0],
-      ...parts
-        .slice(1)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1)),
-    ].join("");
+      ...parts.slice(1).map((part) => part.charAt(0).toUpperCase() + part.slice(1)),
+    ].join('');
   }
   return parts[0]!;
 };
@@ -48,7 +45,7 @@ const getRouteName = (route: string): string => {
 const getReqPayload = (details: any) => {
   const schema = getReqSchema(details?.requestBody);
   // currently only able to handle object schema
-  if (!(schema && schema.type === "object" && schema.properties)) {
+  if (!(schema && schema.type === 'object' && schema.properties)) {
     return {};
   }
   return constructPropObject(schema.properties);
@@ -58,7 +55,7 @@ const getReqPayload = (details: any) => {
 const getResPayload = (details: any) => {
   const schema = getResSchema(details?.responses);
   // currently only able to handle object schema
-  if (!(schema && schema.type === "object" && schema.properties)) {
+  if (!(schema && schema.type === 'object' && schema.properties)) {
     return {};
   }
   return constructPropObject(schema.properties);
@@ -79,7 +76,7 @@ const getPropVal = (propInfo: any) => {
   if (!propInfo.type) return null;
 
   switch (propInfo.type) {
-    case "object":
+    case 'object':
       if (!propInfo.properties) return null;
       return constructPropObject(propInfo.properties);
   }
@@ -87,12 +84,11 @@ const getPropVal = (propInfo: any) => {
 
 /** Extracts schema from request body in spec */
 const getReqSchema = (reqBody: any) => {
-  return reqBody?.content?.["application/json"]?.schema;
+  return reqBody?.content?.['application/json']?.schema;
 };
 
 /** Extracts schema from response body in spec */
 const getResSchema = (responses: any) => {
-  const targetResponse = responses?.["200"] || responses?.default;
-  return targetResponse?.content?.["application/json"]?.schema;
+  const targetResponse = responses?.['200'] || responses?.default;
+  return targetResponse?.content?.['application/json']?.schema;
 };
-
