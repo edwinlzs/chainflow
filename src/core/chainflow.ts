@@ -1,8 +1,8 @@
-import { Endpoint } from "./endpoint.js";
-import { Route } from "./route.js";
-import debug from "debug";
+import { Endpoint } from './endpoint.js';
+import { Route } from './route.js';
+import debug from 'debug';
 
-const log = debug("chainflow");
+const log = debug('chainflow');
 
 type RespPayload = any;
 // type Routes = { [routeName: string]: Route };
@@ -42,7 +42,7 @@ class ChainflowBase {
   #callstack: Callstack = [];
 
   constructor() {
-    ["get", "post", "put", "delete", "patch", "options"].forEach((method) => {
+    ['get', 'post', 'put', 'delete', 'patch', 'options'].forEach((method) => {
       /** Makes a call for the given route and endpoint. */
       Reflect.defineProperty(this, method, {
         value: (route: Route, opts?: CallOpts) => {
@@ -57,7 +57,7 @@ class ChainflowBase {
     });
 
     /** Run the set up chain */
-    Reflect.defineProperty(this, "run", {
+    Reflect.defineProperty(this, 'run', {
       value: async () => {
         log(`Running chainflow...`);
         for (const { endpoint, opts } of this.#callstack) {
@@ -67,7 +67,7 @@ class ChainflowBase {
           const response = await endpoint.call(this.#responses);
           this.#responses[hash] = [response];
         }
-        log("Finished running chainflow.");
+        log('Finished running chainflow.');
       },
     });
   }

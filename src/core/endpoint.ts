@@ -1,9 +1,9 @@
-import { hashEndpoint } from "../utils/hash.js";
-import { Responses } from "./chainflow.js";
-import { ReqNode, ResNode, getNodeValue, setSource } from "./nodes.js";
-import debug from "debug";
+import { hashEndpoint } from '../utils/hash.js';
+import { Responses } from './chainflow.js';
+import { ReqNode, ResNode, getNodeValue, setSource } from './nodes.js';
+import debug from 'debug';
 
-const log = debug("endpoint");
+const log = debug('endpoint');
 
 export type ReqNodes = { [nodeName: string]: ReqNode };
 
@@ -56,11 +56,7 @@ export class Endpoint {
   /** Calls this endpoint with provided responses */
   async call(responses: any): Promise<any> {
     const payload = this.#buildPayload(responses);
-    log(
-      `Calling API with hash "${this.getHash()}" and payload ${JSON.stringify(
-        payload
-      )}`
-    );
+    log(`Calling API with hash "${this.getHash()}" and payload ${JSON.stringify(payload)}`);
     // await fetch(this.hash.route, {
     //   method: this.hash.method,
     //   body: JSON.stringify(payload),
@@ -69,12 +65,7 @@ export class Endpoint {
   }
 
   /** Configure linking of this Req's nodes */
-  set(
-    setter: (
-      link: (dest: ReqNode, source: ResNode) => void,
-      nodes: ReqNodes
-    ) => void
-  ) {
+  set(setter: (link: (dest: ReqNode, source: ResNode) => void, nodes: ReqNodes) => void) {
     setter(link, this.#req);
   }
 
@@ -92,7 +83,7 @@ export const buildObject = (
   nodes: {
     [key: string]: ReqNode;
   },
-  responses: Responses
+  responses: Responses,
 ) => {
   return Object.entries(nodes).reduce((acc, [key, val]) => {
     acc[key] = val[getNodeValue](responses);
@@ -104,6 +95,6 @@ export const buildObject = (
 const link = (dest: ReqNode, source: ResNode) => {
   dest[setSource](source.hash, source.path);
   log(
-    `Linked ResNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest.hash}"`
+    `Linked ResNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest.hash}"`,
   );
 };

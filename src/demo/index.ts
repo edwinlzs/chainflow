@@ -1,7 +1,7 @@
 /** USER TEST ZONE */
-import { chainflow } from "../core/chainflow.js";
-import { ReqNodes } from "../core/endpoint.js";
-import { role, user } from "./setup.js";
+import { chainflow } from '../core/chainflow.js';
+import { ReqNodes } from '../core/endpoint.js';
+import { role, user } from './setup.js';
 
 // create the chains
 role.post?.set((link, { name }: ReqNodes) => {

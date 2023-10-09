@@ -1,15 +1,15 @@
-import parser from "@apidevtools/swagger-parser";
-import { generateRoutes, log } from "./routegen.js";
+import parser from '@apidevtools/swagger-parser';
+import { generateRoutes, log } from './routegen.js';
 
-const specPath = "./src/templates/openapi.json";
+const specPath = './src/templates/openapi.json';
 
 export const gen = async () => {
   try {
     const spec = await parser.validate(specPath, {
-      dereference: { circular: "ignore" },
+      dereference: { circular: 'ignore' },
     });
     const routes = generateRoutes(spec);
-    log("Successfully generated routes.");
+    log('Successfully generated routes.');
     return routes;
   } catch (err) {
     log(err);
