@@ -4,17 +4,21 @@ import { buildObject } from './endpoint';
 
 const log = debug('nodes');
 
-export const setSource = Symbol('_setSource');
-export const getNodeValue = Symbol('_getNodeValue');
+export const setSource = Symbol('setSource');
+export const getNodeValue = Symbol('getNodeValue');
+export const nodeHash = Symbol('hash');
 
 /** A data node for constructing a request. */
 export class ReqNode {
   [key: string]: any;
+  /** may not be useful. currently only identifying base endpoint. */
+  [nodeHash]: string;
   #default: any;
   /** Stores what response node values can be passed into this node and the path to those nodes. */
   #sources: { [nodeHash: string]: string } = {};
 
   constructor({ val, hash }: { val: any; hash: string }) {
+    this[nodeHash] = hash;
     if (Array.isArray(val)) {
       throw new Error(`Unable to handle array types for node with hash "${hash}".`);
     }
@@ -43,7 +47,7 @@ export class ReqNode {
 
       log(
         `Retrieving value for ReqNode with hash "${
-          this._hash
+          this[nodeHash]
         }" from response payload ${JSON.stringify(resPayload)} via path "${resPath}"`,
       );
 
