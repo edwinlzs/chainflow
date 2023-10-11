@@ -1,4 +1,4 @@
-# Chainflows
+# Chainflow
 
 ## Goal
 
