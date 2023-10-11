@@ -80,10 +80,7 @@ export class Endpoint {
  * Builds a JSON object from defined request nodes and
  * available responses as potential sources.
  */
-export const buildObject = (
-  nodes: ReqNodes,
-  responses: Responses,
-) => {
+export const buildObject = (nodes: ReqNodes, responses: Responses) => {
   return Object.entries(nodes).reduce((acc, [key, val]) => {
     acc[key] = val[getNodeValue](responses);
     return acc;
