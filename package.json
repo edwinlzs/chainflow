@@ -1,5 +1,5 @@
 {
-  "name": "chainflows",
+  "name": "chainflow",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,8 @@
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
     "postinstall": "husky install",
     "test": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
+    "test:coverage": "glob -c \"c8 node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
+    "test:debug": "set DEBUG=* & glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
     "demo": "set DEBUG=* & tsc && node ./dist/demo/index.js"
   },
   "keywords": [],
@@ -26,6 +28,7 @@
     "@types/node": "^20.8.3",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
+    "c8": "^8.0.1",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

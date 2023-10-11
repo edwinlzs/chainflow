@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "checkCoverage": true,
+  "lines": 90,
+  "exclude": ["demo", "gen"],
+  "src": "src"
+}

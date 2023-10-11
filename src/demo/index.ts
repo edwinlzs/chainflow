@@ -1,6 +1,6 @@
 /** USER TEST ZONE */
 import { chainflow } from '../core/chainflow.js';
-import { ReqNodes } from '../core/endpoint.js';
+import { ReqNodes } from '../core/reqBuilder.js';
 import { project, role, submission, user } from './setup.js';
 
 // create the chains

@@ -1,2 +1,11 @@
-node_modules/
-dist/
+# lib
+node_modules
+
+# build
+dist
+
+# ide
+.vscode
+
+# testing
+coverage
