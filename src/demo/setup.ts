@@ -19,7 +19,7 @@ const userPostResponse = {
   id: 'user - user_id',
 };
 
-const userPost = new Endpoint({ route: '/user', method: 'POST' });
+const userPost = new Endpoint({ path: '/user', method: 'POST' });
 userPost.req = userPostRequest;
 userPost.res = userPostResponse;
 const user = new Route([userPost]);
@@ -32,7 +32,7 @@ const rolePostRequest = {
 
 const rolePostResponse = {};
 
-const rolePost = new Endpoint({ route: '/role', method: 'POST' });
+const rolePost = new Endpoint({ path: '/role', method: 'POST' });
 rolePost.req = rolePostRequest;
 rolePost.res = rolePostResponse;
 const role = new Route([rolePost]);
@@ -50,7 +50,7 @@ const projectPostResponse = {
   id: 'project - id',
 };
 
-const projectPost = new Endpoint({ route: '/project', method: 'POST' });
+const projectPost = new Endpoint({ path: '/project', method: 'POST' });
 projectPost.req = projectPostRequest;
 projectPost.res = projectPostResponse;
 const project = new Route([projectPost]);
@@ -65,7 +65,7 @@ const submissionPostResponse = {
   id: 'submission - id',
 };
 
-const submissionPost = new Endpoint({ route: '/submission', method: 'POST' });
+const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
 submissionPost.req = submissionPostRequest;
 submissionPost.res = submissionPostResponse;
 const submission = new Route([submissionPost]);

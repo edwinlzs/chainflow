@@ -1,18 +1,21 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { ACCEPTED_METHODS, chainflow } from '../chainflow';
+import { SUPPORTED_METHODS, chainflow } from '../chainflow';
 import { Endpoint } from '../endpoint';
 import { Route } from '../route';
 
 describe('#chainflow', () => {
-  it('should define methods for accepted HTTP method types and a run command', () => {
+  it('should define methods for supported HTTP method types and a run command', () => {
     const testChain = chainflow();
-    assert.deepEqual(Object.getOwnPropertyNames(testChain), ACCEPTED_METHODS.concat(['run']));
+    assert.deepEqual(
+      Object.getOwnPropertyNames(testChain).sort(),
+      ['run'].concat(SUPPORTED_METHODS).sort(),
+    );
   });
 
   it('should allow API calls', async () => {
     const testChain = chainflow();
-    const endpoint = new Endpoint({ route: '/user', method: 'get' });
+    const endpoint = new Endpoint({ path: '/user', method: 'get' });
     const route = new Route([endpoint]);
 
     const tracker = mock.method(endpoint, 'call', () => ({}));
@@ -24,9 +27,9 @@ describe('#chainflow', () => {
 
   it('should allow multiple API calls', async () => {
     const testChain = chainflow();
-    const userEndpoint = new Endpoint({ route: '/user', method: 'get' });
+    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
     const user = new Route([userEndpoint]);
-    const roleEndpoint = new Endpoint({ route: '/role', method: 'post' });
+    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' });
     const role = new Route([roleEndpoint]);
 
     const userTracker = mock.method(userEndpoint, 'call', () => ({}));
@@ -40,7 +43,7 @@ describe('#chainflow', () => {
 
   it('should not actually make call if method is incorrect', async () => {
     const testChain = chainflow();
-    const userEndpoint = new Endpoint({ route: '/user', method: 'get' });
+    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
     const user = new Route([userEndpoint]);
 
     const userTracker = mock.method(userEndpoint, 'call', () => ({}));

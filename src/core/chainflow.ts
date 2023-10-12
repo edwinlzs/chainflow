@@ -37,14 +37,22 @@ type Chainflow = ChainflowBase & {
   run: () => Promise<void>;
 };
 
-export const ACCEPTED_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'options'];
+export type SUPPORTED_METHOD = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
+export const SUPPORTED_METHODS: SUPPORTED_METHOD[] = [
+  'get',
+  'post',
+  'put',
+  'delete',
+  'patch',
+  'options',
+];
 
 class ChainflowBase {
   #responses: Responses = {};
   #callstack: Callstack = [];
 
   constructor() {
-    ACCEPTED_METHODS.forEach((method) => {
+    SUPPORTED_METHODS.forEach((method) => {
       /** Makes a call for the given route and endpoint. */
       Reflect.defineProperty(this, method, {
         value: (route: Route, opts?: CallOpts) => {

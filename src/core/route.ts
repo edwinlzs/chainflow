@@ -1,15 +1,17 @@
-import { ACCEPTED_METHODS } from './chainflow.js';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './chainflow.js';
 import { Endpoint } from './endpoint.js';
 
 /** Stores endpoints based on their route and methods. */
 export class Route {
+  #host: string;
   [method: string]: Endpoint;
 
-  constructor(endpoints: Endpoint[] = []) {
+  constructor(endpoints: Endpoint[] = [], host?: string) {
+    this.#host = host ?? '127.0.0.1';
     endpoints.forEach((endpoint) => {
-      const method = endpoint.method.toLowerCase();
-      if (!ACCEPTED_METHODS.includes(method)) return;
-      (this as any)[method] = endpoint;
+      if (!SUPPORTED_METHODS.includes(endpoint.method as SUPPORTED_METHOD)) return;
+      (this as any)[endpoint.method] = endpoint;
+      endpoint.host = this.#host;
     });
   }
 }

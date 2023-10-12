@@ -6,31 +6,31 @@ export const log = debug('routegen');
 
 /** Given an API spec, generate route objects */
 export const generateRoutes = (spec: any) => {
-  const routes: any = {};
+  const routes: Record<string, Route> = {};
   if (spec.paths) {
-    Object.entries(spec.paths).forEach(([route, rawEndpoints]) => {
+    Object.entries(spec.paths).forEach(([path, rawEndpoints]) => {
       const endpoints: Endpoint[] = [];
       if (rawEndpoints) {
         Object.entries(rawEndpoints).forEach(([method, details]) => {
-          const endpoint = new Endpoint({ route, method });
+          const endpoint = new Endpoint({ path, method });
           endpoint.req = getReqPayload(details);
           endpoint.res = getResPayload(details);
           endpoints.push(endpoint);
         });
       }
-      endpoints.length > 0 && (routes[getRouteName(route)] = new Route(endpoints));
+      endpoints.length > 0 && (routes[getPathName(path)] = new Route(endpoints));
     });
   }
 
   return routes;
 };
 
-/** Creates route name to be stored in routes object */
-const getRouteName = (route: string): string => {
-  if (route.charAt(0) === '/') {
-    route = route.slice(1);
+/** Creates path name in camel case without slashes. */
+const getPathName = (path: string): string => {
+  if (path.charAt(0) === '/') {
+    path = path.slice(1);
   }
-  const parts = route.split('/');
+  const parts = path.split('/');
   if (parts.length === 0) return 'root';
   if (parts.length > 1) {
     return [

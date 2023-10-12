@@ -1,10 +1,10 @@
 import { hashEndpoint } from '../utils/hash.js';
-import { Responses } from './chainflow.js';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
 import { ReqNode, getNodeValue, nodeHash, setSource } from './reqNode.js';
 import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder.js';
 import { RespNode } from './respNode.js';
-import http from '../utils/http.js';
+import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
 
 const log = debug('endpoint');
 
@@ -15,16 +15,24 @@ type RespNodes = { [key: string]: RespNode };
  * as well as calls to that endpoint
  */
 export class Endpoint {
-  #route: string;
-  #method: string;
+  #host: string = '127.0.0.1';
+  #path: string;
+  #method: SUPPORTED_METHOD;
   #req: ReqBuilder = new ReqBuilder({ hash: this.getHash() });
   #res: RespNodes = {};
   /** Temporarily substitutes a real response from calling an API. */
   #tempRes: any;
 
-  constructor({ route, method }: { route: string; method: string }) {
-    this.#route = route;
-    this.#method = method;
+  constructor({ path, method }: { path: string; method: string }) {
+    method = method.toLowerCase();
+    if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
+      throw new Error(`Unsupported method: "${method}"`);
+    this.#path = path;
+    this.#method = method as SUPPORTED_METHOD;
+  }
+
+  set host(host: string) {
+    this.#host = host;
   }
 
   get method() {
@@ -33,7 +41,7 @@ export class Endpoint {
 
   /** Returns a hash that uniquely identifies this endpoint. */
   getHash() {
-    return hashEndpoint({ route: this.#route, method: this.#method });
+    return hashEndpoint({ route: this.#path, method: this.#method });
   }
 
   set req(payload: any) {
@@ -60,7 +68,11 @@ export class Endpoint {
   /** Calls this endpoint with provided responses */
   async call(responses: any): Promise<any> {
     const payload = this.#buildPayload(responses);
-    await http.httpReq({ hash: this.getHash(), body: payload });
+    await http.httpReq({
+      route: `${this.#host}${this.#path}`,
+      method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
+      body: payload,
+    });
 
     return this.#tempRes;
   }
