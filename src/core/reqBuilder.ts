@@ -1,5 +1,5 @@
 import { ReqNode } from './reqNode';
-import debug from 'debug';
+import { debug } from 'debug';
 
 const log = debug('reqBuilder');
 
