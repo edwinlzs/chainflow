@@ -1,8 +1,7 @@
-name: On Push & Pull Request
+name: On Push
 run-name: ${{ github.actor }} has pushed commits
 on:
   - push
-  - pull_request
 jobs:
   Unit-Tests:
     runs-on: ubuntu-latest

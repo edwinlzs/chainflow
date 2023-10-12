@@ -8,17 +8,17 @@ export const log = debug('routegen');
 export const generateRoutes = (spec: any) => {
   const routes: any = {};
   if (spec.paths) {
-    Object.entries(spec.paths).forEach(([route, endpoints]) => {
-      const methods: { [methodName: string]: Endpoint } = {};
-      if (endpoints) {
-        Object.entries(endpoints).forEach(([method, details]) => {
+    Object.entries(spec.paths).forEach(([route, rawEndpoints]) => {
+      const endpoints: Endpoint[] = [];
+      if (rawEndpoints) {
+        Object.entries(rawEndpoints).forEach(([method, details]) => {
           const endpoint = new Endpoint({ route, method });
           endpoint.req = getReqPayload(details);
           endpoint.res = getResPayload(details);
-          methods[method] = endpoint;
+          endpoints.push(endpoint);
         });
       }
-      Object.keys(methods).length > 0 && (routes[getRouteName(route)] = new Route(methods));
+      endpoints.length > 0 && (routes[getRouteName(route)] = new Route(endpoints));
     });
   }
 

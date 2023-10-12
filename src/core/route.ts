@@ -7,7 +7,7 @@ export class Route {
 
   constructor(endpoints: Endpoint[] = []) {
     endpoints.forEach((endpoint) => {
-      const method = endpoint.method;
+      const method = endpoint.method.toLowerCase();
       if (!ACCEPTED_METHODS.includes(method)) return;
       (this as any)[method] = endpoint;
     });
