@@ -2,8 +2,13 @@ import { describe, it, mock } from 'node:test';
 import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
+import { MockAgent, setGlobalDispatcher } from 'undici';
 
 describe('#endpoint', () => {
+  const agent = new MockAgent();
+  setGlobalDispatcher(agent);
+  agent.disableNetConnect();
+
   const testReqPayload = {
     id: 'some-id',
     name: 'some-name',
@@ -13,11 +18,22 @@ describe('#endpoint', () => {
     },
   };
 
+  describe('when an unsupported method is passed to an endpoint', () => {
+    it('should throw an error', () => {
+      assert.throws(
+        () => new Endpoint({ method: 'NOnSeNsE', path: '/' }),
+        /Unsupported method: "nonsense"$/,
+      );
+    });
+  });
+
   describe('when a request payload is assigned to an endpoint', () => {
-    const testEndpoint = new Endpoint({ method: 'post', route: '/user' });
+    const client = agent.get('http://127.0.0.1');
+
+    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' });
     testEndpoint.req = testReqPayload;
 
-    const respEndpoint = new Endpoint({ method: 'get', route: '/age' });
+    const respEndpoint = new Endpoint({ method: 'GET', path: '/age' });
     const respPayload = {
       age: 10,
     };
@@ -27,12 +43,24 @@ describe('#endpoint', () => {
     respEndpoint.res = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
       testEndpoint.set((_, nodes) => {
         assert.deepEqual(Object.keys(nodes), Object.keys(testReqPayload));
       });
     });
 
     it('should use the default value if no RespNode is linked', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
       const tracker = mock.method(http, 'httpReq');
       await testEndpoint.call(responses);
 

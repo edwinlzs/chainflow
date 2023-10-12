@@ -5,7 +5,7 @@ import { Endpoint } from '../endpoint';
 
 describe('#route', () => {
   it('should save endpoints by their method name', () => {
-    const endpoint = new Endpoint({ route: '/user', method: 'get' });
+    const endpoint = new Endpoint({ path: '/user', method: 'get' });
     const testRoute = new Route([endpoint]);
     assert.equal(testRoute['get'], endpoint);
   });

@@ -1,11 +1,25 @@
 import { debug } from 'debug';
+import { request } from 'undici';
 
 const log = debug('http');
 
-const httpReq = async ({ hash, body }: { hash: string; body: any }) => {
-  log(`Calling API with hash "${hash}" and payload ${JSON.stringify(body)}`);
+export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
+
+const httpReq = async ({
+  route,
+  method,
+  body,
+}: {
+  route: string;
+  method: SUPPORTED_METHOD_UPPERCASE;
+  body: any;
+}) => {
+  log(`${method} ${route} with payload ${JSON.stringify(body)}`);
 
   // TODO: insert actual endpoint call here
+  await request(`http://${route}`, {
+    method,
+  });
 
   // TODO: error handling if call fails
 };

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { ReqNode, getNodeValue, setSource } from '../reqNode';
+import { ReqNode, getNodeValue } from '../reqNode';
 
 describe('#reqNode', () => {
   const testVal = {
@@ -14,8 +14,8 @@ describe('#reqNode', () => {
 
   describe('when the node value is not an object', () => {
     it('should save string values as the default', () => {
-      const testNode = new ReqNode({ val: "Hello World!", hash: 'some-hash' });
-      assert.equal(testNode[getNodeValue]({}), "Hello World!");
+      const testNode = new ReqNode({ val: 'Hello World!', hash: 'some-hash' });
+      assert.equal(testNode[getNodeValue]({}), 'Hello World!');
     });
 
     it('should save boolean values as the default', () => {
@@ -44,7 +44,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: Symbol('some-symbol'), hash: 'some-hash' }),
-        /Unhandled value type: "symbol".$/,
+        /Unhandled value type: "symbol"$/,
       );
     });
   });
@@ -54,7 +54,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: ['some-string', 50, false], hash: 'some-hash' }),
-        /Unhandled value type: "array".$/,
+        /Unhandled value type: "array"$/,
       );
     });
   });
@@ -64,7 +64,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: null, hash: 'some-hash' }),
-        /Unhandled value type: "null".$/,
+        /Unhandled value type: "null"$/,
       );
     });
   });

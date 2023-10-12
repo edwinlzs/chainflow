@@ -22,11 +22,11 @@ export class ReqNode {
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
     if (val == null) {
-      throw new Error('Unhandled value type: "null".');
-    };
+      throw new Error('Unhandled value type: "null"');
+    }
     if (Array.isArray(val)) {
-      throw new Error('Unhandled value type: "array".');
-    };
+      throw new Error('Unhandled value type: "array"');
+    }
 
     switch (typeof val) {
       case 'boolean':
@@ -41,7 +41,7 @@ export class ReqNode {
         });
         break;
       default:
-        throw new Error(`Unhandled value type: "${typeof val}".`);
+        throw new Error(`Unhandled value type: "${typeof val}"`);
     }
   }
 
