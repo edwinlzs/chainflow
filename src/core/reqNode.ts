@@ -21,17 +21,27 @@ export class ReqNode {
 
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
+    if (val == null) {
+      throw new Error('Unhandled value type: "null".');
+    };
     if (Array.isArray(val)) {
-      throw new Error(`Unable to handle array types for node with hash "${hash}".`);
-    }
+      throw new Error('Unhandled value type: "array".');
+    };
 
-    if (typeof val === 'object') {
-      Object.entries(val).forEach(([key, val]) => {
-        log(`Creating ReqNode for hash "${hash}" with key "${key}"`);
-        (this as any)[key] = new ReqNode({ val, hash });
-      });
-    } else {
-      this.#default = val;
+    switch (typeof val) {
+      case 'boolean':
+      case 'number':
+      case 'string':
+        this.#default = val;
+        break;
+      case 'object':
+        Object.entries(val).forEach(([key, val]) => {
+          log(`Creating ReqNode for hash "${hash}" with key "${key}"`);
+          (this as any)[key] = new ReqNode({ val, hash });
+        });
+        break;
+      default:
+        throw new Error(`Unhandled value type: "${typeof val}".`);
     }
   }
 
@@ -61,7 +71,7 @@ export class ReqNode {
       }
     }
 
-    if (!this.#default) {
+    if (this.#default === undefined) {
       return buildObject(this as any, responses);
     }
 
@@ -79,10 +89,6 @@ export class ReqNode {
   #accessSource(payload: any, path: string): any {
     const accessors = path.split('.');
     let resVal = payload;
-
-    if (!accessors) {
-      return null;
-    }
 
     let i = 0;
     while (i < accessors.length && resVal) {

@@ -37,4 +37,16 @@ describe('#chainflow', () => {
     assert.equal(userTracker.mock.calls.length, 2);
     assert.equal(roleTracker.mock.calls.length, 1);
   });
+
+  it('should not actually make call if method is incorrect', async () => {
+    const testChain = chainflow();
+    const userEndpoint = new Endpoint({ route: '/user', method: 'get' });
+    const user = new Route([userEndpoint]);
+
+    const userTracker = mock.method(userEndpoint, 'call', () => ({}));
+
+    await testChain.post(user).run();
+
+    assert.equal(userTracker.mock.calls.length, 0);
+  });
 });

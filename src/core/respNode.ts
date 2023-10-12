@@ -11,9 +11,6 @@ export class RespNode {
 
   constructor({ val, hash, path }: { val: any; hash: string; path: string }) {
     this.hash = hash;
-    if (Array.isArray(val)) {
-      throw new Error(`Unable to handle array types for node with hash "${hash}".`);
-    }
 
     this.path = path;
     if (typeof val === 'object') {

@@ -9,3 +9,6 @@ dist
 
 # testing
 coverage
+
+# OS
+.DS_Store
