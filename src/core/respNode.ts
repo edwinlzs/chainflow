@@ -1,6 +1,6 @@
 import debug from 'debug';
 
-const log = debug('respNode');
+const log = debug('chainflow:respNode');
 
 /** A data node for a received response. */
 export class RespNode {

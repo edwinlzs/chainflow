@@ -6,9 +6,15 @@ import { ReqBuilder, ReqNodes } from './reqBuilder.js';
 import { RespNode } from './respNode.js';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
 
-const log = debug('endpoint');
+const log = debug('chainflow:endpoint');
 
 type RespNodes = { [key: string]: RespNode };
+
+/** Describes all the possible input nodes of a HTTP request. */
+export interface InputNodes {
+  pathParams: ReqNodes,
+  body: ReqNodes,
+};
 
 /**
  * Manages request and response nodes,
@@ -18,7 +24,8 @@ export class Endpoint {
   #host: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
-  #req: ReqBuilder = new ReqBuilder({ hash: this.getHash() });
+  #req: ReqBuilder;
+  #pathParams: { [name: string]: ReqNode } = {};
   #res: RespNodes = {};
   /** Temporarily substitutes a real response from calling an API. */
   #tempRes: any;
@@ -29,6 +36,8 @@ export class Endpoint {
       throw new Error(`Unsupported method: "${method}"`);
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
+    this.#req = new ReqBuilder({ hash: this.getHash() });
+    this.#extractPathParams(path);
   }
 
   set host(host: string) {
@@ -78,13 +87,37 @@ export class Endpoint {
   }
 
   /** Configure linking of this Req's nodes */
-  set(setter: (link: (dest: ReqNode, source: RespNode) => void, nodes: ReqNodes) => void) {
-    setter(link, this.#req.body);
+  set(
+    setter: (
+      link: (dest: ReqNode, source: RespNode) => void,
+      nodes: InputNodes,
+    ) => void,
+  ) {
+    setter(link, {
+      pathParams: this.#pathParams,
+      body: this.#req.body,
+    });
   }
 
   /** Builds the request payload */
   #buildPayload(responses: Responses) {
     return buildObject(this.#req.body, responses);
+  }
+
+  /** Extracts Path params from a given path */
+  #extractPathParams(path: string) {
+    // (\/[A-Za-z0-9]+)*\/\{[^}]+\}(\/[A-Za-z0-9]+)*
+    const pathParamRegex = new RegExp(/\/(\{[^{}]+\})/g);
+    const hash = this.getHash();
+    let param;
+    while ((param = pathParamRegex.exec(path)) !== null && typeof param[1] === 'string') {
+      const paramName = param[1].replace('{', '').replace('}', '');
+      log(`Found path parameter for hash "${hash}" with name "${paramName}"`);
+      this.#pathParams[paramName] = new ReqNode({
+        val: paramName,
+        hash,
+      });
+    }
   }
 }
 

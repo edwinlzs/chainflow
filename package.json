@@ -11,8 +11,8 @@
     "postinstall": "husky install",
     "test": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
     "test:coverage": "glob -c \"c8 node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
-    "test:debug": "set DEBUG=* & glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
-    "demo": "set DEBUG=* & tsc && node ./dist/demo/index.js"
+    "test:debug": "glob -c \"node -r dotenv/config --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
+    "demo": "tsc && node -r dotenv/config ./dist/demo/index.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.1.0",
     "debug": "^4.3.4",
+    "dotenv": "^16.3.1",
     "undici": "^5.26.3"
   },
   "devDependencies": {
@@ -36,6 +37,7 @@
     "glob": "^10.3.10",
     "husky": "^8.0.3",
     "markdownlint-cli": "^0.37.0",
+    "openapi-types": "^12.1.3",
     "prettier": "^3.0.3",
     "tsx": "^3.13.0",
     "typescript": "^5.2.2"

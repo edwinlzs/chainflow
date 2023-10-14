@@ -1,5 +1,4 @@
 /** TEST ZONE */
-
 import { Endpoint } from '../core/endpoint';
 import { Route } from '../core/route';
 
@@ -9,7 +8,7 @@ import { Route } from '../core/route';
 
 // User
 const userPostRequest = {
-  name: 'user - name',
+  name: 'user-name',
   details: {
     age: 42,
   },
@@ -26,8 +25,8 @@ const user = new Route([userPost]);
 
 // Role
 const rolePostRequest = {
-  id: 'role - user_id',
-  type: 'role - type',
+  id: 'role-user_id',
+  type: 'role-type',
 };
 
 const rolePostResponse = {};
@@ -39,15 +38,15 @@ const role = new Route([rolePost]);
 
 // Project
 const projectPostRequest = {
-  creator_id: 'project - user_id',
+  creator_id: 'project-user_id',
   details: {
-    title: 'project - title',
-    type: 'project - type',
+    title: 'project-title',
+    type: 'project-type',
   },
 };
 
 const projectPostResponse = {
-  id: 'project - id',
+  id: 'project-id',
 };
 
 const projectPost = new Endpoint({ path: '/project', method: 'POST' });
@@ -57,17 +56,26 @@ const project = new Route([projectPost]);
 
 // Submission
 const submissionPostRequest = {
-  creator_id: 'submission - user_id',
-  project_id: 'submission - project_id',
+  creator_id: 'submission-user_id',
+  project_id: 'submission-project_id',
 };
 
 const submissionPostResponse = {
-  id: 'submission - id',
+  id: 'submission-id',
 };
 
 const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
 submissionPost.req = submissionPostRequest;
 submissionPost.res = submissionPostResponse;
-const submission = new Route([submissionPost]);
+
+const submissionGetResponse = {
+  id: 'submission-id',
+  name: 'submission-name',
+};
+
+const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
+submissionGet.req = {};
+submissionPost.res = submissionGetResponse;
+const submission = new Route([submissionPost, submissionGet]);
 
 export { user, role, project, submission };

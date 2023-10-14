@@ -2,7 +2,7 @@ import { Endpoint } from '../core/endpoint.js';
 import { Route } from '../core/route.js';
 import debug from 'debug';
 
-export const log = debug('routegen');
+export const log = debug('chainflow:routegen');
 
 /** Given an API spec, generate route objects */
 export const generateRoutes = (spec: any) => {

@@ -1,7 +1,7 @@
 import { ReqNode } from './reqNode';
 import { debug } from 'debug';
 
-const log = debug('reqBuilder');
+const log = debug('chainflow:reqBuilder');
 
 export type ReqNodes = { [key: string]: ReqNode };
 
