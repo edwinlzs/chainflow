@@ -91,11 +91,11 @@ describe('#endpoint', () => {
   });
 
   describe('when a path with params in it is assigned to an endpoint', () => {
-    const testEndpoint = new Endpoint({ path: "/pet/{petId}", method: 'get' });
-    
+    const testEndpoint = new Endpoint({ path: '/pet/{petId}', method: 'get' });
+
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((_, nodes) => {
-        assert.deepEqual(Object.keys(nodes.pathParams), ["petId"]);
+        assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
       });
     });
   });

@@ -8,11 +8,11 @@ role.post.set((link, { body: { id } }: InputNodes) => {
   link(id, user.post.res.id);
 });
 
-project.post.set((link, { body: { creator_id }}: InputNodes) => {
+project.post.set((link, { body: { creator_id } }: InputNodes) => {
   link(creator_id, user.post.res.id);
 });
 
-submission.post.set((link, { body: { creator_id, project_id }}: InputNodes) => {
+submission.post.set((link, { body: { creator_id, project_id } }: InputNodes) => {
   link(creator_id, user.post.res.id);
   link(project_id, project.post.res.id);
 });

@@ -12,9 +12,9 @@ type RespNodes = { [key: string]: RespNode };
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
-  pathParams: ReqNodes,
-  body: ReqNodes,
-};
+  pathParams: ReqNodes;
+  body: ReqNodes;
+}
 
 /**
  * Manages request and response nodes,
@@ -87,12 +87,7 @@ export class Endpoint {
   }
 
   /** Configure linking of this Req's nodes */
-  set(
-    setter: (
-      link: (dest: ReqNode, source: RespNode) => void,
-      nodes: InputNodes,
-    ) => void,
-  ) {
+  set(setter: (link: (dest: ReqNode, source: RespNode) => void, nodes: InputNodes) => void) {
     setter(link, {
       pathParams: this.#pathParams,
       body: this.#req.body,
