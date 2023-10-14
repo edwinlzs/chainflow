@@ -43,14 +43,8 @@ describe('#endpoint', () => {
     respEndpoint.res = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
-      client
-        .intercept({
-          path: '/user',
-          method: 'POST',
-        })
-        .reply(200, {});
       testEndpoint.set((_, nodes) => {
-        assert.deepEqual(Object.keys(nodes), Object.keys(testReqPayload));
+        assert.deepEqual(Object.keys(nodes.body), Object.keys(testReqPayload));
       });
     });
 
@@ -71,10 +65,16 @@ describe('#endpoint', () => {
     });
 
     it('should use the available response value after a RespNode is linked to the ReqNode', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
       const tracker = mock.method(http, 'httpReq');
 
       testEndpoint.set((link, nodes) => {
-        link(nodes.details.age, respEndpoint.res.age);
+        link(nodes.body.details.age, respEndpoint.res.age);
       });
       await testEndpoint.call(responses);
 
@@ -86,6 +86,16 @@ describe('#endpoint', () => {
           age: 10,
           member: true,
         },
+      });
+    });
+  });
+
+  describe('when a path with params in it is assigned to an endpoint', () => {
+    const testEndpoint = new Endpoint({ path: "/pet/{petId}", method: 'get' });
+    
+    it('should expose its path params for setting up links', () => {
+      testEndpoint.set((_, nodes) => {
+        assert.deepEqual(Object.keys(nodes.pathParams), ["petId"]);
       });
     });
   });

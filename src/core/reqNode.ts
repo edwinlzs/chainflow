@@ -2,7 +2,7 @@ import debug from 'debug';
 import { Responses } from './chainflow';
 import { buildObject } from './endpoint';
 
-const log = debug('reqNode');
+const log = debug('chainflow:reqNode');
 
 export const setSource = Symbol('setSource');
 export const getNodeValue = Symbol('getNodeValue');
