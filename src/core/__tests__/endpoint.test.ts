@@ -91,6 +91,7 @@ describe('#endpoint', () => {
   });
 
   describe('when a path with params in it is assigned to an endpoint', () => {
+    const client = agent.get('http://127.0.0.1');
     const testEndpoint = new Endpoint({ path: '/pet/{petId}', method: 'get' });
 
     it('should expose its path params for setting up links', () => {
@@ -98,9 +99,23 @@ describe('#endpoint', () => {
         assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
       });
     });
+
+    it('should call the endpoint with the given path params', async () => {
+      client
+        .intercept({
+          path: '/pet/petId',
+          method: 'GET',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+
+      await testEndpoint.call({});
+      assert.equal(tracker.mock.callCount(), 1);
+    });
   });
 
   describe('when a request with query params is assigned to an endpoint', () => {
+    const client = agent.get('http://127.0.0.1');
     const testQuery = {
       cute: true,
     };
@@ -111,6 +126,19 @@ describe('#endpoint', () => {
       testEndpoint.set((_, nodes) => {
         assert.deepEqual(Object.keys(nodes.query), ['cute']);
       });
+    });
+
+    it('should call the endpoint with the given query params', async () => {
+      client
+        .intercept({
+          path: '/pet?cute=true',
+          method: 'GET',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+
+      await testEndpoint.call({});
+      assert.equal(tracker.mock.callCount(), 1);
     });
   });
 });
