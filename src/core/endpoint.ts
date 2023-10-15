@@ -10,10 +10,13 @@ const log = debug('chainflow:endpoint');
 
 type RespNodes = { [key: string]: RespNode };
 
+const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
+
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
   pathParams: ReqNodes;
   body: ReqNodes;
+  query: ReqNodes;
 }
 
 /**
@@ -25,7 +28,6 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #pathParams: { [name: string]: ReqNode } = {};
   #res: RespNodes = {};
   /** Temporarily substitutes a real response from calling an API. */
   #tempRes: any;
@@ -37,7 +39,7 @@ export class Endpoint {
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
-    this.#extractPathParams(path);
+    this.#extractPathParams();
   }
 
   set host(host: string) {
@@ -53,7 +55,8 @@ export class Endpoint {
     return hashEndpoint({ route: this.#path, method: this.#method });
   }
 
-  set req(payload: any) {
+  /** Sets the request body. */
+  set body(payload: any) {
     this.#req.body = payload;
   }
 
@@ -74,11 +77,18 @@ export class Endpoint {
     return this.#res;
   }
 
-  /** Calls this endpoint with provided responses */
+  /** Calls this endpoint with responses provided from earlier requests in the chain. */
   async call(responses: any): Promise<any> {
     const payload = this.#buildPayload(responses);
+    let callPath = this.#path;
+    if (Object.keys(this.#req.pathParams).length > 0) {
+      callPath = this.#insertPathParams(callPath, this.#buildPathParams(responses));
+    }
+    if (Object.keys(this.#req.query).length > 0) {
+      callPath = this.#insertQueryParams(callPath, this.#buildQueryParams(responses));
+    }
     await http.httpReq({
-      route: `${this.#host}${this.#path}`,
+      route: `${this.#host}${callPath}`,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: payload,
     });
@@ -86,11 +96,12 @@ export class Endpoint {
     return this.#tempRes;
   }
 
-  /** Configure linking of this Req's nodes */
+  /** Configure linking of this Req's input nodes. */
   set(setter: (link: (dest: ReqNode, source: RespNode) => void, nodes: InputNodes) => void) {
     setter(link, {
-      pathParams: this.#pathParams,
+      pathParams: this.#req.pathParams,
       body: this.#req.body,
+      query: this.#req.query,
     });
   }
 
@@ -100,19 +111,50 @@ export class Endpoint {
   }
 
   /** Extracts Path params from a given path */
-  #extractPathParams(path: string) {
-    // (\/[A-Za-z0-9]+)*\/\{[^}]+\}(\/[A-Za-z0-9]+)*
-    const pathParamRegex = new RegExp(/\/(\{[^{}]+\})/g);
+  #extractPathParams() {
+    const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
     const hash = this.getHash();
     let param;
-    while ((param = pathParamRegex.exec(path)) !== null && typeof param[1] === 'string') {
+    while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
-      log(`Found path parameter for hash "${hash}" with name "${paramName}"`);
-      this.#pathParams[paramName] = new ReqNode({
+      log(`Found path parameter ReqNode for hash "${hash}" with name "${paramName}"`);
+      this.#req.pathParams[paramName] = new ReqNode({
         val: paramName,
         hash,
       });
     }
+  }
+
+  /** Gets path params key-value pairs for making an endpoint call. */
+  #buildPathParams(responses: Responses) {
+    return buildObject(this.#req.pathParams, responses);
+  }
+
+  /** Gets query params key-value pairs for making an endpoint call. */
+  #buildQueryParams(responses: Responses) {
+    return buildObject(this.#req.query, responses);
+  }
+
+  /** Inserts actual path params into path. */
+  #insertPathParams(path: string, pathParams: Record<string, string>): string {
+    Object.entries(pathParams).forEach(([name, val]) => {
+      path = path.replace(`{${name}}`, val);
+    });
+    return path;
+  }
+
+  /** Inserts actual query params into path. */
+  #insertQueryParams(path: string, queryParams: Record<string, string>): string {
+    if (Object.keys(queryParams).length > 0) path = `${path}?`;
+    Object.entries(queryParams).forEach(([name, val], i) => {
+      path = `${path}${i > 1 ? '&' : ''}${name}=${val}`;
+    });
+    return path;
+  }
+
+  /** Sets the request query parameters. */
+  set query(payload: any) {
+    this.#req.query = payload;
   }
 }
 

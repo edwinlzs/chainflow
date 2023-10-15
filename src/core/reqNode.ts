@@ -66,9 +66,7 @@ export class ReqNode {
       // get response value from a linked source
       const resVal = this.#accessSource(resPayload, resPath);
 
-      if (resVal) {
-        return resVal;
-      }
+      if (resVal) return resVal;
     }
 
     if (this.#default === undefined) {
