@@ -7,7 +7,8 @@ export type ReqNodes = { [key: string]: ReqNode };
 
 export class ReqBuilder {
   #headers: ReqNodes = {};
-  #params: ReqNodes = {};
+  pathParams: ReqNodes = {};
+  #queryParams: ReqNodes = {};
   #body: ReqNodes = {};
   #hash: string;
 
@@ -21,8 +22,22 @@ export class ReqBuilder {
 
   set body(payload: any) {
     Object.entries(payload).forEach(([key, val]) => {
-      log(`Creating ReqNode for hash "${this.#hash}" with key "${key}"`);
+      log(`Creating body ReqNode for hash "${this.#hash}" with key "${key}"`);
       this.#body[key] = new ReqNode({
+        val,
+        hash: this.#hash,
+      });
+    });
+  }
+
+  get query() {
+    return this.#queryParams;
+  }
+
+  set query(payload: any) {
+    Object.entries(payload).forEach(([key, val]) => {
+      log(`Creating query param ReqNode for hash "${this.#hash}" with key "${key}"`);
+      this.#queryParams[key] = new ReqNode({
         val,
         hash: this.#hash,
       });

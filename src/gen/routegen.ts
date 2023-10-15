@@ -13,7 +13,7 @@ export const generateRoutes = (spec: any) => {
       if (rawEndpoints) {
         Object.entries(rawEndpoints).forEach(([method, details]) => {
           const endpoint = new Endpoint({ path, method });
-          endpoint.req = getReqPayload(details);
+          endpoint.body = getReqPayload(details);
           endpoint.res = getResPayload(details);
           endpoints.push(endpoint);
         });

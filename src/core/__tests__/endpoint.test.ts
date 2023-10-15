@@ -31,7 +31,7 @@ describe('#endpoint', () => {
     const client = agent.get('http://127.0.0.1');
 
     const testEndpoint = new Endpoint({ method: 'POST', path: '/user' });
-    testEndpoint.req = testReqPayload;
+    testEndpoint.body = testReqPayload;
 
     const respEndpoint = new Endpoint({ method: 'GET', path: '/age' });
     const respPayload = {
@@ -96,6 +96,20 @@ describe('#endpoint', () => {
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((_, nodes) => {
         assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
+      });
+    });
+  });
+
+  describe('when a request with query params is assigned to an endpoint', () => {
+    const testQuery = {
+      cute: true,
+    };
+    const testEndpoint = new Endpoint({ path: '/pet', method: 'get' });
+    testEndpoint.query = testQuery;
+
+    it('should expose its path params for setting up links', () => {
+      testEndpoint.set((_, nodes) => {
+        assert.deepEqual(Object.keys(nodes.query), ['cute']);
       });
     });
   });

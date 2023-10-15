@@ -14,6 +14,7 @@ type RespNodes = { [key: string]: RespNode };
 export interface InputNodes {
   pathParams: ReqNodes;
   body: ReqNodes;
+  query: ReqNodes;
 }
 
 /**
@@ -25,7 +26,6 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #pathParams: { [name: string]: ReqNode } = {};
   #res: RespNodes = {};
   /** Temporarily substitutes a real response from calling an API. */
   #tempRes: any;
@@ -53,7 +53,8 @@ export class Endpoint {
     return hashEndpoint({ route: this.#path, method: this.#method });
   }
 
-  set req(payload: any) {
+  /** Sets the request body. */
+  set body(payload: any) {
     this.#req.body = payload;
   }
 
@@ -86,11 +87,12 @@ export class Endpoint {
     return this.#tempRes;
   }
 
-  /** Configure linking of this Req's nodes */
+  /** Configure linking of this Req's input nodes. */
   set(setter: (link: (dest: ReqNode, source: RespNode) => void, nodes: InputNodes) => void) {
     setter(link, {
-      pathParams: this.#pathParams,
+      pathParams: this.#req.pathParams,
       body: this.#req.body,
+      query: this.#req.query,
     });
   }
 
@@ -107,12 +109,17 @@ export class Endpoint {
     let param;
     while ((param = pathParamRegex.exec(path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
-      log(`Found path parameter for hash "${hash}" with name "${paramName}"`);
-      this.#pathParams[paramName] = new ReqNode({
+      log(`Found path parameter ReqNode for hash "${hash}" with name "${paramName}"`);
+      this.#req.pathParams[paramName] = new ReqNode({
         val: paramName,
         hash,
       });
     }
+  }
+
+  /** Sets the request query parameters. */
+  set query(payload: any) {
+    this.#req.query = payload;
   }
 }
 
