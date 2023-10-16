@@ -15,7 +15,7 @@ const userPostRequest = {
 };
 
 const userPostResponse = {
-  id: 'user - user_id',
+  id: 'user-user_id',
   ...userPostRequest,
 };
 
@@ -56,7 +56,7 @@ const projectPostRequest = {
 };
 
 const projectPostResponse = {
-  id: 'project-id',
+  id: 'project-project_id',
 };
 
 const projectPost = new Endpoint({ path: '/project', method: 'POST' });
