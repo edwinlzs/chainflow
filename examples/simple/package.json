@@ -4,15 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/server.ts & node -r ts-node/register index.ts"
+    "start:server": "ts-node src/server.ts",
+    "start:flow": "node -r ts-node/register index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "chainflow": "file:../../"
+    "chainflow": "file:../.."
   },
   "dependencies": {
+    "@types/express": "^4.17.19",
     "express": "^4.18.2",
     "ts-node": "^10.9.1"
   }

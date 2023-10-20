@@ -1,10 +1,12 @@
 import express from 'express';
 
-const app = express;
-const port = 3001;
+const PORT = 3001;
+
+const app = express();
+app.use(express.json());
 
 app.post('/user', (req, res) => {
-  console.log(`Received POST call at /user with body: ${JSON.stringify(req.body, null, 2)}`);
+  console.log(`Received POST call at /user with body: ${JSON.stringify(req.body)}`);
   res.send({
     id: 'user - user_id',
     ...req.body,
@@ -12,7 +14,7 @@ app.post('/user', (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-  console.log(`Received GET call at /user with query: ${req.query}`);
+  console.log(`Received GET call at /user with query: ${JSON.stringify(req.query, null, 2)}`);
   res.send({
     id: 'user-user_id',
     name: 'user-name',
@@ -23,7 +25,7 @@ app.get('/user', (req, res) => {
 });
 
 app.post('/role', (req, res) => {
-  console.log(`Received POST call at /role with body: ${JSON.stringify(req.body, null, 2)}`);
+  console.log(`Received POST call at /role with body: ${JSON.stringify(req.body)}`);
   res.send({
     user_id: 'role-user_id',
     type: 'role-type',
@@ -31,14 +33,14 @@ app.post('/role', (req, res) => {
 });
 
 app.post('/project', (req, res) => {
-  console.log(`Received POST call at /project with body: ${JSON.stringify(req.body, null, 2)}`);
+  console.log(`Received POST call at /project with body: ${JSON.stringify(req.body)}`);
   res.send({
     id: 'project-project_id',
   });
 });
 
 app.post('/submission', (req, res) => {
-  console.log(`Received POST call at /submission with body: ${JSON.stringify(req.body, null, 2)}`);
+  console.log(`Received POST call at /submission with body: ${JSON.stringify(req.body)}`);
   res.send({
     creator_id: 'submission-user_id',
     project_id: 'submission-project_id',
@@ -53,6 +55,6 @@ app.get('/submission/{submissionId}', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`);
 });
