@@ -79,14 +79,17 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify({
-        id: 'some-id',
-        name: 'some-name',
-        details: {
-          age: 10,
-          member: true,
-        },
-      }));
+      assert.deepEqual(
+        call.arguments?.[0]?.body,
+        JSON.stringify({
+          id: 'some-id',
+          name: 'some-name',
+          details: {
+            age: 10,
+            member: true,
+          },
+        }),
+      );
     });
   });
 
