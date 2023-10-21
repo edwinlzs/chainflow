@@ -61,7 +61,7 @@ describe('#endpoint', () => {
       assert.equal(tracker.mock.callCount(), 1);
       const call = tracker.mock.calls[0];
 
-      assert.deepEqual(call.arguments?.[0]?.body, testReqPayload);
+      assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify(testReqPayload));
     });
 
     it('should use the available response value after a RespNode is linked to the ReqNode', async () => {
@@ -79,14 +79,14 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      assert.deepEqual(call.arguments?.[0]?.body, {
+      assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify({
         id: 'some-id',
         name: 'some-name',
         details: {
           age: 10,
           member: true,
         },
-      });
+      }));
     });
   });
 

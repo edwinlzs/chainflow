@@ -65,7 +65,7 @@ const submissionPostRequest = {
 };
 
 const submissionPostResponse = {
-  id: 'submission-id',
+  id: 'submission-submission_id',
 };
 
 const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
@@ -73,8 +73,8 @@ submissionPost.body = submissionPostRequest;
 submissionPost.res = submissionPostResponse;
 
 const submissionGetResponse = {
-  id: 'submission-id',
-  name: 'submission-name',
+  id: 'submission-submission_id',
+  name: 'submission-submission_name',
 };
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });

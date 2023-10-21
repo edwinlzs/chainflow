@@ -8,7 +8,7 @@ app.use(express.json());
 app.post('/user', (req, res) => {
   console.log(`Received POST call at /user with body: ${JSON.stringify(req.body)}`);
   res.send({
-    id: 'user - user_id',
+    id: 'user-user_id',
     ...req.body,
   });
 });
@@ -42,16 +42,15 @@ app.post('/project', (req, res) => {
 app.post('/submission', (req, res) => {
   console.log(`Received POST call at /submission with body: ${JSON.stringify(req.body)}`);
   res.send({
-    creator_id: 'submission-user_id',
-    project_id: 'submission-project_id',
+    id: 'submission-submission_id',
   });
 });
 
-app.get('/submission/{submissionId}', (req, res) => {
+app.get('/submission/:submissionId', (req, res) => {
   console.log(`Received GET call at /submission with path: ${req.path}`);
   res.send({
-    id: 'submission-id',
-    name: 'submission-name',
+    id: 'submission-submission_id',
+    name: 'submission-submission_name',
   });
 });
 

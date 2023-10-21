@@ -93,7 +93,7 @@ export class Endpoint {
       addr: this.#address,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
-      body,
+      body: body && JSON.stringify(body),
     });
 
     return this.#tempRes;

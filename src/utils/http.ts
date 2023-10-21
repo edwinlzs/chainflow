@@ -31,7 +31,7 @@ const httpReq = async ({
     // TODO: insert actual endpoint call here
     const res = await request(`http://${addr}${path}`, {
       method,
-      body: body && JSON.stringify(body),
+      body,
       headers,
     });
   } catch (err) {
