@@ -1,12 +1,6 @@
-/** TEST ZONE */
-import { Endpoint } from '../core/endpoint';
-import { Route } from '../core/route';
+import { Endpoint, Route } from 'chainflow';
 
-// this section should be derived by the lib from API specs
-// or from utility functions placed within defined routes
-// to capture input/output payloads
-
-// User
+// Defining API signatures
 const userPostRequest = {
   name: 'user-name',
   details: {
@@ -31,7 +25,7 @@ const userGet = new Endpoint({ path: '/user', method: 'GET' });
 userGet.query = userQuery;
 userGet.res = userPostResponse;
 
-const user = new Route([userPost, userGet]);
+const user = new Route([userPost, userGet], '127.0.0.1:3001');
 
 // Role
 const rolePostRequest = {
@@ -44,7 +38,7 @@ const rolePostResponse = {};
 const rolePost = new Endpoint({ path: '/role', method: 'POST' });
 rolePost.body = rolePostRequest;
 rolePost.res = rolePostResponse;
-const role = new Route([rolePost]);
+const role = new Route([rolePost], '127.0.0.1:3001');
 
 // Project
 const projectPostRequest = {
@@ -62,7 +56,7 @@ const projectPostResponse = {
 const projectPost = new Endpoint({ path: '/project', method: 'POST' });
 projectPost.body = projectPostRequest;
 projectPost.res = projectPostResponse;
-const project = new Route([projectPost]);
+const project = new Route([projectPost], '127.0.0.1:3001');
 
 // Submission
 const submissionPostRequest = {
@@ -71,7 +65,7 @@ const submissionPostRequest = {
 };
 
 const submissionPostResponse = {
-  id: 'submission-id',
+  id: 'submission-submission_id',
 };
 
 const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
@@ -79,13 +73,13 @@ submissionPost.body = submissionPostRequest;
 submissionPost.res = submissionPostResponse;
 
 const submissionGetResponse = {
-  id: 'submission-id',
-  name: 'submission-name',
+  id: 'submission-submission_id',
+  name: 'submission-submission_name',
 };
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
 submissionGet.body = {};
 submissionPost.res = submissionGetResponse;
-const submission = new Route([submissionPost, submissionGet]);
+const submission = new Route([submissionPost, submissionGet], '127.0.0.1:3001');
 
-export { user, role, project, submission };
+export { user, role, project, submission }

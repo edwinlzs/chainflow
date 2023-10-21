@@ -24,7 +24,7 @@ export interface InputNodes {
  * as well as calls to that endpoint
  */
 export class Endpoint {
-  #host: string = '127.0.0.1';
+  #address: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
@@ -42,8 +42,8 @@ export class Endpoint {
     this.#extractPathParams();
   }
 
-  set host(host: string) {
-    this.#host = host;
+  set address(address: string) {
+    this.#address = address;
   }
 
   get method() {
@@ -79,7 +79,9 @@ export class Endpoint {
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
   async call(responses: any): Promise<any> {
-    const payload = this.#buildPayload(responses);
+    const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
+    let body = undefined;
+    if (method !== 'GET') body = this.#buildPayload(responses);
     let callPath = this.#path;
     if (Object.keys(this.#req.pathParams).length > 0) {
       callPath = this.#insertPathParams(callPath, this.#buildPathParams(responses));
@@ -88,9 +90,10 @@ export class Endpoint {
       callPath = this.#insertQueryParams(callPath, this.#buildQueryParams(responses));
     }
     await http.httpReq({
-      route: `${this.#host}${callPath}`,
+      addr: this.#address,
+      path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
-      body: payload,
+      body: body && JSON.stringify(body),
     });
 
     return this.#tempRes;

@@ -2,7 +2,7 @@ import { Endpoint } from './endpoint.js';
 import { Route } from './route.js';
 import debug from 'debug';
 
-const log = debug('chainflow');
+const log = debug('chainflow:chainflow');
 
 type RespPayload = any;
 // type Routes = { [routeName: string]: Route };
