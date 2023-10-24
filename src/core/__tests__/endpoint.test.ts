@@ -3,6 +3,7 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
+import { link } from '../../utils/inputs';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -43,7 +44,7 @@ describe('#endpoint', () => {
     respEndpoint.res = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
-      testEndpoint.set((_, nodes) => {
+      testEndpoint.set((nodes) => {
         assert.deepEqual(Object.keys(nodes.body), Object.keys(testReqPayload));
       });
     });
@@ -73,7 +74,7 @@ describe('#endpoint', () => {
         .reply(200, {});
       const tracker = mock.method(http, 'httpReq');
 
-      testEndpoint.set((link, nodes) => {
+      testEndpoint.set((nodes) => {
         link(nodes.body.details.age, respEndpoint.res.age);
       });
       await testEndpoint.call(responses);
@@ -98,7 +99,7 @@ describe('#endpoint', () => {
     const testEndpoint = new Endpoint({ path: '/pet/{petId}', method: 'get' });
 
     it('should expose its path params for setting up links', () => {
-      testEndpoint.set((_, nodes) => {
+      testEndpoint.set((nodes) => {
         assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
       });
     });
@@ -126,7 +127,7 @@ describe('#endpoint', () => {
     testEndpoint.query = testQuery;
 
     it('should expose its path params for setting up links', () => {
-      testEndpoint.set((_, nodes) => {
+      testEndpoint.set((nodes) => {
         assert.deepEqual(Object.keys(nodes.query), ['cute']);
       });
     });

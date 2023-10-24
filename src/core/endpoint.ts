@@ -1,6 +1,6 @@
 import { hashEndpoint } from '../utils/hash.js';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
-import { ReqNode, getNodeValue, nodeHash, setSource } from './reqNode.js';
+import { ReqNode, getNodeValue } from './reqNode.js';
 import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder.js';
 import { RespNode } from './respNode.js';
@@ -100,8 +100,8 @@ export class Endpoint {
   }
 
   /** Configure linking of this Req's input nodes. */
-  set(setter: (link: (dest: ReqNode, source: RespNode) => void, nodes: InputNodes) => void) {
-    setter(link, {
+  set(setter: (nodes: InputNodes) => void) {
+    setter({
       pathParams: this.#req.pathParams,
       body: this.#req.body,
       query: this.#req.query,
@@ -170,12 +170,4 @@ export const buildObject = (nodes: ReqNodes, responses: Responses) => {
     acc[key] = val[getNodeValue](responses);
     return acc;
   }, {} as any);
-};
-
-/** Link a Response node to a Request node */
-const link = (dest: ReqNode, source: RespNode) => {
-  dest[setSource](source.hash, source.path);
-  log(
-    `Linked RespNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest[nodeHash]}"`,
-  );
 };
