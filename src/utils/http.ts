@@ -1,5 +1,5 @@
 import { debug } from 'debug';
-import { Client, request } from 'undici';
+import { request } from 'undici';
 
 const log = debug('http');
 
@@ -25,7 +25,6 @@ const httpReq = async ({
   body?: any;
 }) => {
   log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
-  const client = new Client(`http://${addr}`);
 
   try {
     // TODO: insert actual endpoint call here
@@ -34,11 +33,12 @@ const httpReq = async ({
       body,
       headers,
     });
+    return res;
   } catch (err) {
+    // TODO: error handling if call fails
     log(`Request failed: ${err}`);
+    return null;
   }
-
-  // TODO: error handling if call fails
 };
 
 export default { httpReq };

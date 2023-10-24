@@ -7,7 +7,7 @@ const log = debug('chainflow:chainflow');
 type RespPayload = any;
 // type Routes = { [routeName: string]: Route };
 
-/** Stores accumulated responses. */
+/** Stores responses accumulated from endpoint calls in the current flow. */
 export type Responses = { [callSignHash: string]: RespPayload[] };
 
 /** Stores chain of endpoint calls. */
@@ -74,8 +74,12 @@ class ChainflowBase {
           // call endpoint
           const hash = endpoint.getHash();
           log(`Making a call to endpoint with hash "${hash}"`);
-          const response = await endpoint.call(this.#responses);
-          this.#responses[hash] = [response];
+          const resp = await endpoint.call(this.#responses);
+          if (resp == null) {
+            log('Chainflow failed to run.');
+            break;
+          }
+          this.#responses[hash] = [resp];
         }
         log('Finished running chainflow.');
       },
