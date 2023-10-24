@@ -61,6 +61,7 @@ export class ReqNode {
 
   /** Sets the pool of values for this request node. */
   [setValuePool](valuePool: any[]) {
+    // TODO: some sort of type validation for provided value pool?
     this.#valuePool = valuePool;
   }
 

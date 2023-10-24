@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { ReqNode, getNodeValue } from '../reqNode';
+import { ReqNode, getNodeValue, setValuePool } from '../reqNode';
 
 describe('#reqNode', () => {
   const testVal = {
@@ -67,5 +67,12 @@ describe('#reqNode', () => {
         /Unhandled value type: "null"$/,
       );
     });
+  });
+
+  describe('when a value pool is provided for a node', () => {
+    const testNode = new ReqNode({ val: 40, hash: 'some-hash' });
+    const testValuePool = [10, 20, 30];
+    testNode[setValuePool](testValuePool);
+    assert.ok(testValuePool.includes(testNode[getNodeValue]({})));
   });
 });

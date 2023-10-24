@@ -3,7 +3,7 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../utils/inputs';
+import { link, valuePool } from '../../utils/inputs';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -41,7 +41,7 @@ describe('#endpoint', () => {
     const responses = {
       [respEndpoint.getHash()]: [respPayload],
     };
-    respEndpoint.res = respPayload;
+    respEndpoint.resp = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
@@ -75,7 +75,7 @@ describe('#endpoint', () => {
       const tracker = mock.method(http, 'httpReq');
 
       testEndpoint.set((nodes) => {
-        link(nodes.body.details.age, respEndpoint.res.age);
+        link(nodes.body.details.age, respEndpoint.resp.age);
       });
       await testEndpoint.call(responses);
 
@@ -91,6 +91,34 @@ describe('#endpoint', () => {
           },
         }),
       );
+    });
+
+    it('should use values from a provided value pool', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+      const testValuePool = [10, 20, 30];
+
+      testEndpoint.set((nodes) => {
+        valuePool(nodes.body.details.age, testValuePool);
+      });
+      await testEndpoint.call(responses);
+
+      const call = tracker.mock.calls[0];
+      const callBody = JSON.parse(call.arguments?.[0]?.body);
+      assert.ok(testValuePool.includes(callBody?.details?.age));
+      assert.deepEqual(callBody, {
+        id: 'some-id',
+        name: 'some-name',
+        details: {
+          age: callBody?.details?.age,
+          member: true,
+        },
+      });
     });
   });
 

@@ -21,7 +21,7 @@ const userPostResponse = {
 
 const userPost = new Endpoint({ path: '/user', method: 'POST' });
 userPost.body = userPostRequest;
-userPost.res = userPostResponse;
+userPost.resp = userPostResponse;
 
 const userQuery = {
   age: 42,
@@ -29,7 +29,7 @@ const userQuery = {
 
 const userGet = new Endpoint({ path: '/user', method: 'GET' });
 userGet.query = userQuery;
-userGet.res = userPostResponse;
+userGet.resp = userPostResponse;
 
 const user = new Route([userPost, userGet]);
 
@@ -43,7 +43,7 @@ const rolePostResponse = {};
 
 const rolePost = new Endpoint({ path: '/role', method: 'POST' });
 rolePost.body = rolePostRequest;
-rolePost.res = rolePostResponse;
+rolePost.resp = rolePostResponse;
 const role = new Route([rolePost]);
 
 // Project
@@ -61,7 +61,7 @@ const projectPostResponse = {
 
 const projectPost = new Endpoint({ path: '/project', method: 'POST' });
 projectPost.body = projectPostRequest;
-projectPost.res = projectPostResponse;
+projectPost.resp = projectPostResponse;
 const project = new Route([projectPost]);
 
 // Submission
@@ -76,7 +76,7 @@ const submissionPostResponse = {
 
 const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
 submissionPost.body = submissionPostRequest;
-submissionPost.res = submissionPostResponse;
+submissionPost.resp = submissionPostResponse;
 
 const submissionGetResponse = {
   id: 'submission-id',
@@ -85,7 +85,7 @@ const submissionGetResponse = {
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
 submissionGet.body = {};
-submissionPost.res = submissionGetResponse;
+submissionPost.resp = submissionGetResponse;
 const submission = new Route([submissionPost, submissionGet]);
 
 export { user, role, project, submission };

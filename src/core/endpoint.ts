@@ -5,6 +5,7 @@ import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder.js';
 import { RespNode } from './respNode.js';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
+import { Dispatcher } from 'undici';
 
 const log = debug('chainflow:endpoint');
 
@@ -28,9 +29,7 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #res: RespNodes = {};
-  /** Temporarily substitutes a real response from calling an API. */
-  #tempRes: any;
+  #resp: RespNodes = {};
 
   constructor({ path, method }: { path: string; method: string }) {
     method = method.toLowerCase();
@@ -60,12 +59,11 @@ export class Endpoint {
     this.#req.body = payload;
   }
 
-  set res(payload: any) {
-    this.#tempRes = payload;
+  set resp(payload: any) {
     const hash = this.getHash();
     Object.entries(payload).forEach(([key, val]) => {
       log(`Creating RespNode for hash "${hash}" with path "${key}"`);
-      this.#res[key] = new RespNode({
+      this.#resp[key] = new RespNode({
         val,
         hash,
         path: key,
@@ -73,8 +71,13 @@ export class Endpoint {
     });
   }
 
-  get res() {
-    return this.#res;
+  get resp() {
+    return this.#resp;
+  }
+
+  /** Sets the request query parameters. */
+  set query(payload: any) {
+    this.#req.query = payload;
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
@@ -89,14 +92,16 @@ export class Endpoint {
     if (Object.keys(this.#req.query).length > 0) {
       callPath = this.#insertQueryParams(callPath, this.#buildQueryParams(responses));
     }
-    await http.httpReq({
+    const resp = await http.httpReq({
       addr: this.#address,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),
     });
 
-    return this.#tempRes;
+    if (!this.#validateResp(resp)) return null;
+
+    return resp?.body;
   }
 
   /** Configure linking of this Req's input nodes. */
@@ -155,9 +160,16 @@ export class Endpoint {
     return path;
   }
 
-  /** Sets the request query parameters. */
-  set query(payload: any) {
-    this.#req.query = payload;
+  /** Checks that endpoint call succeeded -
+   * request did not throw error,
+   * and status code is within 200 - 299. */
+  #validateResp(resp: Dispatcher.ResponseData | null): boolean {
+    if (resp == null) return false;
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      log(`Request failed with status code: ${resp.statusCode}`);
+      return false;
+    }
+    return true;
   }
 }
 

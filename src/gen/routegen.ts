@@ -14,7 +14,7 @@ export const generateRoutes = (spec: any) => {
         Object.entries(rawEndpoints).forEach(([method, details]) => {
           const endpoint = new Endpoint({ path, method });
           endpoint.body = getReqPayload(details);
-          endpoint.res = getResPayload(details);
+          endpoint.resp = getResPayload(details);
           endpoints.push(endpoint);
         });
       }
