@@ -32,8 +32,7 @@ describe('#endpoint', () => {
   describe('when a request payload is assigned to an endpoint', () => {
     const client = agent.get('http://127.0.0.1');
 
-    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' });
-    testEndpoint.body = testReqPayload;
+    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' }).body(testReqPayload);
 
     const respEndpoint = new Endpoint({ method: 'GET', path: '/age' });
     const respPayload = {
@@ -112,7 +111,7 @@ describe('#endpoint', () => {
           member: true,
         },
       };
-      testEndpoint.body = testReqPayloadWithValPool;
+      testEndpoint.body(testReqPayloadWithValPool);
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
@@ -146,7 +145,7 @@ describe('#endpoint', () => {
           member: true,
         },
       };
-      testEndpoint.body = testReqPayloadWithValGen;
+      testEndpoint.body(testReqPayloadWithValGen);
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
@@ -192,7 +191,7 @@ describe('#endpoint', () => {
       cute: true,
     };
     const testEndpoint = new Endpoint({ path: '/pet', method: 'get' });
-    testEndpoint.query = testQuery;
+    testEndpoint.query(testQuery);
 
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((nodes) => {

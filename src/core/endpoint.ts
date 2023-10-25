@@ -41,8 +41,9 @@ export class Endpoint {
     this.#extractPathParams();
   }
 
-  set address(address: string) {
+  address(address: string) {
     this.#address = address;
+    return this;
   }
 
   get method() {
@@ -55,8 +56,9 @@ export class Endpoint {
   }
 
   /** Sets the request body. */
-  set body(payload: any) {
+  body(payload: any) {
     this.#req.body = payload;
+    return this;
   }
 
   set resp(payload: any) {
@@ -76,8 +78,9 @@ export class Endpoint {
   }
 
   /** Sets the request query parameters. */
-  set query(payload: any) {
+  query(payload: any) {
     this.#req.query = payload;
+    return this;
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */

@@ -19,8 +19,7 @@ const userPostResponse = {
   ...userPostRequest,
 };
 
-const userPost = new Endpoint({ path: '/user', method: 'POST' });
-userPost.body = userPostRequest;
+const userPost = new Endpoint({ path: '/user', method: 'POST' }).body(userPostRequest);
 userPost.resp = userPostResponse;
 
 const userQuery = {
@@ -28,7 +27,7 @@ const userQuery = {
 };
 
 const userGet = new Endpoint({ path: '/user', method: 'GET' });
-userGet.query = userQuery;
+userGet.query(userQuery);
 userGet.resp = userPostResponse;
 
 const user = new Route([userPost, userGet]);
@@ -41,8 +40,7 @@ const rolePostRequest = {
 
 const rolePostResponse = {};
 
-const rolePost = new Endpoint({ path: '/role', method: 'POST' });
-rolePost.body = rolePostRequest;
+const rolePost = new Endpoint({ path: '/role', method: 'POST' }).body(rolePostRequest);
 rolePost.resp = rolePostResponse;
 const role = new Route([rolePost]);
 
@@ -59,8 +57,7 @@ const projectPostResponse = {
   id: 'project-project_id',
 };
 
-const projectPost = new Endpoint({ path: '/project', method: 'POST' });
-projectPost.body = projectPostRequest;
+const projectPost = new Endpoint({ path: '/project', method: 'POST' }).body(projectPostRequest);
 projectPost.resp = projectPostResponse;
 const project = new Route([projectPost]);
 
@@ -74,8 +71,9 @@ const submissionPostResponse = {
   id: 'submission-id',
 };
 
-const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
-submissionPost.body = submissionPostRequest;
+const submissionPost = new Endpoint({ path: '/submission', method: 'POST' }).body(
+  submissionPostRequest,
+);
 submissionPost.resp = submissionPostResponse;
 
 const submissionGetResponse = {
@@ -84,7 +82,6 @@ const submissionGetResponse = {
 };
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
-submissionGet.body = {};
 submissionPost.resp = submissionGetResponse;
 const submission = new Route([submissionPost, submissionGet]);
 
