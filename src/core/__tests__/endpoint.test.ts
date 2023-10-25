@@ -3,7 +3,8 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link, valuePool } from '../../utils/inputs';
+import { link } from '../../utils/inputs';
+import { valGen, valPool } from '../reqNode';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -103,9 +104,15 @@ describe('#endpoint', () => {
       const tracker = mock.method(http, 'httpReq');
       const testValuePool = [10, 20, 30];
 
-      testEndpoint.set((nodes) => {
-        valuePool(nodes.body.details.age, testValuePool);
-      });
+      const testReqPayloadWithValPool = {
+        id: 'some-id',
+        name: 'some-name',
+        details: {
+          age: valPool(testValuePool),
+          member: true,
+        },
+      };
+      testEndpoint.body = testReqPayloadWithValPool;
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
@@ -116,6 +123,39 @@ describe('#endpoint', () => {
         name: 'some-name',
         details: {
           age: callBody?.details?.age,
+          member: true,
+        },
+      });
+    });
+
+    it('should use values from a provided generator function', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+      const testValGen = () => 'michael-scott';
+
+      const testReqPayloadWithValGen = {
+        id: 'some-id',
+        name: valGen(testValGen),
+        details: {
+          age: 42,
+          member: true,
+        },
+      };
+      testEndpoint.body = testReqPayloadWithValGen;
+      await testEndpoint.call(responses);
+
+      const call = tracker.mock.calls[0];
+      const callBody = JSON.parse(call.arguments?.[0]?.body);
+      assert.deepEqual(callBody, {
+        id: 'some-id',
+        name: 'michael-scott',
+        details: {
+          age: 42,
           member: true,
         },
       });

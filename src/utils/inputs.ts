@@ -1,5 +1,5 @@
 import { debug } from 'debug';
-import { ReqNode, nodeHash, setSource, setValuePool } from '../core/reqNode';
+import { ReqNode, nodeHash, setSource } from '../core/reqNode';
 import { RespNode } from '../core/respNode';
 
 const log = debug('chainflow:inputs');
@@ -13,10 +13,4 @@ export const link: (dest: ReqNode, source: RespNode) => void = (
   log(
     `Linked RespNode with hash "${source.hash}" and path "${source.path}" to ReqNode with hash "${dest[nodeHash]}"`,
   );
-};
-
-/** Defines a set of values to choose from for a Request node. */
-export const valuePool = (dest: ReqNode, valuePool: any[]) => {
-  dest[setValuePool](valuePool);
-  log(`Defined value pool for ReqNode with hash "${dest[nodeHash]}"`);
 };
