@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:server": "ts-node src/server.ts",
-    "start:flow": "node -r ts-node/register index.ts"
+    "server": "ts-node src/server.ts",
+    "flow": "node -r ts-node/register index.ts"
   },
   "keywords": [],
   "author": "",

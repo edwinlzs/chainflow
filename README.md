@@ -6,57 +6,128 @@ Manage dynamically generated datasets/payloads that can be used to call endpoint
 
 Payload chaining to complete a series of actions in a business-centric manner.
 
-## Use Case
+## Use Cases
 
-### Examples
+1. Simulate frontend interaction flow with backend APIs
+2. Seeding a database with business logic for demo purposes
+3. Testing variations of inputs on endpoints
 
-Example of a chain
+## Basic Usage
 
-1. Create User 1 (POST `/user`)
-2. Assign Role 1 (POST `/role`) with User 1
-3. Create Project 1 (POST `/project`) with User 1
-4. Create Project 2 (POST `/project`) with User 1
-5. Create Submission 1 (POST `/submission`) with Project 1, User 1
-6. Create Submission 2 (POST `/submission`) with Project 2, User 1
+Define your endpoints and their request/response signatures.
 
-## Code
+`definitions.ts`
 
-`links.ts`
+```typescript
+// Define API signatures
+export const userPost = endpoint('POST', '/user').body({
+  name: 'Tom',
+  details: {
+    age: 40,
+  },
+});
+
+export const rolePost = endpoint('POST', '/role').body({
+  type: 'Engineer',
+  userId: '',
+});
+
+export const userGet = endpoint('GET', '/user').query({
+  role: '',
+});
+```
+
+Use `link` to pass values from a response into a future request.
+
+`chains.ts`
 
 ```typescript
 // generate route objects
-import { generateRoutes } from Chainflow;
+import { generateRoutes, link } from chainflow;
+import * as definitions from 'definitions';
 
-const { role, project, submission } = generateRoutes();
+const { user, role } = generateRoutes(definitions, '127.0.0.1', '5000');
 
-/// Set up links between endpoints
-role.post.set(function ({ name, type }) {
-  // indicate name should be passed from user to role
-  link(name, user.post.res.name);
-  
-  // specify pool of values for type
-  assign(type, ["ENGINEER", "ARCHITECT", "BUILDER"]);
+/// Create endpoint chains
+role.post.set(({ body: { userId }}) => {
+  link(userId, user.post.resp.id); // link `userId` to `id` from `POST /user` response
 });
 
-project.post.set(function ({ createdBy }) {
-  link(createdBy, user.post.res.name);
-});
+user.get.set(({ query: { role } }) => {
+  link(role, role.post.resp.type); // link `role` to `type` from `POST /role` response
+})
 
-submission.post.set(function ({ projectId, details: { createdBy } }) {
-  link(projectId, project.post.res.id);
-  link(createdBy, user.post.res.name);
-});
-
-export { role, project, submission };
+export { user, role };
 ```
 
-`workflows.ts`
+Define the sequence of endpoint calls which makes endpoint requests based on the given default values as well as linked values from responses received during the flow.
+
+`flows.ts`
 
 ```typescript
-/// Create workflows that take advantage of chain links
+/// Create workflows that take advantage of chains
 import { chainflow } from Chainflow;
+import { user, role } from 'chains';
 
-const chain = chainflow();
+const flow = chainflow();
+flow.post(user).post(role).get(user).run();
+```
 
-chain.post(user).post(role).post(project, { count: 2 }).post(submission).run();
+---
+
+\
+The above setup will result in the following API calls:
+
+1. `POST` Request to `/user` with body:
+
+   ```json
+   {
+     "name": "Tom",
+     "details": {
+       "age": 40
+     }
+   }
+   ```
+
+2. `POST` Request to `/role` with body:
+
+   ```json
+   {
+     type: 'Engineer',
+     userId: [[userId from response to step 1]],
+   }
+   ```
+
+3. `GET` Request to `/user?role=Engineer`
+
+## Advanced Features
+
+The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
+
+However, you can also use the following features to more flexibly define the values used in a request.
+
+### `valPool`
+
+Define a pool of values to take from when building requests.
+
+```typescript
+export const userPost = endpoint('POST', '/user').body({
+  name: valPool(['Tom', 'Harry', 'Jane']),
+  details: {
+    age: 40,
+  },
+});
+```
+
+### `valGen`
+
+Define a callback that produces values for building requests.
+
+```typescript
+export const userPost = endpoint('POST', '/user').body({
+  name: 'Tom',
+  details: {
+    age: valGen(() => Math.floor(Math.random() * 100)),
+  },
+});
 ```
