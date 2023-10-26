@@ -8,8 +8,6 @@ import { Dispatcher } from 'undici';
 
 const log = debug('chainflow:endpoint');
 
-// type RespNodes<T = any> = { [key: string]: RespNode };
-
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
 /** Describes all the possible input nodes of a HTTP request. */
@@ -21,22 +19,22 @@ export interface InputNodes {
 
 export const nodePath = Symbol('nodePath');
 
-/** Handles property access of a response signature. */
+/** Recursive proxy that handles property access of a response signature. */
 const RespNodeHandler = {
-    get(obj: { path: string[], hash: string }, prop: any): any {
-      if (prop === nodePath) return obj.path;
-      if (prop === nodeHash) return obj.hash;
-      const newPath = [...obj.path];
-      newPath.push(prop);
-      return new Proxy(
-        {
-          path: newPath,
-          hash: obj.hash,
-        },
-        RespNodeHandler,
-      );
-    },
-}
+  get(obj: { path: string[]; hash: string }, prop: any): any {
+    if (prop === nodePath) return obj.path;
+    if (prop === nodeHash) return obj.hash;
+    const newPath = [...obj.path];
+    newPath.push(prop);
+    return new Proxy(
+      {
+        path: newPath,
+        hash: obj.hash,
+      },
+      RespNodeHandler,
+    );
+  },
+};
 
 /**
  * Manages request and response nodes,
@@ -79,18 +77,6 @@ export class Endpoint {
     this.#req.body = payload;
     return this;
   }
-
-  // set resp(payload: any) {
-  //   const hash = this.getHash();
-  //   Object.entries(payload).forEach(([key, val]) => {
-  //     log(`Creating RespNode for hash "${hash}" with path "${key}"`);
-  //     this.#resp[key] = new RespNode({
-  //       val,
-  //       hash,
-  //       path: key,
-  //     });
-  //   });
-  // }
 
   get resp() {
     return this.#resp;

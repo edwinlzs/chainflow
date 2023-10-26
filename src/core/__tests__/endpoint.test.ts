@@ -29,7 +29,7 @@ describe('#endpoint', () => {
     });
   });
 
-  describe.skip('when a request payload is assigned to an endpoint', () => {
+  describe('when a request payload is assigned to an endpoint', () => {
     const client = agent.get('http://127.0.0.1');
 
     const testEndpoint = new Endpoint({ method: 'POST', path: '/user' }).body(testReqPayload);
@@ -41,7 +41,6 @@ describe('#endpoint', () => {
     const responses = {
       [respEndpoint.getHash()]: [respPayload],
     };
-    // respEndpoint.resp = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
@@ -75,7 +74,7 @@ describe('#endpoint', () => {
       const tracker = mock.method(http, 'httpReq');
 
       testEndpoint.set((nodes) => {
-        // link(nodes.body.details.age, respEndpoint.resp.age);
+        link(nodes.body.details.age, respEndpoint.resp.age);
       });
       await testEndpoint.call(responses);
 
