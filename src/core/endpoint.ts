@@ -1,15 +1,14 @@
 import { hashEndpoint } from '../utils/hash.js';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
-import { ReqNode, getNodeValue } from './reqNode.js';
+import { ReqNode, getNodeValue, nodeHash } from './reqNode.js';
 import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder.js';
-import { RespNode } from './respNode.js';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
 import { Dispatcher } from 'undici';
 
 const log = debug('chainflow:endpoint');
 
-type RespNodes = { [key: string]: RespNode };
+// type RespNodes<T = any> = { [key: string]: RespNode };
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
@@ -18,6 +17,25 @@ export interface InputNodes {
   pathParams: ReqNodes;
   body: ReqNodes;
   query: ReqNodes;
+}
+
+export const nodePath = Symbol('nodePath');
+
+/** Handles property access of a response signature. */
+const RespNodeHandler = {
+    get(obj: { path: string[], hash: string }, prop: any): any {
+      if (prop === nodePath) return obj.path;
+      if (prop === nodeHash) return obj.hash;
+      const newPath = [...obj.path];
+      newPath.push(prop);
+      return new Proxy(
+        {
+          path: newPath,
+          hash: obj.hash,
+        },
+        RespNodeHandler,
+      );
+    },
 }
 
 /**
@@ -29,7 +47,7 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #resp: RespNodes = {};
+  #resp: any;
 
   constructor({ path, method }: { path: string; method: string }) {
     method = method.toLowerCase();
@@ -39,6 +57,7 @@ export class Endpoint {
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
+    this.#resp = new Proxy({ path: [], hash: this.getHash() }, RespNodeHandler);
   }
 
   address(address: string) {
@@ -61,17 +80,17 @@ export class Endpoint {
     return this;
   }
 
-  set resp(payload: any) {
-    const hash = this.getHash();
-    Object.entries(payload).forEach(([key, val]) => {
-      log(`Creating RespNode for hash "${hash}" with path "${key}"`);
-      this.#resp[key] = new RespNode({
-        val,
-        hash,
-        path: key,
-      });
-    });
-  }
+  // set resp(payload: any) {
+  //   const hash = this.getHash();
+  //   Object.entries(payload).forEach(([key, val]) => {
+  //     log(`Creating RespNode for hash "${hash}" with path "${key}"`);
+  //     this.#resp[key] = new RespNode({
+  //       val,
+  //       hash,
+  //       path: key,
+  //     });
+  //   });
+  // }
 
   get resp() {
     return this.#resp;

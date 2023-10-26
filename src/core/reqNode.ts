@@ -39,8 +39,9 @@ export class ReqNode {
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
-  /** Stores what response node values can be passed into this node and the path to those nodes. */
-  #sources: { [nodeHash: string]: string } = {};
+  /** Stores what response node values can be passed into this node
+   *  and the path (as an array of property accessor strings) to those nodes. */
+  #sources: { [nodeHash: string]: string[] } = {};
   /** Stores possible values this node can take. */
   #valuePool: any[] = [];
   /** Determines what strategy to select from pool of values */
@@ -87,7 +88,7 @@ export class ReqNode {
   }
 
   /** Sets a source node for this request node. */
-  [setSource](hash: string, path: string) {
+  [setSource](hash: string, path: string[]) {
     this.#sources[hash] = path;
   }
 
@@ -144,13 +145,12 @@ export class ReqNode {
   }
 
   /** Access the source node value in a response payload */
-  #accessSource(payload: any, path: string): any {
-    const accessors = path.split('.');
+  #accessSource(payload: any, path: string[]): any {
     let resVal = payload;
 
     let i = 0;
-    while (i < accessors.length && resVal) {
-      const accessor = accessors[i]!;
+    while (i < path.length && resVal) {
+      const accessor = path[i]!;
       resVal = resVal[accessor];
       i += 1;
     }

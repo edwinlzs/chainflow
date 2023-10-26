@@ -19,7 +19,7 @@ export class Route {
         }"`,
       );
       (this as any)[endpoint.method] = endpoint;
-      endpoint.address = this.#address;
+      endpoint.address(this.#address);
     });
   }
 }
