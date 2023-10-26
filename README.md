@@ -93,8 +93,8 @@ The above setup will result in the following API calls:
 
    ```json
    {
-     type: 'Engineer',
-     userId: [[userId from response to step 1]],
+     "type": "Engineer",
+     "userId": [[userId from response to step 1]],
    }
    ```
 
