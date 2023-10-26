@@ -1,15 +1,12 @@
 import { hashEndpoint } from '../utils/hash.js';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
-import { ReqNode, getNodeValue } from './reqNode.js';
+import { ReqNode, getNodeValue, nodeHash } from './reqNode.js';
 import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder.js';
-import { RespNode } from './respNode.js';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
 import { Dispatcher } from 'undici';
 
 const log = debug('chainflow:endpoint');
-
-type RespNodes = { [key: string]: RespNode };
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
@@ -20,6 +17,25 @@ export interface InputNodes {
   query: ReqNodes;
 }
 
+export const nodePath = Symbol('nodePath');
+
+/** Recursive proxy that handles property access of a response signature. */
+const RespNodeHandler = {
+  get(obj: { path: string[]; hash: string }, prop: any): any {
+    if (prop === nodePath) return obj.path;
+    if (prop === nodeHash) return obj.hash;
+    const newPath = [...obj.path];
+    newPath.push(prop);
+    return new Proxy(
+      {
+        path: newPath,
+        hash: obj.hash,
+      },
+      RespNodeHandler,
+    );
+  },
+};
+
 /**
  * Manages request and response nodes,
  * as well as calls to that endpoint
@@ -29,7 +45,7 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #resp: RespNodes = {};
+  #resp: any;
 
   constructor({ path, method }: { path: string; method: string }) {
     method = method.toLowerCase();
@@ -39,10 +55,12 @@ export class Endpoint {
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
+    this.#resp = new Proxy({ path: [], hash: this.getHash() }, RespNodeHandler);
   }
 
-  set address(address: string) {
+  address(address: string) {
     this.#address = address;
+    return this;
   }
 
   get method() {
@@ -55,20 +73,9 @@ export class Endpoint {
   }
 
   /** Sets the request body. */
-  set body(payload: any) {
+  body(payload: any) {
     this.#req.body = payload;
-  }
-
-  set resp(payload: any) {
-    const hash = this.getHash();
-    Object.entries(payload).forEach(([key, val]) => {
-      log(`Creating RespNode for hash "${hash}" with path "${key}"`);
-      this.#resp[key] = new RespNode({
-        val,
-        hash,
-        path: key,
-      });
-    });
+    return this;
   }
 
   get resp() {
@@ -76,8 +83,9 @@ export class Endpoint {
   }
 
   /** Sets the request query parameters. */
-  set query(payload: any) {
+  query(payload: any) {
     this.#req.query = payload;
+    return this;
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */

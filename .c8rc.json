@@ -1,7 +1,7 @@
 {
   "all": true,
   "checkCoverage": true,
-  "lines": 90,
-  "exclude": ["src/index.ts", "demo", "examples", "gen"],
+  "lines": 95,
+  "exclude": ["src/index.ts", "**/__tests__", "demo", "examples", "gen"],
   "src": "src"
 }

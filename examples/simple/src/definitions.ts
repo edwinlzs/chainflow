@@ -8,23 +8,13 @@ const userPostRequest = {
   },
 };
 
-const userPostResponse = {
-  id: 'user-user_id',
-  ...userPostRequest,
-};
-
-const userPost = new Endpoint({ path: '/user', method: 'POST' });
-userPost.body = userPostRequest;
-userPost.resp = userPostResponse;
+const userPost = new Endpoint({ path: '/user', method: 'POST' }).body(userPostRequest);
 
 const userQuery = {
   age: 42,
 };
 
-const userGet = new Endpoint({ path: '/user', method: 'GET' });
-userGet.query = userQuery;
-userGet.resp = userPostResponse;
-
+const userGet = new Endpoint({ path: '/user', method: 'GET' }).query(userQuery);
 const user = new Route([userPost, userGet], '127.0.0.1:3001');
 
 // Role
@@ -33,11 +23,7 @@ const rolePostRequest = {
   type: 'role-type',
 };
 
-const rolePostResponse = {};
-
-const rolePost = new Endpoint({ path: '/role', method: 'POST' });
-rolePost.body = rolePostRequest;
-rolePost.resp = rolePostResponse;
+const rolePost = new Endpoint({ path: '/role', method: 'POST' }).body(rolePostRequest);
 const role = new Route([rolePost], '127.0.0.1:3001');
 
 // Project
@@ -49,13 +35,7 @@ const projectPostRequest = {
   },
 };
 
-const projectPostResponse = {
-  id: 'project-project_id',
-};
-
-const projectPost = new Endpoint({ path: '/project', method: 'POST' });
-projectPost.body = projectPostRequest;
-projectPost.resp = projectPostResponse;
+const projectPost = new Endpoint({ path: '/project', method: 'POST' }).body(projectPostRequest);
 const project = new Route([projectPost], '127.0.0.1:3001');
 
 // Submission
@@ -64,22 +44,11 @@ const submissionPostRequest = {
   project_id: 'submission-project_id',
 };
 
-const submissionPostResponse = {
-  id: 'submission-submission_id',
-};
-
-const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
-submissionPost.body = submissionPostRequest;
-submissionPost.resp = submissionPostResponse;
-
-const submissionGetResponse = {
-  id: 'submission-submission_id',
-  name: 'submission-submission_name',
-};
+const submissionPost = new Endpoint({ path: '/submission', method: 'POST' }).body(
+  submissionPostRequest,
+);
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
-submissionGet.body = {};
-submissionPost.resp = submissionGetResponse;
 const submission = new Route([submissionPost, submissionGet], '127.0.0.1:3001');
 
-export { user, role, project, submission }
+export { user, role, project, submission };

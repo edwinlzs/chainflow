@@ -3,7 +3,8 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link, valuePool } from '../../utils/inputs';
+import { link } from '../../utils/inputs';
+import { valGen, valPool } from '../reqNode';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -31,8 +32,7 @@ describe('#endpoint', () => {
   describe('when a request payload is assigned to an endpoint', () => {
     const client = agent.get('http://127.0.0.1');
 
-    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' });
-    testEndpoint.body = testReqPayload;
+    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' }).body(testReqPayload);
 
     const respEndpoint = new Endpoint({ method: 'GET', path: '/age' });
     const respPayload = {
@@ -41,7 +41,6 @@ describe('#endpoint', () => {
     const responses = {
       [respEndpoint.getHash()]: [respPayload],
     };
-    respEndpoint.resp = respPayload;
 
     it('should expose its request nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
@@ -103,9 +102,15 @@ describe('#endpoint', () => {
       const tracker = mock.method(http, 'httpReq');
       const testValuePool = [10, 20, 30];
 
-      testEndpoint.set((nodes) => {
-        valuePool(nodes.body.details.age, testValuePool);
-      });
+      const testReqPayloadWithValPool = {
+        id: 'some-id',
+        name: 'some-name',
+        details: {
+          age: valPool(testValuePool),
+          member: true,
+        },
+      };
+      testEndpoint.body(testReqPayloadWithValPool);
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
@@ -116,6 +121,39 @@ describe('#endpoint', () => {
         name: 'some-name',
         details: {
           age: callBody?.details?.age,
+          member: true,
+        },
+      });
+    });
+
+    it('should use values from a provided generator function', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+      const testValGen = () => 'michael-scott';
+
+      const testReqPayloadWithValGen = {
+        id: 'some-id',
+        name: valGen(testValGen),
+        details: {
+          age: 42,
+          member: true,
+        },
+      };
+      testEndpoint.body(testReqPayloadWithValGen);
+      await testEndpoint.call(responses);
+
+      const call = tracker.mock.calls[0];
+      const callBody = JSON.parse(call.arguments?.[0]?.body);
+      assert.deepEqual(callBody, {
+        id: 'some-id',
+        name: 'michael-scott',
+        details: {
+          age: 42,
           member: true,
         },
       });
@@ -152,7 +190,7 @@ describe('#endpoint', () => {
       cute: true,
     };
     const testEndpoint = new Endpoint({ path: '/pet', method: 'get' });
-    testEndpoint.query = testQuery;
+    testEndpoint.query(testQuery);
 
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((nodes) => {

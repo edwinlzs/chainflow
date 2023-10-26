@@ -9,17 +9,17 @@ user.get.set(({ query: { age } }: InputNodes) => {
   link(age, user.post.resp.details.age);
 });
 
-role.post.set(({ body: { user_id } }: InputNodes) => {
-  link(user_id, user.post.resp.id);
+role.post.set(({ body: { userId } }: InputNodes) => {
+  link(userId, user.post.resp.id);
 });
 
-project.post.set(({ body: { creator_id } }: InputNodes) => {
-  link(creator_id, user.post.resp.id);
+project.post.set(({ body: { creatorId } }: InputNodes) => {
+  link(creatorId, user.post.resp.id);
 });
 
-submission.post.set(({ body: { creator_id, project_id } }: InputNodes) => {
-  link(creator_id, user.post.resp.id);
-  link(project_id, project.post.resp.id);
+submission.post.set(({ body: { creatorId, projectId } }: InputNodes) => {
+  link(creatorId, user.post.resp.id);
+  link(projectId, project.post.resp.id);
 });
 
 submission.get.set(({ pathParams: { submissionId } }) => {

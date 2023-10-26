@@ -13,6 +13,24 @@ export enum VALUE_POOL_SELECT {
   UNIFORM,
 }
 
+const nodeValueIdentifier = Symbol('nodeValueIdentifier');
+enum NodeValue {
+  ValuePool,
+  Generator,
+}
+
+/** Defines a set of values to choose from when making an endpoint call. */
+export const valPool = (valuePool: any[]) => ({
+  valuePool,
+  [nodeValueIdentifier]: NodeValue.ValuePool,
+});
+
+/** Provides a generator function to produce a value for an endpoint call. */
+export const valGen = (generator: () => any) => ({
+  generator,
+  [nodeValueIdentifier]: NodeValue.Generator,
+});
+
 /** A data node for constructing a request. */
 export class ReqNode {
   /** Key-values under this node, if this node represents an object. */
@@ -21,18 +39,33 @@ export class ReqNode {
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
-  /** Stores what response node values can be passed into this node and the path to those nodes. */
-  #sources: { [nodeHash: string]: string } = {};
+  /** Stores what response node values can be passed into this node
+   *  and the path (as an array of property accessor strings) to those nodes. */
+  #sources: { [nodeHash: string]: string[] } = {};
   /** Stores possible values this node can take. */
   #valuePool: any[] = [];
   /** Determines what strategy to select from pool of values */
   #valuePoolSelect: VALUE_POOL_SELECT = VALUE_POOL_SELECT.UNIFORM;
+  /** Generator function to generate values on demand for this node. */
+  #generator: (() => any) | undefined;
 
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
     if (val == null) {
       throw new Error('Unhandled value type: "null"');
     }
+
+    switch (val[nodeValueIdentifier]) {
+      case NodeValue.ValuePool:
+        this.#valuePool = val.valuePool;
+        log(`Defined value pool for ReqNode with hash "${hash}`);
+        return;
+      case NodeValue.Generator:
+        log(`Defined value generator for ReqNode with hash "${hash}"`);
+        this.#generator = val.generator;
+        return;
+    }
+
     if (Array.isArray(val)) {
       throw new Error('Unhandled value type: "array"');
     }
@@ -55,7 +88,7 @@ export class ReqNode {
   }
 
   /** Sets a source node for this request node. */
-  [setSource](hash: string, path: string) {
+  [setSource](hash: string, path: string[]) {
     this.#sources[hash] = path;
   }
 
@@ -85,6 +118,11 @@ export class ReqNode {
       if (resVal) return resVal;
     }
 
+    // attempt to get value from generator function
+    if (this.#generator) {
+      return this.#generator();
+    }
+
     // attempt to get value from value pool
     if (this.#valuePool.length > 0) {
       return this.#selectValue();
@@ -107,13 +145,12 @@ export class ReqNode {
   }
 
   /** Access the source node value in a response payload */
-  #accessSource(payload: any, path: string): any {
-    const accessors = path.split('.');
+  #accessSource(payload: any, path: string[]): any {
     let resVal = payload;
 
     let i = 0;
-    while (i < accessors.length && resVal) {
-      const accessor = accessors[i]!;
+    while (i < path.length && resVal) {
+      const accessor = path[i]!;
       resVal = resVal[accessor];
       i += 1;
     }

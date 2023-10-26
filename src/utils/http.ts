@@ -1,7 +1,7 @@
 import { debug } from 'debug';
 import { request } from 'undici';
 
-const log = debug('http');
+const log = debug('chainflow:http');
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 

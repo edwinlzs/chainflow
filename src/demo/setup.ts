@@ -14,78 +14,49 @@ const userPostRequest = {
   },
 };
 
-const userPostResponse = {
-  id: 'user-user_id',
-  ...userPostRequest,
-};
-
-const userPost = new Endpoint({ path: '/user', method: 'POST' });
-userPost.body = userPostRequest;
-userPost.resp = userPostResponse;
+const userPost = new Endpoint({ path: '/user', method: 'POST' }).body(userPostRequest);
 
 const userQuery = {
   age: 42,
 };
 
 const userGet = new Endpoint({ path: '/user', method: 'GET' });
-userGet.query = userQuery;
-userGet.resp = userPostResponse;
+userGet.query(userQuery);
 
 const user = new Route([userPost, userGet]);
 
 // Role
 const rolePostRequest = {
-  user_id: 'role-user_id',
+  userId: 'role-userId',
   type: 'role-type',
 };
 
-const rolePostResponse = {};
-
-const rolePost = new Endpoint({ path: '/role', method: 'POST' });
-rolePost.body = rolePostRequest;
-rolePost.resp = rolePostResponse;
+const rolePost = new Endpoint({ path: '/role', method: 'POST' }).body(rolePostRequest);
 const role = new Route([rolePost]);
 
 // Project
 const projectPostRequest = {
-  creator_id: 'project-user_id',
+  creatorId: 'project-userId',
   details: {
     title: 'project-title',
     type: 'project-type',
   },
 };
 
-const projectPostResponse = {
-  id: 'project-project_id',
-};
-
-const projectPost = new Endpoint({ path: '/project', method: 'POST' });
-projectPost.body = projectPostRequest;
-projectPost.resp = projectPostResponse;
+const projectPost = new Endpoint({ path: '/project', method: 'POST' }).body(projectPostRequest);
 const project = new Route([projectPost]);
 
 // Submission
 const submissionPostRequest = {
-  creator_id: 'submission-user_id',
-  project_id: 'submission-project_id',
+  creatorId: 'submission-userId',
+  projectId: 'submission-projectId',
 };
 
-const submissionPostResponse = {
-  id: 'submission-id',
-};
-
-const submissionPost = new Endpoint({ path: '/submission', method: 'POST' });
-submissionPost.body = submissionPostRequest;
-submissionPost.resp = submissionPostResponse;
-
-const submissionGetResponse = {
-  id: 'submission-id',
-  name: 'submission-name',
-};
+const submissionPost = new Endpoint({ path: '/submission', method: 'POST' }).body(
+  submissionPostRequest,
+);
 
 const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
-submissionGet.body = {};
-submissionPost.resp = submissionGetResponse;
 const submission = new Route([submissionPost, submissionGet]);
 
 export { user, role, project, submission };
