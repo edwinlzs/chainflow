@@ -94,11 +94,11 @@ The above setup will result in the following API calls:
    ```json
    {
      "type": "Engineer",
-     "userId": [[userId from response to step 1]],
+     "userId": "[[userId from response to step 1]]",
    }
    ```
 
-3. `GET` Request to `/user?role=Engineer`
+3. `GET` Request to `/user?role=[[type from response to step 2]]`
 
 ## Advanced Features
 
