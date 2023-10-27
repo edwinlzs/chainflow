@@ -11,7 +11,8 @@ const log = debug('chainflow:endpoint');
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
-export const endpoint = (path: string, method: string) => new Endpoint({ path, method });
+/** Convenience function for creating an endpoint. */
+export const endpoint = (method: string, path: string) => new Endpoint({ method, path });
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
@@ -48,7 +49,7 @@ export class Endpoint {
   #req: ReqBuilder;
   #resp: any;
 
-  constructor({ path, method }: { path: string; method: string }) {
+  constructor({ method, path }: { method: string; path: string }) {
     method = method.toLowerCase();
     if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
       throw new Error(`Unsupported method: "${method}"`);
