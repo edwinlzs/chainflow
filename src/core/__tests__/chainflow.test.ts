@@ -11,12 +11,9 @@ describe('#chainflow', () => {
   agent.disableNetConnect();
   const client = agent.get('http://127.0.0.1');
 
-  it('should define methods for supported HTTP method types and a run command', () => {
+  it('should define methods for supported HTTP method types', () => {
     const testChain = chainflow();
-    assert.deepEqual(
-      Object.getOwnPropertyNames(testChain).sort(),
-      ['run'].concat(SUPPORTED_METHODS).sort(),
-    );
+    assert.deepEqual(Object.getOwnPropertyNames(testChain).sort(), SUPPORTED_METHODS.sort());
   });
 
   it('should allow API calls', async () => {
@@ -87,4 +84,11 @@ describe('#chainflow', () => {
 
     assert.equal(userTracker.mock.calls.length, 0);
   });
+
+  // it('should reset its state after a run so future runs use a clean slate', () => {
+  //   const testChain = chainflow();
+  //   const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
+  //   const user = new Route([userEndpoint]);
+
+  // });
 });
