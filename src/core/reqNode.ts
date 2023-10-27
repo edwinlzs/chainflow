@@ -1,13 +1,9 @@
 import debug from 'debug';
 import { Responses } from './chainflow';
 import { buildObject } from './endpoint';
+import { getNodeValue, nodeHash, setSource, setValuePool } from '../utils/symbols';
 
 const log = debug('chainflow:reqNode');
-
-export const setSource = Symbol('setSource');
-export const setValuePool = Symbol('setValuePool');
-export const getNodeValue = Symbol('getNodeValue');
-export const nodeHash = Symbol('hash');
 
 export enum VALUE_POOL_SELECT {
   UNIFORM,
