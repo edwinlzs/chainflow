@@ -33,7 +33,7 @@ export const rolePost = endpoint('POST', '/role').body({
 });
 
 export const userGet = endpoint('GET', '/user').query({
-  role: '',
+  roleType: '',
 });
 ```
 
@@ -50,11 +50,11 @@ const { user, role } = generateRoutes(definitions, '127.0.0.1', '5000');
 
 /// Create endpoint chains
 role.post.set(({ body: { userId }}) => {
-  link(userId, user.post.resp.id); // link `userId` to `id` from `POST /user` response
+  link(userId, user.post.resp.id); // link `id` from `POST /user` response to `userId`
 });
 
-user.get.set(({ query: { role } }) => {
-  link(role, role.post.resp.type); // link `role` to `type` from `POST /role` response
+user.get.set(({ query: { roleType } }) => {
+  link(roleType, role.post.resp.type); // link `type` from `POST /role` response to `roleType` 
 })
 
 export { user, role };
@@ -98,7 +98,7 @@ The above setup will result in the following API calls:
    }
    ```
 
-3. `GET` Request to `/user?role=[[type from response to step 2]]`
+3. `GET` Request to `/user?roleType=[[type from response to step 2]]`
 
 ## Advanced Features
 
