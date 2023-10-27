@@ -24,7 +24,7 @@ describe('#endpoint', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new Endpoint({ method: 'NOnSeNsE', path: '/' }),
-        /Unsupported method: "nonsense"$/,
+        /Method "nonsense" is not supported.$/,
       );
     });
   });

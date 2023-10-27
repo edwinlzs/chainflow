@@ -2,6 +2,7 @@ import debug from 'debug';
 import { Responses } from './chainflow';
 import { buildObject } from './endpoint';
 import { getNodeValue, nodeHash, setSource, setValuePool } from '../utils/symbols';
+import { UnsupportedTypeError } from './errors';
 
 const log = debug('chainflow:reqNode');
 
@@ -48,7 +49,7 @@ export class ReqNode {
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
     if (val == null) {
-      throw new Error('Unhandled value type: "null"');
+      throw new UnsupportedTypeError('null');
     }
 
     switch (val[nodeValueIdentifier]) {
@@ -63,7 +64,7 @@ export class ReqNode {
     }
 
     if (Array.isArray(val)) {
-      throw new Error('Unhandled value type: "array"');
+      throw new UnsupportedTypeError('array');
     }
 
     switch (typeof val) {
@@ -79,7 +80,7 @@ export class ReqNode {
         });
         break;
       default:
-        throw new Error(`Unhandled value type: "${typeof val}"`);
+        throw new UnsupportedTypeError(typeof val);
     }
   }
 
@@ -96,9 +97,10 @@ export class ReqNode {
 
   /** Retrieve value of a node. */
   [getNodeValue](responses: Responses) {
+    const usedEndpoints: string[] = []; // stores endpoint responses already tried
     // attempt to get value from any source nodes available
-    const endpointHash = this.#getSourceHash(responses);
-    if (endpointHash) {
+    let endpointHash = this.#getSourceHash(responses, usedEndpoints);
+    while (endpointHash) {
       const resPath = this.#sources[endpointHash]!;
       const resPayload = responses[endpointHash]![0];
 
@@ -109,9 +111,12 @@ export class ReqNode {
       );
 
       // get response value from a linked source
-      const resVal = this.#accessSource(resPayload, resPath);
+      const respVal = this.#accessSource(resPayload, resPath, endpointHash);
 
-      if (resVal) return resVal;
+      if (respVal !== undefined) return respVal;
+
+      usedEndpoints.push(endpointHash);
+      endpointHash = this.#getSourceHash(responses, usedEndpoints);
     }
 
     // attempt to get value from generator function
@@ -133,25 +138,34 @@ export class ReqNode {
     return this.#default;
   }
 
-  /** Retrieves a matching endpoint hash from this node's sources, if any */
-  #getSourceHash(responses: Responses) {
+  /** Retrieves a matching endpoint hash from this node's sources, if any,
+   *  excluding endpoints that are already used for the current endpoint call. */
+  #getSourceHash(responses: Responses, usedEndpoints: string[]) {
     const sourceEndpointHashes = Object.keys(this.#sources);
     const availEndpointHashes = Object.keys(responses);
-    return sourceEndpointHashes.find((hash) => availEndpointHashes.includes(hash));
+    return sourceEndpointHashes.find(
+      (hash) => availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash),
+    );
   }
 
   /** Access the source node value in a response payload */
-  #accessSource(payload: any, path: string[]): any {
-    let resVal = payload;
+  #accessSource(payload: any, path: string[], sourceEndpointHash: string): any {
+    let respVal = payload;
 
     let i = 0;
-    while (i < path.length && resVal) {
+    while (i < path.length) {
+      if (respVal == null || typeof respVal !== 'object') {
+        log(
+          `Unable to retrieve source node value from response to endpoint with hash "${sourceEndpointHash}".`,
+        );
+        return;
+      }
       const accessor = path[i]!;
-      resVal = resVal[accessor];
+      respVal = respVal[accessor];
       i += 1;
     }
 
-    return resVal;
+    return respVal;
   }
 
   /** Selects a value from the value pool based on the value pool select strategy. */

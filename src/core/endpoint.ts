@@ -6,6 +6,7 @@ import { ReqBuilder, ReqNodes } from './reqBuilder.js';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols.js';
+import { UnsupportedMethodError } from './errors.js';
 
 const log = debug('chainflow:endpoint');
 
@@ -52,7 +53,7 @@ export class Endpoint {
   constructor({ method, path }: { method: string; path: string }) {
     method = method.toLowerCase();
     if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
-      throw new Error(`Unsupported method: "${method}"`);
+      throw new UnsupportedMethodError(method);
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
@@ -111,7 +112,7 @@ export class Endpoint {
 
     if (!this.#validateResp(resp)) return null;
 
-    return resp?.body;
+    return resp?.body.json();
   }
 
   /** Configure linking of this Req's input nodes. */

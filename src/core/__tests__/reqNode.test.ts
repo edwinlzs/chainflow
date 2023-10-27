@@ -45,7 +45,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: Symbol('some-symbol'), hash: 'some-hash' }),
-        /Unhandled value type: "symbol"$/,
+        /Value with type: "symbol" is not supported.$/,
       );
     });
   });
@@ -55,7 +55,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: ['some-string', 50, false], hash: 'some-hash' }),
-        /Unhandled value type: "array"$/,
+        /Value with type: "array" is not supported.$/,
       );
     });
   });
@@ -65,7 +65,7 @@ describe('#reqNode', () => {
     it('should throw an error', () => {
       assert.throws(
         () => new ReqNode({ val: null, hash: 'some-hash' }),
-        /Unhandled value type: "null"$/,
+        /Value with type: "null" is not supported.$/,
       );
     });
   });

@@ -84,10 +84,9 @@ class ChainflowBase {
     log('Finished running chainflow.');
   }
 
-  /** Resets the chainflow's state by clearing its callstack and accumulated responses. */
+  /** Resets the chainflow's state by clearing its accumulated responses. */
   reset() {
     this.#responses = {};
-    this.#callstack = [];
   }
 }
 
