@@ -28,6 +28,16 @@ export const valGen = (generator: () => any) => ({
   [nodeValueIdentifier]: NodeValue.Generator,
 });
 
+/** Details of a source node. */
+interface ISource {
+  /** An array of property accessor strings defining
+   * how to access the source node in a response payload
+   */
+  path: string[];
+  /** A callback that will be used on the source value. */
+  callback?: (val: any) => any;
+}
+
 /** A data node for constructing a request. */
 export class ReqNode {
   /** Key-values under this node, if this node represents an object. */
@@ -36,9 +46,8 @@ export class ReqNode {
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
-  /** Stores what response node values can be passed into this node
-   *  and the path (as an array of property accessor strings) to those nodes. */
-  #sources: { [nodeHash: string]: string[] } = {};
+  /** Stores what response node values can be passed into this node. */
+  #sources: { [nodeHash: string]: ISource } = {};
   /** Stores possible values this node can take. */
   #valuePool: any[] = [];
   /** Determines what strategy to select from pool of values */
@@ -85,8 +94,11 @@ export class ReqNode {
   }
 
   /** Sets a source node for this request node. */
-  [setSource](hash: string, path: string[]) {
-    this.#sources[hash] = path;
+  [setSource](hash: string, path: string[], callback?: (val: any) => any) {
+    this.#sources[hash] = {
+      path,
+      callback,
+    };
   }
 
   /** Sets the pool of values for this request node. */
@@ -101,19 +113,20 @@ export class ReqNode {
     // attempt to get value from any source nodes available
     let endpointHash = this.#getSourceHash(responses, usedEndpoints);
     while (endpointHash) {
-      const resPath = this.#sources[endpointHash]!;
-      const resPayload = responses[endpointHash]![0];
+      const respSource = this.#sources[endpointHash]!;
+      const respPayload = responses[endpointHash]![0];
 
       log(
         `Retrieving value for ReqNode with hash "${
           this[nodeHash]
-        }" from response payload ${JSON.stringify(resPayload)} via path "${resPath}"`,
+        }" from response payload ${JSON.stringify(respPayload)} via path "${respSource.path}"`,
       );
 
       // get response value from a linked source
-      const respVal = this.#accessSource(resPayload, resPath, endpointHash);
+      const respVal = this.#accessSource(respPayload, respSource.path, endpointHash);
 
-      if (respVal !== undefined) return respVal;
+      if (respVal !== undefined)
+        return respSource.callback ? respSource.callback(respVal) : respVal;
 
       usedEndpoints.push(endpointHash);
       endpointHash = this.#getSourceHash(responses, usedEndpoints);
