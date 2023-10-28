@@ -122,3 +122,9 @@ const userPost = endpoint('POST', '/user').body({
   },
 });
 ```
+
+## Development
+
+Run specific test files:
+
+`pnpm run test:file ./src/**/chainflow.test.ts`
