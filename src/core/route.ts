@@ -1,5 +1,5 @@
-import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './chainflow.js';
-import { Endpoint } from './endpoint.js';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './chainflow';
+import { Endpoint } from './endpoint';
 import debug from 'debug';
 
 const log = debug('chainflow:route');

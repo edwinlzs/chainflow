@@ -27,7 +27,6 @@ const httpReq = async ({
   log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
 
   try {
-    // TODO: insert actual endpoint call here
     const res = await request(`http://${addr}${path}`, {
       method,
       body,
@@ -35,7 +34,6 @@ const httpReq = async ({
     });
     return res;
   } catch (err) {
-    // TODO: error handling if call fails
     log(`Request failed: ${err}`);
     return null;
   }

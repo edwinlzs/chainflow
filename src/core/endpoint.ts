@@ -1,12 +1,12 @@
-import { hashEndpoint } from '../utils/hash.js';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
-import { ReqNode } from './reqNode.js';
+import { hashEndpoint } from '../utils/hash';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow';
+import { ReqNode } from './reqNode';
 import debug from 'debug';
-import { ReqBuilder, ReqNodes } from './reqBuilder.js';
-import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
+import { ReqBuilder, ReqNodes } from './reqBuilder';
+import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
-import { getNodeValue, nodeHash, nodePath } from '../utils/symbols.js';
-import { UnsupportedMethodError } from './errors.js';
+import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
+import { UnsupportedMethodError } from './errors';
 
 const log = debug('chainflow:endpoint');
 
