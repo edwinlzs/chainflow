@@ -43,35 +43,7 @@ describe('#chainflow', () => {
     assert.equal(roleTracker.mock.calls.length, 1);
   });
 
-  it('should break chainflow if an endpoint call returns an error code', async () => {
-    client
-      .intercept({
-        path: '/user',
-        method: 'GET',
-      })
-      .reply(200, {});
-    client
-      .intercept({
-        path: '/role',
-        method: 'POST',
-      })
-      .reply(400, {});
-
-    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
-    const user = new Route([userEndpoint]);
-    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' });
-    const role = new Route([roleEndpoint]);
-
-    const userTracker = mock.method(userEndpoint, 'call');
-    const roleTracker = mock.method(roleEndpoint, 'call');
-
-    await chainflow().get(user).post(role).get(user).run();
-
-    assert.equal(userTracker.mock.calls.length, 1);
-    assert.equal(roleTracker.mock.calls.length, 1);
-  });
-
-  it('should not actually make call if method is incorrect', async () => {
+  it('should not execute actual call if method is incorrect', async () => {
     const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
     const user = new Route([userEndpoint]);
 
@@ -82,15 +54,36 @@ describe('#chainflow', () => {
     assert.equal(userTracker.mock.calls.length, 0);
   });
 
-  it('should reset its state after a run so future runs use a clean slate', async () => {
-    client
-      .intercept({
-        path: '/user',
-        method: 'POST',
-      })
-      .reply(200, {
-        userId: 'userId A',
-      });
+  describe('when an endpoint call returns an error code', () => {
+    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
+    const user = new Route([userEndpoint]);
+    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' });
+    const role = new Route([roleEndpoint]);
+
+    const userTracker = mock.method(userEndpoint, 'call');
+    const roleTracker = mock.method(roleEndpoint, 'call');
+
+    it('should break the chainflow', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'GET',
+        })
+        .reply(200, {});
+      client
+        .intercept({
+          path: '/role',
+          method: 'POST',
+        })
+        .reply(400, {});
+      await chainflow().get(user).post(role).get(user).run();
+
+      assert.equal(userTracker.mock.calls.length, 1);
+      assert.equal(roleTracker.mock.calls.length, 1);
+    });
+  });
+
+  describe('when a chainflow has finished a run', () => {
     const userEndpoint = new Endpoint({ path: '/user', method: 'post' }).body({
       name: 'Tom',
     });
@@ -101,43 +94,54 @@ describe('#chainflow', () => {
     });
     const role = new Route([roleEndpoint]);
 
+    const testFlow = chainflow().post(user).post(role);
     const roleTracker = mock.method(roleEndpoint, 'call');
 
-    const testFlow = chainflow().post(user).post(role);
-    await testFlow.run();
-
-    assert.equal(roleTracker.mock.calls.length, 1);
-    assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
-      [userEndpoint.getHash()]: [
-        {
+    it('should reset its state so future runs use a clean slate', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {
           userId: 'userId A',
-        },
-      ],
-    });
+        });
+      roleTracker.mock.resetCalls();
+      await testFlow.run();
 
-    client
-      .intercept({
-        path: '/user',
-        method: 'POST',
-      })
-      .reply(200, {
-        userId: 'userId B',
+      assert.equal(roleTracker.mock.calls.length, 1);
+      assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
+        [userEndpoint.getHash()]: [
+          {
+            userId: 'userId A',
+          },
+        ],
       });
 
-    await testFlow.run();
-
-    assert.equal(roleTracker.mock.calls.length, 2);
-    assert.deepEqual(roleTracker.mock.calls[1].arguments[0], {
-      [userEndpoint.getHash()]: [
-        {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {
           userId: 'userId B',
-        },
-      ],
+        });
+
+      roleTracker.mock.resetCalls();
+      await testFlow.run();
+
+      assert.equal(roleTracker.mock.calls.length, 1);
+      assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
+        [userEndpoint.getHash()]: [
+          {
+            userId: 'userId B',
+          },
+        ],
+      });
     });
   });
 
-  it('should use value from another linked response if the first available linked response does not have value', async () => {
-    const tracker = mock.method(http, 'httpReq');
+  describe('when multiple responses are linked to a request', () => {
     const userPostEndpoint = new Endpoint({ path: '/user', method: 'post' });
     const userGetEndpoint = new Endpoint({ path: '/user', method: 'get' });
     const user = new Route([userPostEndpoint, userGetEndpoint]);
@@ -152,66 +156,111 @@ describe('#chainflow', () => {
       link(name, user.get.resp.details.name);
     });
     const testFlow = chainflow().post(user).get(user).post(role);
+    const tracker = mock.method(http, 'httpReq');
 
-    client
-      .intercept({
-        path: '/user',
-        method: 'POST',
-      })
-      .reply(200, {
-        details: {
+    describe('when both linked responses have the source value', () => {
+      it('should use the value of the response with higher priority', async () => {
+        client
+          .intercept({
+            path: '/user',
+            method: 'POST',
+          })
+          .reply(200, {
+            details: {
+              name: 'A',
+            },
+          });
+
+        client
+          .intercept({
+            path: '/user',
+            method: 'GET',
+          })
+          .reply(200, {
+            details: {
+              name: 'B',
+            },
+          });
+        tracker.mock.resetCalls();
+        await testFlow.run();
+        assert.equal(tracker.mock.calls.length, 3);
+        const roleCall = tracker.mock.calls[2];
+        const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
+        assert.deepEqual(callBody, {
           name: 'A',
-        },
+        });
       });
-
-    client
-      .intercept({
-        path: '/user',
-        method: 'GET',
-      })
-      .reply(200, {
-        details: {
-          name: 'B',
-        },
-      });
-
-    await testFlow.run();
-
-    assert.equal(tracker.mock.calls.length, 3);
-    const roleCall1 = tracker.mock.calls[2];
-    const callBody1 = JSON.parse(roleCall1.arguments?.[0]?.body);
-    assert.deepEqual(callBody1, {
-      name: 'A',
     });
 
-    // when higher priority response does not have the correct source node
-    client
-      .intercept({
-        path: '/user',
-        method: 'POST',
-      })
-      .reply(200, {
-        details: null,
-      });
+    describe('when the first available linked response does not have value', () => {
+      it('should use value from another linked response ', async () => {
+        client
+          .intercept({
+            path: '/user',
+            method: 'POST',
+          })
+          .reply(200, {
+            details: null,
+          });
 
-    client
-      .intercept({
-        path: '/user',
-        method: 'GET',
-      })
-      .reply(200, {
-        details: {
+        client
+          .intercept({
+            path: '/user',
+            method: 'GET',
+          })
+          .reply(200, {
+            details: {
+              name: 'B',
+            },
+          });
+        tracker.mock.resetCalls();
+        await testFlow.run();
+        assert.equal(tracker.mock.calls.length, 3);
+        const roleCall = tracker.mock.calls[2];
+        const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
+        assert.deepEqual(callBody, {
           name: 'B',
-        },
+        });
+        tracker.mock.resetCalls();
       });
+    });
+  });
 
-    await testFlow.run();
+  describe('when a callback is provided for a linked value', () => {
+    const client = agent.get('http://127.0.0.1');
+    const userPostEndpoint = new Endpoint({ path: '/user', method: 'post' }).body({
+      name: 'Tom',
+    });
+    const rolePostEndpoint = new Endpoint({ path: '/role', method: 'post' }).body({
+      userId: 'defaultId',
+    });
+    const user = new Route([userPostEndpoint]);
+    const role = new Route([rolePostEndpoint]);
 
-    assert.equal(tracker.mock.calls.length, 6);
-    const roleCall2 = tracker.mock.calls[5];
-    const callBody2 = JSON.parse(roleCall2.arguments?.[0]?.body);
-    assert.deepEqual(callBody2, {
-      name: 'B',
+    const testCallback = (userId: string) => `${userId} has been modified`;
+    rolePostEndpoint.set(({ body: { userId } }) => {
+      link(userId, user.post.resp.userId, testCallback);
+    });
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should call the endpoint with the given query params', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {
+          userId: 'newUserId',
+        });
+      tracker.mock.resetCalls();
+      await chainflow().post(user).post(role).run();
+
+      assert.equal(tracker.mock.callCount(), 2);
+      const roleCall = tracker.mock.calls[1];
+      const roleCallBody = JSON.parse(roleCall?.arguments[0]?.body);
+      assert.deepEqual(roleCallBody, {
+        userId: 'newUserId has been modified',
+      });
     });
   });
 });

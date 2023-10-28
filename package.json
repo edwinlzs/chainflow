@@ -10,8 +10,9 @@
     "lint:fix": "eslint ./src/ --ext .ts --fix",
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
     "prepare": "husky install",
-    "test": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
-    "test:coverage": "glob -c \"c8 node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
+    "test": "glob -c \"node --loader tsx --test --no-warnings \" \"./src/**/*.test.ts\"",
+    "test:file": "glob -c \"node --loader tsx --test --no-warnings \"",
+    "test:coverage": "glob -c \"c8 node --test --loader tsx --no-warnings\" \"./src/**/*.test.ts\"",
     "test:debug": "glob -c \"node -r dotenv/config --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
     "demo": "tsc && node -r dotenv/config ./dist/demo/index.js"
   },

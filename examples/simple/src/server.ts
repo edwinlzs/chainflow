@@ -46,6 +46,7 @@ app.post('/submission', (req, res) => {
   });
 });
 
+// this route has a `submissionId` param in its path
 app.get('/submission/:submissionId', (req, res) => {
   console.log(`Received GET call at /submission with path: ${req.path}`);
   res.send({

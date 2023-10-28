@@ -1,54 +1,42 @@
-import { Endpoint, Route } from 'chainflow';
+import { endpoint, route } from 'chainflow';
 
 // Defining API signatures
-const userPostRequest = {
+const userPost = endpoint('POST', '/user').body({
   name: 'user-name',
   details: {
     age: 42,
   },
-};
+});
 
-const userPost = new Endpoint({ path: '/user', method: 'POST' }).body(userPostRequest);
-
-const userQuery = {
+const userGet = endpoint('GET', '/user').query({
   age: 42,
-};
-
-const userGet = new Endpoint({ path: '/user', method: 'GET' }).query(userQuery);
-const user = new Route([userPost, userGet], '127.0.0.1:3001');
+});
+const user = route([userPost, userGet], '127.0.0.1:3001');
 
 // Role
-const rolePostRequest = {
+const rolePost = endpoint('POST', '/role').body({
   user_id: 'role-user_id',
   type: 'role-type',
-};
-
-const rolePost = new Endpoint({ path: '/role', method: 'POST' }).body(rolePostRequest);
-const role = new Route([rolePost], '127.0.0.1:3001');
+});
+const role = route([rolePost], '127.0.0.1:3001');
 
 // Project
-const projectPostRequest = {
+const projectPost = endpoint('POST', '/project').body({
   creator_id: 'project-user_id',
   details: {
     title: 'project-title',
     type: 'project-type',
   },
-};
-
-const projectPost = new Endpoint({ path: '/project', method: 'POST' }).body(projectPostRequest);
-const project = new Route([projectPost], '127.0.0.1:3001');
+});
+const project = route([projectPost], '127.0.0.1:3001');
 
 // Submission
-const submissionPostRequest = {
+const submissionPost = endpoint('POST', '/submission').body({
   creator_id: 'submission-user_id',
   project_id: 'submission-project_id',
-};
+});
 
-const submissionPost = new Endpoint({ path: '/submission', method: 'POST' }).body(
-  submissionPostRequest,
-);
-
-const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
-const submission = new Route([submissionPost, submissionGet], '127.0.0.1:3001');
+const submissionGet = endpoint('GET', '/submission/{submissionId}');
+const submission = route([submissionPost, submissionGet], '127.0.0.1:3001');
 
 export { user, role, project, submission };
