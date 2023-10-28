@@ -1,5 +1,5 @@
-import { Endpoint } from './endpoint.js';
-import { Route } from './route.js';
+import { Endpoint } from './endpoint';
+import { Route } from './route';
 import debug from 'debug';
 
 const log = debug('chainflow:chainflow');
@@ -34,7 +34,6 @@ type Chainflow = ChainflowBase & {
   delete: EndpointCall;
   patch: EndpointCall;
   options: EndpointCall;
-  run: () => Promise<void>;
 };
 
 export type SUPPORTED_METHOD = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
@@ -65,29 +64,32 @@ class ChainflowBase {
         },
       });
     });
+  }
 
-    /** Run the set up chain */
-    Reflect.defineProperty(this, 'run', {
-      value: async () => {
-        log(`Running chainflow...`);
-        for (const { endpoint, opts } of this.#callstack) {
-          // call endpoint
-          const hash = endpoint.getHash();
-          log(`Making a call to endpoint with hash "${hash}"`);
-          const resp = await endpoint.call(this.#responses);
-          if (resp == null) {
-            log('Chainflow failed to run.');
-            break;
-          }
-          this.#responses[hash] = [resp];
-        }
-        log('Finished running chainflow.');
-      },
-    });
+  /** Run the set up chain */
+  async run() {
+    log(`Running chainflow...`);
+    for (const { endpoint, opts } of this.#callstack) {
+      // call endpoint
+      const hash = endpoint.getHash();
+      log(`Making a call to endpoint with hash "${hash}"`);
+      const resp = await endpoint.call(this.#responses);
+      if (resp == null) {
+        log('Chainflow failed to run.');
+        break;
+      }
+      this.#responses[hash] = [resp];
+    }
+    this.reset();
+    log('Finished running chainflow.');
+  }
+
+  /** Resets the chainflow's state by clearing its accumulated responses. */
+  reset() {
+    this.#responses = {};
   }
 }
 
 export const chainflow = (): Chainflow => {
-  const chainflow = new ChainflowBase();
-  return chainflow as Chainflow;
+  return new ChainflowBase() as Chainflow;
 };

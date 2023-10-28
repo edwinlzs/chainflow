@@ -1,5 +1,5 @@
-import { Endpoint } from '../core/endpoint.js';
-import { Route } from '../core/route.js';
+import { Endpoint } from '../core/endpoint';
+import { Route } from '../core/route';
 import debug from 'debug';
 
 export const log = debug('chainflow:routegen');

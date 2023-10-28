@@ -1,6 +1,6 @@
 /** TEST ZONE */
-import { Endpoint } from '../core/endpoint';
-import { Route } from '../core/route';
+import { Endpoint, endpoint } from '../core/endpoint';
+import { Route, route } from '../core/route';
 
 // this section should be derived by the lib from API specs
 // or from utility functions placed within defined routes
@@ -14,16 +14,16 @@ const userPostRequest = {
   },
 };
 
-const userPost = new Endpoint({ path: '/user', method: 'POST' }).body(userPostRequest);
+const userPost = endpoint('POST', '/user').body(userPostRequest);
 
 const userQuery = {
   age: 42,
 };
 
-const userGet = new Endpoint({ path: '/user', method: 'GET' });
+const userGet = endpoint('GET', '/user');
 userGet.query(userQuery);
 
-const user = new Route([userPost, userGet]);
+const user = route([userPost, userGet]);
 
 // Role
 const rolePostRequest = {
@@ -31,8 +31,8 @@ const rolePostRequest = {
   type: 'role-type',
 };
 
-const rolePost = new Endpoint({ path: '/role', method: 'POST' }).body(rolePostRequest);
-const role = new Route([rolePost]);
+const rolePost = endpoint('POST', '/role').body(rolePostRequest);
+const role = route([rolePost]);
 
 // Project
 const projectPostRequest = {
@@ -43,8 +43,8 @@ const projectPostRequest = {
   },
 };
 
-const projectPost = new Endpoint({ path: '/project', method: 'POST' }).body(projectPostRequest);
-const project = new Route([projectPost]);
+const projectPost = endpoint('POST', '/project').body(projectPostRequest);
+const project = route([projectPost]);
 
 // Submission
 const submissionPostRequest = {
@@ -52,11 +52,9 @@ const submissionPostRequest = {
   projectId: 'submission-projectId',
 };
 
-const submissionPost = new Endpoint({ path: '/submission', method: 'POST' }).body(
-  submissionPostRequest,
-);
+const submissionPost = endpoint('POST', '/submission').body(submissionPostRequest);
 
-const submissionGet = new Endpoint({ path: '/submission/{submissionId}', method: 'GET' });
-const submission = new Route([submissionPost, submissionGet]);
+const submissionGet = endpoint('GET', '/submission/{submissionId}');
+const submission = route([submissionPost, submissionGet]);
 
 export { user, role, project, submission };

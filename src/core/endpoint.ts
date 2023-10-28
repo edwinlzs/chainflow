@@ -1,14 +1,19 @@
-import { hashEndpoint } from '../utils/hash.js';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow.js';
-import { ReqNode, getNodeValue, nodeHash } from './reqNode.js';
+import { hashEndpoint } from '../utils/hash';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow';
+import { ReqNode } from './reqNode';
 import debug from 'debug';
-import { ReqBuilder, ReqNodes } from './reqBuilder.js';
-import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http.js';
+import { ReqBuilder, ReqNodes } from './reqBuilder';
+import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
+import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
+import { UnsupportedMethodError } from './errors';
 
 const log = debug('chainflow:endpoint');
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
+
+/** Convenience function for creating an endpoint. */
+export const endpoint = (method: string, path: string) => new Endpoint({ method, path });
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
@@ -17,9 +22,7 @@ export interface InputNodes {
   query: ReqNodes;
 }
 
-export const nodePath = Symbol('nodePath');
-
-/** Recursive proxy that handles property access of a response signature. */
+/** Generates proxies recursively to handle nested property access of a response signature. */
 const RespNodeHandler = {
   get(obj: { path: string[]; hash: string }, prop: any): any {
     if (prop === nodePath) return obj.path;
@@ -47,10 +50,10 @@ export class Endpoint {
   #req: ReqBuilder;
   #resp: any;
 
-  constructor({ path, method }: { path: string; method: string }) {
+  constructor({ method, path }: { method: string; path: string }) {
     method = method.toLowerCase();
     if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
-      throw new Error(`Unsupported method: "${method}"`);
+      throw new UnsupportedMethodError(method);
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
@@ -109,7 +112,7 @@ export class Endpoint {
 
     if (!this.#validateResp(resp)) return null;
 
-    return resp?.body;
+    return resp?.body.json();
   }
 
   /** Configure linking of this Req's input nodes. */

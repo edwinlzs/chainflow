@@ -1,6 +1,6 @@
 import { debug } from 'debug';
-import { ReqNode, nodeHash, setSource } from '../core/reqNode';
-import { nodePath } from '../core/endpoint';
+import { ReqNode } from '../core/reqNode';
+import { nodeHash, nodePath, setSource } from './symbols';
 
 const log = debug('chainflow:inputs');
 

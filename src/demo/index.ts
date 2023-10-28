@@ -1,8 +1,8 @@
 /** USER TEST ZONE */
-import { chainflow } from '../core/chainflow.js';
-import { InputNodes } from '../core/endpoint.js';
-import { link } from '../utils/inputs.js';
-import { project, role, submission, user } from './setup.js';
+import { chainflow } from '../core/chainflow';
+import { InputNodes } from '../core/endpoint';
+import { link } from '../utils/inputs';
+import { project, role, submission, user } from './setup';
 
 // create the chains
 user.get.set(({ query: { age } }: InputNodes) => {

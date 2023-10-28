@@ -1,5 +1,5 @@
 import parser from '@apidevtools/swagger-parser';
-import { generateRoutes, log } from './routegen.js';
+import { generateRoutes, log } from './routegen';
 
 const specPath = './src/templates/openapi.json';
 

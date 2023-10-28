@@ -1,16 +1,20 @@
-import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './chainflow.js';
-import { Endpoint } from './endpoint.js';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './chainflow';
+import { Endpoint } from './endpoint';
 import debug from 'debug';
 
 const log = debug('chainflow:route');
+
+/** Convenience function for creating a route. */
+export const route = (endpoints: Endpoint[] = [], address?: string) =>
+  new Route(endpoints, address);
 
 /** Stores endpoints based on their route and methods. */
 export class Route {
   #address: string;
   [method: string]: Endpoint;
 
-  constructor(endpoints: Endpoint[] = [], address?: string) {
-    this.#address = address ?? '127.0.0.1';
+  constructor(endpoints: Endpoint[] = [], address: string = '127.0.0.1') {
+    this.#address = address;
     endpoints.forEach((endpoint) => {
       if (!SUPPORTED_METHODS.includes(endpoint.method as SUPPORTED_METHOD)) return;
       log(
