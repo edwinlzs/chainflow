@@ -1,0 +1,22 @@
+{
+  "name": "simple",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "server": "ts-node src/server.ts",
+    "flow": "node -r ts-node/register index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@faker-js/faker": "^8.2.0",
+    "chainflow": "file:../.."
+  },
+  "dependencies": {
+    "@types/express": "^4.17.19",
+    "express": "^4.18.2",
+    "ts-node": "^10.9.1"
+  }
+}
