@@ -1,5 +1,7 @@
 import { endpoint, route } from 'chainflow';
 
+const addr = '127.0.0.1:3001';
+
 // Defining API signatures
 const userPost = endpoint('POST', '/user').body({
   name: 'user-name',
@@ -11,14 +13,14 @@ const userPost = endpoint('POST', '/user').body({
 const userGet = endpoint('GET', '/user').query({
   age: 42,
 });
-const user = route([userPost, userGet], '127.0.0.1:3001');
+const user = route([userPost, userGet], addr);
 
 // Role
 const rolePost = endpoint('POST', '/role').body({
   user_id: 'role-user_id',
   type: 'role-type',
 });
-const role = route([rolePost], '127.0.0.1:3001');
+const role = route([rolePost], addr);
 
 // Project
 const projectPost = endpoint('POST', '/project').body({
@@ -28,7 +30,7 @@ const projectPost = endpoint('POST', '/project').body({
     type: 'project-type',
   },
 });
-const project = route([projectPost], '127.0.0.1:3001');
+const project = route([projectPost], addr);
 
 // Submission
 const submissionPost = endpoint('POST', '/submission').body({
@@ -37,6 +39,6 @@ const submissionPost = endpoint('POST', '/submission').body({
 });
 
 const submissionGet = endpoint('GET', '/submission/{submissionId}');
-const submission = route([submissionPost, submissionGet], '127.0.0.1:3001');
+const submission = route([submissionPost, submissionGet], addr);
 
 export { user, role, project, submission };
