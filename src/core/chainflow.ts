@@ -1,5 +1,4 @@
 import { Endpoint } from './endpoint';
-import { Route } from './route';
 import debug from 'debug';
 
 const log = debug('chainflow:chainflow');
@@ -23,48 +22,9 @@ interface CallOpts {
   count?: number;
 }
 
-/** Function for registering an endpoint call in a chainflow. */
-type EndpointCall = (route: Route, opts?: CallOpts) => Chainflow;
-
-/** Chainflow with defined methods. */
-type Chainflow = ChainflowBase & {
-  get: EndpointCall;
-  post: EndpointCall;
-  put: EndpointCall;
-  delete: EndpointCall;
-  patch: EndpointCall;
-  options: EndpointCall;
-};
-
-export type SUPPORTED_METHOD = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
-export const SUPPORTED_METHODS: SUPPORTED_METHOD[] = [
-  'get',
-  'post',
-  'put',
-  'delete',
-  'patch',
-  'options',
-];
-
-class ChainflowBase {
+class Chainflow {
   #responses: Responses = {};
   #callstack: Callstack = [];
-
-  constructor() {
-    SUPPORTED_METHODS.forEach((method) => {
-      /** Makes a call for the given route and endpoint. */
-      Reflect.defineProperty(this, method, {
-        value: (route: Route, opts?: CallOpts) => {
-          const endpoint = route[method];
-          if (!endpoint) {
-            return this;
-          }
-          this.#callstack.push({ endpoint, opts });
-          return this;
-        },
-      });
-    });
-  }
 
   /** Run the set up chain */
   async run() {
@@ -84,6 +44,12 @@ class ChainflowBase {
     log('Finished running chainflow.');
   }
 
+  /** Adds an endpoint call to the callchain. */
+  call(endpoint: Endpoint, opts?: CallOpts) {
+    this.#callstack.push({ endpoint, opts });
+    return this;
+  }
+
   /** Resets the chainflow's state by clearing its accumulated responses. */
   reset() {
     this.#responses = {};
@@ -91,5 +57,5 @@ class ChainflowBase {
 }
 
 export const chainflow = (): Chainflow => {
-  return new ChainflowBase() as Chainflow;
+  return new Chainflow();
 };

@@ -1,67 +1,55 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { SUPPORTED_METHODS, chainflow } from '../chainflow';
-import { Endpoint } from '../endpoint';
-import { Route } from '../route';
+import { chainflow } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../utils/inputs';
 import http from '../../utils/http';
+import { endpointFactory } from '../endpointFactory';
 
 describe('#chainflow', () => {
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
-  const client = agent.get('http://127.0.0.1');
-
-  it('should define methods for supported HTTP method types', () => {
-    assert.deepEqual(Object.getOwnPropertyNames(chainflow()).sort(), SUPPORTED_METHODS.sort());
-  });
+  const client = agent.get('http://127.0.0.1:5000');
+  const factory = endpointFactory('127.0.0.1:5000');
 
   it('should allow API calls', async () => {
-    const endpoint = new Endpoint({ path: '/user', method: 'get' });
-    const route = new Route([endpoint]);
-
+    const endpoint = factory.get('/user');
     const tracker = mock.method(endpoint, 'call', () => ({}));
 
-    await chainflow().get(route).run();
-
+    await chainflow().call(endpoint).run();
     assert.equal(tracker.mock.calls.length, 1);
   });
 
   it('should allow multiple API calls', async () => {
-    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
-    const user = new Route([userEndpoint]);
-    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' });
-    const role = new Route([roleEndpoint]);
+    const getUser = factory.get('/user');
+    const createRole = factory.post('/role');
 
-    const userTracker = mock.method(userEndpoint, 'call', () => ({}));
-    const roleTracker = mock.method(roleEndpoint, 'call', () => ({}));
+    const userTracker = mock.method(getUser, 'call', () => ({}));
+    const roleTracker = mock.method(createRole, 'call', () => ({}));
 
-    await chainflow().get(user).post(role).get(user).run();
+    await chainflow().call(getUser).call(createRole).call(getUser).run();
 
     assert.equal(userTracker.mock.calls.length, 2);
     assert.equal(roleTracker.mock.calls.length, 1);
   });
 
-  it('should not execute actual call if method is incorrect', async () => {
-    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
-    const user = new Route([userEndpoint]);
+  // it('should not execute actual call if method is incorrect', async () => {
+  //   const getUser = factory.get('/user');
 
-    const userTracker = mock.method(userEndpoint, 'call', () => ({}));
+  //   const userTracker = mock.method(getUser, 'call', () => ({}));
 
-    await chainflow().post(user).run();
+  //   await chainflow().call(getUser).run();
 
-    assert.equal(userTracker.mock.calls.length, 0);
-  });
+  //   assert.equal(userTracker.mock.calls.length, 0);
+  // });
 
   describe('when an endpoint call returns an error code', () => {
-    const userEndpoint = new Endpoint({ path: '/user', method: 'get' });
-    const user = new Route([userEndpoint]);
-    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' });
-    const role = new Route([roleEndpoint]);
+    const getUser = factory.get('/user');
+    const createRole = factory.post('/role');
 
-    const userTracker = mock.method(userEndpoint, 'call');
-    const roleTracker = mock.method(roleEndpoint, 'call');
+    const userTracker = mock.method(getUser, 'call');
+    const roleTracker = mock.method(createRole, 'call');
 
     it('should break the chainflow', async () => {
       client
@@ -76,7 +64,7 @@ describe('#chainflow', () => {
           method: 'POST',
         })
         .reply(400, {});
-      await chainflow().get(user).post(role).get(user).run();
+      await chainflow().call(getUser).call(createRole).call(getUser).run();
 
       assert.equal(userTracker.mock.calls.length, 1);
       assert.equal(roleTracker.mock.calls.length, 1);
@@ -84,18 +72,15 @@ describe('#chainflow', () => {
   });
 
   describe('when a chainflow has finished a run', () => {
-    const userEndpoint = new Endpoint({ path: '/user', method: 'post' }).body({
+    const createUser = factory.post('/user').body({
       name: 'Tom',
     });
-    const user = new Route([userEndpoint]);
-
-    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' }).body({
+    const createRole = factory.post('/role').body({
       userId: 'defaultId',
     });
-    const role = new Route([roleEndpoint]);
 
-    const testFlow = chainflow().post(user).post(role);
-    const roleTracker = mock.method(roleEndpoint, 'call');
+    const testFlow = chainflow().call(createUser).call(createRole);
+    const roleTracker = mock.method(createRole, 'call');
 
     it('should reset its state so future runs use a clean slate', async () => {
       client
@@ -111,7 +96,7 @@ describe('#chainflow', () => {
 
       assert.equal(roleTracker.mock.calls.length, 1);
       assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
-        [userEndpoint.getHash()]: [
+        [createUser.getHash()]: [
           {
             userId: 'userId A',
           },
@@ -132,7 +117,7 @@ describe('#chainflow', () => {
 
       assert.equal(roleTracker.mock.calls.length, 1);
       assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
-        [userEndpoint.getHash()]: [
+        [createUser.getHash()]: [
           {
             userId: 'userId B',
           },
@@ -142,20 +127,17 @@ describe('#chainflow', () => {
   });
 
   describe('when multiple responses are linked to a request', () => {
-    const userPostEndpoint = new Endpoint({ path: '/user', method: 'post' });
-    const userGetEndpoint = new Endpoint({ path: '/user', method: 'get' });
-    const user = new Route([userPostEndpoint, userGetEndpoint]);
-
-    const roleEndpoint = new Endpoint({ path: '/role', method: 'post' }).body({
+    const createUser = factory.post('/user');
+    const getUser = factory.get('/user');
+    const createRole = factory.post('/role').body({
       name: 'defaultName',
     });
-    const role = new Route([roleEndpoint]);
 
-    role.post.set(({ body: { name } }) => {
-      link(name, user.post.resp.details.name);
-      link(name, user.get.resp.details.name);
+    createRole.set(({ body: { name } }) => {
+      link(name, createUser.resp.details.name);
+      link(name, getUser.resp.details.name);
     });
-    const testFlow = chainflow().post(user).get(user).post(role);
+    const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
     const tracker = mock.method(http, 'httpReq');
 
     describe('when both linked responses have the source value', () => {
@@ -227,19 +209,16 @@ describe('#chainflow', () => {
   });
 
   describe('when a callback is provided for a linked value', () => {
-    const client = agent.get('http://127.0.0.1');
-    const userPostEndpoint = new Endpoint({ path: '/user', method: 'post' }).body({
+    const createUser = factory.post('/user').body({
       name: 'Tom',
     });
-    const rolePostEndpoint = new Endpoint({ path: '/role', method: 'post' }).body({
+    const createRole = factory.post('/role').body({
       userId: 'defaultId',
     });
-    const user = new Route([userPostEndpoint]);
-    const role = new Route([rolePostEndpoint]);
 
     const testCallback = (userId: string) => `${userId} has been modified`;
-    rolePostEndpoint.set(({ body: { userId } }) => {
-      link(userId, user.post.resp.userId, testCallback);
+    createRole.set(({ body: { userId } }) => {
+      link(userId, createUser.resp.userId, testCallback);
     });
     const tracker = mock.method(http, 'httpReq');
 
@@ -253,7 +232,7 @@ describe('#chainflow', () => {
           userId: 'newUserId',
         });
       tracker.mock.resetCalls();
-      await chainflow().post(user).post(role).run();
+      await chainflow().call(createUser).call(createRole).run();
 
       assert.equal(tracker.mock.callCount(), 2);
       const roleCall = tracker.mock.calls[1];

@@ -1,42 +1,37 @@
 # Chainflow
 
-## Goal
-
-Manage dynamically generated datasets/payloads that can be used to call endpoints.
-
-Payload chaining to complete a series of actions in a business-centric manner.
+Create dynamic and flexible workflows of API calls by linking outputs from one call to the input of another.
 
 ## Use Cases
 
-1. Simulate frontend interaction flow with backend APIs
-2. Seeding a database with business logic for demo purposes
-3. Testing variations of inputs on endpoints
+1. Set up demo data
+2. Simulate frontend interactions with backend APIs
+3. Test edge cases on endpoints with input variations
 
 ## Basic Usage
 
-Define your endpoints and their request/response signatures with `endpoint` and wrap different methods of the same routes together with `route`.
+Use `endpointFactory` to define your endpoints and their request/response signatures with the `endpoint` method.
 
 ```typescript
-import { endpoint, route } from chainflow;
+import { endpointFactory } from chainflow;
 
-const userPost = endpoint('POST', '/user').body({
+const factory = endpointFactory('127.0.0.1:5000');
+
+const createUser = factory.post('/user').body({
   name: 'Tom',
   details: {
     age: 40,
   },
 });
 
-const rolePost = endpoint('POST', '/role').body({
+const createRole = factory.post('/role').body({
   type: 'Engineer',
   userId: '',
 });
 
-const userGet = endpoint('GET', '/user').query({
+const getUser = factory.get('/user').query({
   roleType: '',
 });
-
-const user = route([userGet, userPost], '127.0.0.1:5000');
-const role = route([rolePost], '127.0.0.1:5000');
 ```
 
 Use `link` to pass values from a response into a future request.
@@ -44,24 +39,26 @@ Use `link` to pass values from a response into a future request.
 ```typescript
 import { generateRoutes, link } from chainflow;
 
-/// Create endpoint chains
-role.post.set(({ body: { userId }}) => {
-  link(userId, user.post.resp.id); // link `id` from `POST /user` response to `userId`
+createRole.set(({ body: { userId }}) => {
+  link(userId, createUser.resp.id); // link `id` from `POST /user` response to `userId`
 });
 
-user.get.set(({ query: { roleType } }) => {
-  link(roleType, role.post.resp.type); // link `type` from `POST /role` response to `roleType`
-})
+getUser.set(({ query: { roleType } }) => {
+  link(roleType, createRole.resp.type); // link `type` from `POST /role` response to `roleType`
+});
 ```
 
 Use methods on `chainflow` to define the sequence of endpoint requests built with the given default values or linked values from earlier responses received during the flow.
 
 ```typescript
-/// Create workflows that take advantage of chains
 import { chainflow } from Chainflow;
 
-const flow = chainflow();
-flow.post(user).post(role).get(user).run();
+const flow = chainflow()
+  .call(createUser)
+  .call(createRole)
+  .call(getUser);
+
+flow.run();
 ```
 
 ---
@@ -85,11 +82,11 @@ The above setup will result in the following API calls:
    ```json
    {
      "type": "Engineer",
-     "userId": "[[(userId) from response to step 1]]"
+     "userId": "['userId' from response to step 1]"
    }
    ```
 
-3. `GET` Request to `/user?roleType=[[(type) from response to step 2]]`
+3. `GET` Request to `/user?roleType=['type' from response to step 2]`
 
 ## Advanced Features
 
@@ -102,7 +99,7 @@ However, you can also use the following features to more flexibly define the val
 Define a pool of values to take from when building requests.
 
 ```typescript
-const userPost = endpoint('POST', '/user').body({
+const userPost = factory.post('/user').body({
   name: valPool(['Tom', 'Harry', 'Jane']),
   details: {
     age: 40,
@@ -115,7 +112,7 @@ const userPost = endpoint('POST', '/user').body({
 Define a callback that produces values for building requests.
 
 ```typescript
-const userPost = endpoint('POST', '/user').body({
+const userPost = factory.post('/user').body({
   name: 'Tom',
   details: {
     age: valGen(() => Math.floor(Math.random() * 100)),

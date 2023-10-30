@@ -10,6 +10,8 @@ describe('#endpoint', () => {
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
+  const client = agent.get('http://127.0.0.1:5000');
+  const addr = '127.0.0.1:5000';
 
   const testReqPayload = {
     id: 'some-id',
@@ -23,18 +25,16 @@ describe('#endpoint', () => {
   describe('when an unsupported method is passed to an endpoint', () => {
     it('should throw an error', () => {
       assert.throws(
-        () => new Endpoint({ method: 'NOnSeNsE', path: '/' }),
+        () => new Endpoint({ addr, method: 'NOnSeNsE', path: '/' }),
         /Method "nonsense" is not supported.$/,
       );
     });
   });
 
   describe('when a request payload is assigned to an endpoint', () => {
-    const client = agent.get('http://127.0.0.1');
+    const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/user' }).body(testReqPayload);
 
-    const testEndpoint = new Endpoint({ method: 'POST', path: '/user' }).body(testReqPayload);
-
-    const respEndpoint = new Endpoint({ method: 'GET', path: '/age' });
+    const respEndpoint = new Endpoint({ addr, method: 'GET', path: '/age' });
     const respPayload = {
       age: 10,
     };
@@ -161,8 +161,7 @@ describe('#endpoint', () => {
   });
 
   describe('when a path with params in it is assigned to an endpoint', () => {
-    const client = agent.get('http://127.0.0.1');
-    const testEndpoint = new Endpoint({ path: '/pet/{petId}', method: 'get' });
+    const testEndpoint = new Endpoint({ addr, path: '/pet/{petId}', method: 'get' });
 
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((nodes) => {
@@ -185,11 +184,10 @@ describe('#endpoint', () => {
   });
 
   describe('when a request with query params is assigned to an endpoint', () => {
-    const client = agent.get('http://127.0.0.1');
     const testQuery = {
       cute: true,
     };
-    const testEndpoint = new Endpoint({ path: '/pet', method: 'get' });
+    const testEndpoint = new Endpoint({ addr, path: '/pet', method: 'get' });
     testEndpoint.query(testQuery);
 
     it('should expose its path params for setting up links', () => {

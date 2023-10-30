@@ -13,7 +13,7 @@ dependencies:
 
 devDependencies:
   chainflow:
-    specifier: file:..\..
+    specifier: file:../..
     version: file:../..(openapi-types@12.1.3)
 
 packages:
