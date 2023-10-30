@@ -1,16 +1,12 @@
 # Chainflow
 
-## Goal
-
-Manage dynamically generated datasets/payloads that can be used to call endpoints.
-
-Payload chaining to complete a series of actions in a business-centric manner.
+Create dynamic and flexible workflows of API calls by linking outputs from one call to the input of another.
 
 ## Use Cases
 
-1. Simulate frontend interaction flow with backend APIs
-2. Seeding a database with business logic for demo purposes
-3. Testing variations of inputs on endpoints
+1. Set up demo data
+2. Simulate frontend interactions with backend APIs
+3. Test edge cases on endpoints with input variations
 
 ## Basic Usage
 
@@ -43,7 +39,6 @@ Use `link` to pass values from a response into a future request.
 ```typescript
 import { generateRoutes, link } from chainflow;
 
-/// Create endpoint chains
 createRole.set(({ body: { userId }}) => {
   link(userId, createUser.resp.id); // link `id` from `POST /user` response to `userId`
 });
@@ -56,7 +51,6 @@ getUser.set(({ query: { roleType } }) => {
 Use methods on `chainflow` to define the sequence of endpoint requests built with the given default values or linked values from earlier responses received during the flow.
 
 ```typescript
-/// Create workflows that take advantage of chains
 import { chainflow } from Chainflow;
 
 const flow = chainflow()
@@ -88,11 +82,11 @@ The above setup will result in the following API calls:
    ```json
    {
      "type": "Engineer",
-     "userId": "[[(userId) from response to step 1]]"
+     "userId": "['userId' from response to step 1]"
    }
    ```
 
-3. `GET` Request to `/user?roleType=[[(type) from response to step 2]]`
+3. `GET` Request to `/user?roleType=['type' from response to step 2]`
 
 ## Advanced Features
 
