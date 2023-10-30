@@ -1,5 +1,5 @@
 import { hashEndpoint } from '../utils/hash';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS, Responses } from './chainflow';
+import { Responses } from './chainflow';
 import { ReqNode } from './reqNode';
 import debug from 'debug';
 import { ReqBuilder, ReqNodes } from './reqBuilder';
@@ -7,13 +7,11 @@ import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
 import { UnsupportedMethodError } from './errors';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
 
 const log = debug('chainflow:endpoint');
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
-
-/** Convenience function for creating an endpoint. */
-export const endpoint = (method: string, path: string) => new Endpoint({ method, path });
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
@@ -44,26 +42,22 @@ const RespNodeHandler = {
  * as well as calls to that endpoint
  */
 export class Endpoint {
-  #address: string = '127.0.0.1';
+  #addr: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
   #resp: any;
 
-  constructor({ method, path }: { method: string; path: string }) {
+  constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
     method = method.toLowerCase();
     if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
       throw new UnsupportedMethodError(method);
+    this.#addr = addr;
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
     this.#resp = new Proxy({ path: [], hash: this.getHash() }, RespNodeHandler);
-  }
-
-  address(address: string) {
-    this.#address = address;
-    return this;
   }
 
   get method() {
@@ -104,7 +98,7 @@ export class Endpoint {
       callPath = this.#insertQueryParams(callPath, this.#buildQueryParams(responses));
     }
     const resp = await http.httpReq({
-      addr: this.#address,
+      addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),

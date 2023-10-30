@@ -2,30 +2,43 @@
 import { chainflow } from '../core/chainflow';
 import { InputNodes } from '../core/endpoint';
 import { link } from '../utils/inputs';
-import { project, role, submission, user } from './setup';
+import {
+  createProject,
+  createRole,
+  createSubmission,
+  createUser,
+  getSubmission,
+  getUser,
+} from './setup';
 
 // create the chains
-user.get.set(({ query: { age } }: InputNodes) => {
-  link(age, user.post.resp.details.age);
+getUser.set(({ query: { age } }: InputNodes) => {
+  link(age, createUser.resp.details.age);
 });
 
-role.post.set(({ body: { userId } }: InputNodes) => {
-  link(userId, user.post.resp.id);
+createRole.set(({ body: { userId } }: InputNodes) => {
+  link(userId, createUser.resp.id);
 });
 
-project.post.set(({ body: { creatorId } }: InputNodes) => {
-  link(creatorId, user.post.resp.id);
+createProject.set(({ body: { creatorId } }: InputNodes) => {
+  link(creatorId, createUser.resp.id);
 });
 
-submission.post.set(({ body: { creatorId, projectId } }: InputNodes) => {
-  link(creatorId, user.post.resp.id);
-  link(projectId, project.post.resp.id);
+createSubmission.set(({ body: { creatorId, projectId } }: InputNodes) => {
+  link(creatorId, createUser.resp.id);
+  link(projectId, createProject.resp.id);
 });
 
-submission.get.set(({ pathParams: { submissionId } }) => {
-  link(submissionId, submission.post.resp.id);
+getSubmission.set(({ pathParams: { submissionId } }) => {
+  link(submissionId, createSubmission.resp.id);
 });
 
 // run the chainflows
 const chain = chainflow();
-chain.post(user).post(role).post(project).post(submission).get(submission).run();
+chain
+  .call(createUser)
+  .call(createRole)
+  .call(createProject)
+  .call(createSubmission)
+  .call(getSubmission)
+  .run();

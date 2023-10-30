@@ -17,26 +17,25 @@ Payload chaining to complete a series of actions in a business-centric manner.
 Define your endpoints and their request/response signatures with `endpoint` and wrap different methods of the same routes together with `route`.
 
 ```typescript
-import { endpoint, route } from chainflow;
+import { route } from chainflow;
 
-const userPost = endpoint('POST', '/user').body({
+const route = route('127.0.0.1:5000');
+
+const createUser = route.post('/user').body({
   name: 'Tom',
   details: {
     age: 40,
   },
 });
 
-const rolePost = endpoint('POST', '/role').body({
+const createRole = route.post('/role').body({
   type: 'Engineer',
   userId: '',
 });
 
-const userGet = endpoint('GET', '/user').query({
+const getUser = route.get('/user').query({
   roleType: '',
 });
-
-const user = route([userGet, userPost], '127.0.0.1:5000');
-const role = route([rolePost], '127.0.0.1:5000');
 ```
 
 Use `link` to pass values from a response into a future request.
@@ -45,13 +44,13 @@ Use `link` to pass values from a response into a future request.
 import { generateRoutes, link } from chainflow;
 
 /// Create endpoint chains
-role.post.set(({ body: { userId }}) => {
-  link(userId, user.post.resp.id); // link `id` from `POST /user` response to `userId`
+createRole.set(({ body: { userId }}) => {
+  link(userId, createUser.resp.id); // link `id` from `POST /user` response to `userId`
 });
 
-user.get.set(({ query: { roleType } }) => {
-  link(roleType, role.post.resp.type); // link `type` from `POST /role` response to `roleType`
-})
+getUser.set(({ query: { roleType } }) => {
+  link(roleType, createRole.resp.type); // link `type` from `POST /role` response to `roleType`
+});
 ```
 
 Use methods on `chainflow` to define the sequence of endpoint requests built with the given default values or linked values from earlier responses received during the flow.
@@ -61,7 +60,11 @@ Use methods on `chainflow` to define the sequence of endpoint requests built wit
 import { chainflow } from Chainflow;
 
 const flow = chainflow();
-flow.post(user).post(role).get(user).run();
+flow
+  .call(createUser)
+  .call(createRole)
+  .call(getUser)
+  .run();
 ```
 
 ---
