@@ -14,26 +14,26 @@ Payload chaining to complete a series of actions in a business-centric manner.
 
 ## Basic Usage
 
-Define your endpoints and their request/response signatures with `endpoint` and wrap different methods of the same routes together with `route`.
+Use `endpointFactory` to define your endpoints and their request/response signatures with the `endpoint` method.
 
 ```typescript
-import { route } from chainflow;
+import { endpointFactory } from chainflow;
 
-const route = route('127.0.0.1:5000');
+const factory = endpointFactory('127.0.0.1:5000');
 
-const createUser = route.post('/user').body({
+const createUser = factory.post('/user').body({
   name: 'Tom',
   details: {
     age: 40,
   },
 });
 
-const createRole = route.post('/role').body({
+const createRole = factory.post('/role').body({
   type: 'Engineer',
   userId: '',
 });
 
-const getUser = route.get('/user').query({
+const getUser = factory.get('/user').query({
   roleType: '',
 });
 ```
