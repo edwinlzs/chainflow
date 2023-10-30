@@ -105,7 +105,7 @@ However, you can also use the following features to more flexibly define the val
 Define a pool of values to take from when building requests.
 
 ```typescript
-const userPost = endpoint('POST', '/user').body({
+const userPost = factory.post('/user').body({
   name: valPool(['Tom', 'Harry', 'Jane']),
   details: {
     age: 40,
@@ -118,7 +118,7 @@ const userPost = endpoint('POST', '/user').body({
 Define a callback that produces values for building requests.
 
 ```typescript
-const userPost = endpoint('POST', '/user').body({
+const userPost = factory.post('/user').body({
   name: 'Tom',
   details: {
     age: valGen(() => Math.floor(Math.random() * 100)),
