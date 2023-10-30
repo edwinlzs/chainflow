@@ -1,22 +1,18 @@
-import { endpoint, route, valGen, valPool } from 'chainflow';
+import { endpointFactory, valGen, valPool } from 'chainflow';
 import { faker } from '@faker-js/faker';
 
-const addr = '127.0.0.1:3001';
+const factory = endpointFactory('127.0.0.1:3001');
 
 // Defining API signatures
-const userPost = endpoint('POST', '/user').body({
+export const createUser = factory.post('/user').body({
   name: valGen(faker.person.fullName),
   favAnimal: valPool(['cat', 'dog', 'highland cow']),
 });
 
-const userGet = endpoint('GET', '/user').query({
+export const getUser = factory.get('/user').query({
   favAnimal: 'highland cow',
 });
-const user = route([userPost, userGet], addr);
 
-const notificationPost = endpoint('POST', '/notification').query({
+export const createNotification = factory.post('/notification').query({
   msg: 'default notification',
 });
-const notification = route([notificationPost], addr);
-
-export { user, notification };

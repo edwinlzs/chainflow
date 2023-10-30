@@ -59,12 +59,12 @@ Use methods on `chainflow` to define the sequence of endpoint requests built wit
 /// Create workflows that take advantage of chains
 import { chainflow } from Chainflow;
 
-const flow = chainflow();
-flow
+const flow = chainflow()
   .call(createUser)
   .call(createRole)
-  .call(getUser)
-  .run();
+  .call(getUser);
+
+flow.run();
 ```
 
 ---
