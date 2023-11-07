@@ -1,8 +1,15 @@
 import debug from 'debug';
 import { Responses } from './chainflow';
-import { buildObject } from './endpoint';
-import { getNodeValue, nodeHash, setSource, setValuePool } from '../utils/symbols';
-import { UnsupportedTypeError } from './errors';
+import { OutputNode, buildObject } from './endpoint';
+import {
+  getNodeValue,
+  nodeHash,
+  nodePath,
+  setSource,
+  setSources,
+  setValuePool,
+} from '../utils/symbols';
+import { MissingSourcePathError, MissingSourcesError, UnsupportedTypeError } from './errors';
 
 const log = debug('chainflow:reqNode');
 
@@ -38,6 +45,18 @@ interface ISource {
   callback?: (val: any) => any;
 }
 
+/** Multiple source nodes to a request node. */
+interface ISources {
+  accessInfo: ISourceAccessInfo[];
+  callback: (val: any) => any;
+}
+
+interface ISourceAccessInfo {
+  hash: string;
+  path: string[];
+  key: string; // the key given to this value when passing into the callback
+}
+
 /** A data node for constructing a request. */
 export class ReqNode {
   /** Key-values under this node, if this node represents an object. */
@@ -47,7 +66,7 @@ export class ReqNode {
   /** Default value of this node */
   #default: any;
   /** Stores what response node values can be passed into this node. */
-  #sources: { [nodeHash: string]: ISource } = {};
+  #sources: { [nodeHash: string]: ISource | ISources } = {};
   /** Stores possible values this node can take. */
   #valuePool: any[] = [];
   /** Determines what strategy to select from pool of values */
@@ -101,6 +120,24 @@ export class ReqNode {
     };
   }
 
+  /** Sets multiple source nodes to be combined into a single input for this request node */
+  [setSources](sources: { [key: string]: OutputNode }, callback: (val: any) => any) {
+    const hashes: string[] = [];
+    const accessInfo: ISourceAccessInfo[] = Object.entries(sources).map(([key, source]) => {
+      const hash = source[nodeHash];
+      hashes.push(hash);
+      return {
+        path: source[nodePath],
+        hash,
+        key,
+      };
+    });
+    this.#sources[hashes.sort().join('|')] = {
+      accessInfo,
+      callback,
+    };
+  }
+
   /** Sets the pool of values for this request node. */
   [setValuePool](valuePool: any[]) {
     // TODO: some sort of type validation for provided value pool?
@@ -111,25 +148,26 @@ export class ReqNode {
   [getNodeValue](responses: Responses) {
     const usedEndpoints: string[] = []; // stores endpoint responses already tried
     // attempt to get value from any source nodes available
-    let endpointHash = this.#getSourceHash(responses, usedEndpoints);
+    // TODO: refactor to match & access source at the same time rather than doing separately
+    let endpointHash = this.#matchSourceHash(responses, usedEndpoints);
     while (endpointHash) {
       const respSource = this.#sources[endpointHash]!;
-      const respPayload = responses[endpointHash]![0];
 
-      log(
-        `Retrieving value for ReqNode with hash "${
-          this[nodeHash]
-        }" from response payload ${JSON.stringify(respPayload)} via path "${respSource.path}"`,
-      );
-
-      // get response value from a linked source
-      const respVal = this.#accessSource(respPayload, respSource.path, endpointHash);
+      let respVal;
+      if (endpointHash.includes('|')) {
+        // indicates this is multi-source
+        if (!('accessInfo' in respSource)) throw new MissingSourcesError(endpointHash);
+        respVal = this.#getMultiSourceNodeValues(respSource, responses);
+      } else {
+        if (!('path' in respSource)) throw new MissingSourcePathError(endpointHash);
+        respVal = this.#getSingleSourceNodeValue(endpointHash, respSource.path, responses);
+      }
 
       if (respVal !== undefined)
         return respSource.callback ? respSource.callback(respVal) : respVal;
 
-      usedEndpoints.push(endpointHash);
-      endpointHash = this.#getSourceHash(responses, usedEndpoints);
+      usedEndpoints.push(...endpointHash.split('|'));
+      endpointHash = this.#matchSourceHash(responses, usedEndpoints);
     }
 
     // attempt to get value from generator function
@@ -153,12 +191,24 @@ export class ReqNode {
 
   /** Retrieves a matching endpoint hash from this node's sources, if any,
    *  excluding endpoints that are already used for the current endpoint call. */
-  #getSourceHash(responses: Responses, usedEndpoints: string[]) {
+  #matchSourceHash(responses: Responses, usedEndpoints: string[]) {
     const sourceEndpointHashes = Object.keys(this.#sources);
     const availEndpointHashes = Object.keys(responses);
-    return sourceEndpointHashes.find(
-      (hash) => availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash),
-    );
+    return sourceEndpointHashes.find((hash) => {
+      if (hash.includes('|')) {
+        // handle combined hash for multi-node source
+        const hashes = hash.split('|');
+        if (
+          // if every response is available
+          hashes.every(
+            (hash) => availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash),
+          )
+        ) {
+          return hash;
+        }
+      }
+      return availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash);
+    });
   }
 
   /** Access the source node value in a response payload */
@@ -179,6 +229,31 @@ export class ReqNode {
     }
 
     return respVal;
+  }
+
+  /** Attempts to retrieve values for a request node from a single source node. */
+  #getSingleSourceNodeValue(hash: string, path: string[], responses: Responses) {
+    const respPayload = responses[hash]![0];
+
+    log(
+      `Retrieving value for ReqNode with hash "${this[nodeHash]}" from response of endpoint with hash ${hash} via path "${path}"`,
+    );
+
+    // get response value from a linked source
+    return this.#accessSource(respPayload, path, hash);
+  }
+
+  /** Attempts to retrieve values for a request node from multiple source nodes. */
+  #getMultiSourceNodeValues(sources: ISources, responses: Responses) {
+    const respVals: { [key: string]: any } = {};
+    for (const info of sources.accessInfo) {
+      const respVal = this.#getSingleSourceNodeValue(info.hash, info.path, responses);
+      // if one value is unavailable, stop constructing multi-source value
+      if (respVal === undefined) return undefined;
+      respVals[info.key] = respVal;
+    }
+    log(`All source values retrieved for multi-source node with hash "${this[nodeHash]}"`);
+    return respVals;
   }
 
   /** Selects a value from the value pool based on the value pool select strategy. */

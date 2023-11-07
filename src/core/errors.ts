@@ -13,3 +13,23 @@ export class UnsupportedMethodError extends Error {
     this.name = 'UnsupportedMethodError';
   }
 }
+
+/** When the path to access a source node value is not defined. */
+export class MissingSourcePathError extends Error {
+  constructor(sourceHash: string) {
+    super(
+      `Expected a path to be defined to access a source value with endpoint hash "${sourceHash}".`,
+    );
+    this.name = 'MissingSourcePathError';
+  }
+}
+
+/** When the sources for a multi-source node value is not defined. */
+export class MissingSourcesError extends Error {
+  constructor(sourceHash: string) {
+    super(
+      `Expected a path to be defined to access source values with combined endpoint hash "${sourceHash}".`,
+    );
+    this.name = 'MissingSourcesError';
+  }
+}

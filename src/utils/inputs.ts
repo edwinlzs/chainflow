@@ -1,6 +1,6 @@
 import { debug } from 'debug';
 import { ReqNode } from '../core/reqNode';
-import { nodeHash, nodePath, setSource } from './symbols';
+import { nodeHash, nodePath, setSource, setSources } from './symbols';
 import { OutputNode } from '../core/endpoint';
 
 const log = debug('chainflow:inputs');
@@ -26,6 +26,11 @@ export const link = (dest: ReqNode, source: OutputNode, callback?: (val: any) =>
  * @param sources an array of response nodes that will be passed into the callback.
  * @param callback a function to merge the sources into a single output for the dest.
  */
-export const linkMerge = (dest: ReqNode, sources: OutputNode[], callback?: (val: any) => any) => {
-  // TODO
+export const linkMany = (
+  dest: ReqNode,
+  sources: { [key: string]: OutputNode },
+  callback: (val: any) => any,
+) => {
+  dest[setSources](sources, callback);
+  log(`Linked multiple RespNodes object to ReqNode with hash "${dest[nodeHash]}"`);
 };

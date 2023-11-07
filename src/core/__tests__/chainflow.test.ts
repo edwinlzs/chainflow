@@ -2,7 +2,7 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { chainflow } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../utils/inputs';
+import { link, linkMany } from '../../utils/inputs';
 import http from '../../utils/http';
 import { endpointFactory } from '../endpointFactory';
 
@@ -239,6 +239,56 @@ describe('#chainflow', () => {
       const roleCallBody = JSON.parse(roleCall?.arguments[0]?.body);
       assert.deepEqual(roleCallBody, {
         userId: 'newUserId has been modified',
+      });
+    });
+  });
+
+  describe('when multiple responses are linked to a request', () => {
+    const getUser = factory.get('/user');
+    const getFavAnimal = factory.get('/favAnimal');
+    const createNotification = factory.post('/notification').body({
+      msg: 'default msg',
+    });
+
+    const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+      `${userName} likes ${favAnimal}.`;
+    createNotification.set(({ body: { msg } }) => {
+      linkMany(
+        msg,
+        {
+          userName: getUser.resp.name,
+          favAnimal: getFavAnimal.resp.favAnimal,
+        },
+        testCallback,
+      );
+    });
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should pass both linked responses to the request', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'GET',
+        })
+        .reply(200, {
+          name: 'John',
+        });
+      client
+        .intercept({
+          path: '/favAnimal',
+          method: 'GET',
+        })
+        .reply(200, {
+          favAnimal: 'dogs',
+        });
+      tracker.mock.resetCalls();
+      await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+      assert.equal(tracker.mock.callCount(), 3);
+      const notificationCall = tracker.mock.calls[2];
+      const notificationCallBody = JSON.parse(notificationCall?.arguments[0]?.body);
+      assert.deepEqual(notificationCallBody, {
+        msg: 'John likes dogs.',
       });
     });
   });
