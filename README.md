@@ -121,6 +121,34 @@ const userPost = factory.post('/user').body({
 });
 ```
 
+### `linkMany`
+
+Link multiple response values to a single request node, providing a callback to transform the values into a single output.
+
+```typescript
+const mergeValues = ({
+  userName,
+  favAnimal,
+}: {
+  userName: string;
+  favAnimal: string;
+}) => `${userName} likes ${favAnimal}.`;
+
+createNotification.set(({ body: { msg } }) => {
+  linkMany(
+    msg, // the request node
+    // specify which response nodes to take values from and assigns them to a key
+    {
+      userName: getUser.resp.name,
+      favAnimal: getFavAnimal.resp.favAnimal,
+    },
+    // callback that takes the response values as its argument
+    // and returns a single output value for the request node
+    mergeValues, 
+  );
+});
+```
+
 ## Development
 
 Run specific test files:
