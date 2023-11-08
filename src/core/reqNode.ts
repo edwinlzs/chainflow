@@ -9,7 +9,7 @@ import {
   setSources,
   setValuePool,
 } from '../utils/symbols';
-import { MissingSourcePathError, MissingSourcesError, UnsupportedTypeError } from './errors';
+import { UnsupportedTypeError } from './errors';
 
 const log = debug('chainflow:reqNode');
 
@@ -122,17 +122,17 @@ export class ReqNode {
 
   /** Sets multiple source nodes to be combined into a single input for this request node */
   [setSources](sources: { [key: string]: OutputNode }, callback: (val: any) => any) {
-    const hashes: string[] = [];
+    const hashes = new Set<string>();
     const accessInfo: ISourceAccessInfo[] = Object.entries(sources).map(([key, source]) => {
       const hash = source[nodeHash];
-      hashes.push(hash);
+      hashes.add(hash);
       return {
         path: source[nodePath],
         hash,
         key,
       };
     });
-    this.#sources[hashes.sort().join('|')] = {
+    this.#sources[new Array(...hashes).sort().join('|')] = {
       accessInfo,
       callback,
     };
@@ -154,12 +154,9 @@ export class ReqNode {
       const respSource = this.#sources[endpointHash]!;
 
       let respVal;
-      if (endpointHash.includes('|')) {
-        // indicates this is multi-source
-        if (!('accessInfo' in respSource)) throw new MissingSourcesError(endpointHash);
+      if ('accessInfo' in respSource) {
         respVal = this.#getMultiSourceNodeValues(respSource, responses);
       } else {
-        if (!('path' in respSource)) throw new MissingSourcePathError(endpointHash);
         respVal = this.#getSingleSourceNodeValue(endpointHash, respSource.path, responses);
       }
 
