@@ -20,6 +20,13 @@ export interface InputNodes {
   query: ReqNodes;
 }
 
+/** Describes a value in the output of an endpoint call. */
+export interface OutputNode {
+  [nodeHash]: string;
+  [nodePath]: string[];
+  [key: string]: any;
+}
+
 /** Generates proxies recursively to handle nested property access of a response signature. */
 const RespNodeHandler = {
   get(obj: { path: string[]; hash: string }, prop: any): any {
@@ -33,7 +40,7 @@ const RespNodeHandler = {
         hash: obj.hash,
       },
       RespNodeHandler,
-    );
+    ) as unknown as OutputNode;
   },
 };
 
@@ -46,7 +53,7 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #resp: any;
+  #resp: OutputNode;
 
   constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
     method = method.toLowerCase();
@@ -57,7 +64,10 @@ export class Endpoint {
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
-    this.#resp = new Proxy({ path: [], hash: this.getHash() }, RespNodeHandler);
+    this.#resp = new Proxy(
+      { path: [], hash: this.getHash() },
+      RespNodeHandler,
+    ) as unknown as OutputNode;
   }
 
   get method() {

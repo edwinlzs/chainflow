@@ -34,7 +34,8 @@ const getUser = factory.get('/user').query({
 });
 ```
 
-Use `link` to pass values from a response into a future request.
+Use the `set` method to expose an endpoint's input nodes.  
+Use the `link` helper to pass values from a response into a future request.
 
 ```typescript
 import { generateRoutes, link } from chainflow;
@@ -48,7 +49,7 @@ getUser.set(({ query: { roleType } }) => {
 });
 ```
 
-Use methods on `chainflow` to define the sequence of endpoint requests built with the given default values or linked values from earlier responses received during the flow.
+Use a `chainflow` to define a sequence of endpoint calls that take advantage of the values and links provided above.
 
 ```typescript
 import { chainflow } from Chainflow;
@@ -117,6 +118,34 @@ const userPost = factory.post('/user').body({
   details: {
     age: valGen(() => Math.floor(Math.random() * 100)),
   },
+});
+```
+
+### `linkMany`
+
+Link multiple response values to a single request node, providing a callback to transform the values into a single output.
+
+```typescript
+const mergeValues = ({
+  userName,
+  favAnimal,
+}: {
+  userName: string;
+  favAnimal: string;
+}) => `${userName} likes ${favAnimal}.`;
+
+createNotification.set(({ body: { msg } }) => {
+  linkMany(
+    msg, // the request node
+    // specify which response nodes to take values from and assigns them to a key
+    {
+      userName: getUser.resp.name,
+      favAnimal: getFavAnimal.resp.favAnimal,
+    },
+    // callback that takes the response values as its argument
+    // and returns a single output value for the request node
+    mergeValues, 
+  );
 });
 ```
 
