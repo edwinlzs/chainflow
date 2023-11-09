@@ -6,13 +6,11 @@ const factory = endpointFactory('127.0.0.1:3001');
 // Defining API signatures
 export const createUser = factory.post('/user').body({
   name: valGen(faker.person.fullName),
-  favAnimal: valPool(['cat', 'dog', 'highland cow']),
+  favAnimal: valPool(['cats', 'dogs', 'highland cows']),
 });
 
-export const getUser = factory.get('/user').query({
-  favAnimal: 'highland cow',
-});
+export const getFavAnimalOfUser = factory.get('/user/favAnimal/{userId}');
 
-export const createNotification = factory.post('/notification').query({
+export const createNotification = factory.post('/notification').body({
   msg: 'default notification',
 });
