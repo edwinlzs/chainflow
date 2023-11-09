@@ -9,7 +9,6 @@ import {
   setSources,
   setValuePool,
 } from '../utils/symbols';
-import { UnsupportedTypeError } from './errors';
 
 const log = debug('chainflow:reqNode');
 
@@ -76,9 +75,6 @@ export class ReqNode {
 
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
-    if (val == null) {
-      throw new UnsupportedTypeError('null');
-    }
 
     switch (val[nodeValueIdentifier]) {
       case NodeValue.ValuePool:
@@ -91,24 +87,21 @@ export class ReqNode {
         return;
     }
 
-    if (Array.isArray(val)) {
-      throw new UnsupportedTypeError('array');
-    }
-
     switch (typeof val) {
-      case 'boolean':
-      case 'number':
-      case 'string':
-        this.#default = val;
-        break;
       case 'object':
+        if (Array.isArray(val)) {
+          this.#default = val;
+          break;
+        }
+
         Object.entries(val).forEach(([key, val]) => {
           log(`Creating ReqNode for hash "${hash}" with key "${key}"`);
           (this as any)[key] = new ReqNode({ val, hash });
         });
         break;
       default:
-        throw new UnsupportedTypeError(typeof val);
+        this.#default = val;
+        break;
     }
   }
 
