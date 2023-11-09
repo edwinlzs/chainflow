@@ -5,7 +5,7 @@ const log = debug('chainflow:http');
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
-const headers = {
+const defaultHeaders = {
   connection: 'keep-alive',
   accept: '*/*',
   'content-type': 'application/json',
@@ -18,11 +18,13 @@ const httpReq = async ({
   path,
   method,
   body,
+  headers,
 }: {
   addr: string;
   path: string;
   method: SUPPORTED_METHOD_UPPERCASE;
   body?: any;
+  headers?: Record<string, string>;
 }) => {
   log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
 
@@ -30,7 +32,10 @@ const httpReq = async ({
     const res = await request(`http://${addr}${path}`, {
       method,
       body,
-      headers,
+      headers: {
+        ...defaultHeaders,
+        ...headers,
+      },
     });
     return res;
   } catch (err) {

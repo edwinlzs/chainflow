@@ -34,10 +34,24 @@ export class ReqBuilder {
     return this.#queryParams;
   }
 
-  set query(payload: any) {
-    Object.entries(payload).forEach(([key, val]) => {
+  set query(params: any) {
+    Object.entries(params).forEach(([key, val]) => {
       log(`Creating query param ReqNode for hash "${this.#hash}" with key "${key}"`);
       this.#queryParams[key] = new ReqNode({
+        val,
+        hash: this.#hash,
+      });
+    });
+  }
+
+  get headers() {
+    return this.#headers;
+  }
+
+  set headers(params: any) {
+    Object.entries(params).forEach(([key, val]) => {
+      log(`Creating header ReqNode for hash "${this.#hash}" with key "${key}"`);
+      this.#headers[key] = new ReqNode({
         val,
         hash: this.#hash,
       });

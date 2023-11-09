@@ -89,26 +89,44 @@ The above setup will result in the following API calls:
 
 3. `GET` Request to `/user?roleType=['type' from response to step 2]`
 
-## Advanced Features
+## More Features
+
+### Path params
+
+Define path params by wrapping a param name with `{}` in the endpoint path.
+
+```typescript
+const getGroupsOfUser = factory.get('/groups/{userId}');
+```
+
+### Query params
+
+Define query params with the `query` method on an endpoint.
+
+```typescript
+const getUsersInGroup = factory.get('/user').query({
+  groupId: 'some-id',
+});
+```
 
 The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
 
 However, you can also use the following features to more flexibly define the values used in a request.
 
-### `valPool`
+### `pool`
 
 Define a pool of values to take from when building requests.
 
 ```typescript
 const userPost = factory.post('/user').body({
-  name: valPool(['Tom', 'Harry', 'Jane']),
+  name: pool(['Tom', 'Harry', 'Jane']),
   details: {
     age: 40,
   },
 });
 ```
 
-### `valGen`
+### `gen`
 
 Define a callback that produces values for building requests.
 
@@ -116,7 +134,7 @@ Define a callback that produces values for building requests.
 const userPost = factory.post('/user').body({
   name: 'Tom',
   details: {
-    age: valGen(() => Math.floor(Math.random() * 100)),
+    age: gen(() => Math.floor(Math.random() * 100)),
   },
 });
 ```
