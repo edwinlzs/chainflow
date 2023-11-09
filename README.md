@@ -96,7 +96,7 @@ The above setup will result in the following API calls:
 Define path params by wrapping a param name with `{}` in the endpoint path.
 
 ```typescript
-const getGroupsOfUser = factory.get('/groups/{userId}');
+const getGroupsWithUser = factory.get('/groups/{userId}');
 ```
 
 ### Query params
@@ -165,6 +165,17 @@ createNotification.set(({ body: { msg } }) => {
     mergeValues, 
   );
 });
+```
+
+### Headers
+
+Specify headers with `headers` method on endpoints.
+
+```typescript
+const getInfo = factory.get('/info').headers({
+  token: 'some-token',
+});
+
 ```
 
 ## Development
