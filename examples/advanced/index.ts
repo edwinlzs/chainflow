@@ -10,4 +10,4 @@ console.log("Running chainflows");
 
 // run the chainflows
 const chain = chainflow();
-chain.call(createUser).call(getUser).run();
+chain.call(createUser).call(getUser).call(createNotification).run();
