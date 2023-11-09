@@ -4,7 +4,6 @@ import debug from 'debug';
 const log = debug('chainflow:chainflow');
 
 type RespPayload = any;
-// type Routes = { [routeName: string]: Route };
 
 /** Stores responses accumulated from endpoint calls in the current flow. */
 export type Responses = { [callSignHash: string]: RespPayload[] };
