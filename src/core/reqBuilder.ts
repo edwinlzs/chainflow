@@ -5,6 +5,7 @@ const log = debug('chainflow:reqBuilder');
 
 export type ReqNodes = { [key: string]: ReqNode };
 
+/** Contains node definitions for a request. */
 export class ReqBuilder {
   #headers: ReqNodes = {};
   pathParams: ReqNodes = {};
