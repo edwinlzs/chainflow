@@ -9,7 +9,7 @@ export const createUser = factory.post('/user').body({
   favAnimal: valPool(['cats', 'dogs', 'highland cows']),
 });
 
-export const getFavAnimalOfUser = factory.get('/user/favAnimal/{userId}');
+export const getFavAnimalOfUser = factory.get('/favAnimal/{userId}');
 
 export const createNotification = factory.post('/notification').body({
   msg: 'default notification',

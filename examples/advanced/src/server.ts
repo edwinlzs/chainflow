@@ -22,8 +22,8 @@ app.post('/user', (req, res) => {
   res.send(user);
 });
 
-app.get('/user/favAnimal/:userId', (req, res) => {
-  console.log(`Received GET call at /user/favAnimal/:userId with path parameters: ${JSON.stringify(req.params, null, 2)}`);
+app.get('/favAnimal/:userId', (req, res) => {
+  console.log(`Received GET call at /favAnimal/:userId with path parameters: ${JSON.stringify(req.params, null, 2)}`);
 
   const { userId } = req.params;
   const favAnimal = db.users.filter((user) => user.id === userId)[0]?.favAnimal;
