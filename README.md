@@ -10,6 +10,10 @@ Create dynamic and flexible workflows of API calls by linking outputs from one c
 
 ## Basic Usage
 
+```console
+npm install --save-dev chainflow
+```
+
 Use `endpointFactory` to define your endpoints and their request/response signatures with the `endpoint` method.
 
 ```typescript
