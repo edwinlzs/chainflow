@@ -23,13 +23,13 @@ enum NodeValue {
 }
 
 /** Defines a set of values to choose from when making an endpoint call. */
-export const valPool = (valuePool: any[]) => ({
+export const pool = (valuePool: any[]) => ({
   valuePool,
   [nodeValueIdentifier]: NodeValue.ValuePool,
 });
 
 /** Provides a generator function to produce a value for an endpoint call. */
-export const valGen = (generator: () => any) => ({
+export const gen = (generator: () => any) => ({
   generator,
   [nodeValueIdentifier]: NodeValue.Generator,
 });

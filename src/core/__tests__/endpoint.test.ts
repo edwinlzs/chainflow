@@ -4,7 +4,7 @@ import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../utils/inputs';
-import { valGen, valPool } from '../reqNode';
+import { gen, pool } from '../reqNode';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -106,7 +106,7 @@ describe('#endpoint', () => {
         id: 'some-id',
         name: 'some-name',
         details: {
-          age: valPool(testValuePool),
+          age: pool(testValuePool),
           member: true,
         },
       };
@@ -138,7 +138,7 @@ describe('#endpoint', () => {
 
       const testReqPayloadWithValGen = {
         id: 'some-id',
-        name: valGen(testValGen),
+        name: gen(testValGen),
         details: {
           age: 42,
           member: true,
