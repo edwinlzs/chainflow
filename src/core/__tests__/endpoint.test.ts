@@ -177,6 +177,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
       const tracker = mock.method(http, 'httpReq');
+      tracker.mock.resetCalls();
 
       await testEndpoint.call({});
       assert.equal(tracker.mock.callCount(), 1);
@@ -204,6 +205,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
       const tracker = mock.method(http, 'httpReq');
+      tracker.mock.resetCalls();
 
       await testEndpoint.call({});
       assert.equal(tracker.mock.callCount(), 1);
@@ -218,8 +220,24 @@ describe('#endpoint', () => {
     const testEndpoint = new Endpoint({ addr, path: '/auth', method: 'get' });
     testEndpoint.headers(testHeaders);
 
-    it('should call the endpoint with the given custom headers, overriding any conflicting defaults', async () => {
+    it('should call the endpoint with the given headers and override conflicting defaults', async () => {
 
+      client
+        .intercept({
+          path: '/auth',
+          method: 'GET',
+        })
+        .reply(200, {});
+
+      const tracker = mock.method(http, 'httpReq');
+      tracker.mock.resetCalls();
+
+      await testEndpoint.call({});
+      assert.equal(tracker.mock.callCount(), 1);
+      assert.deepEqual(tracker.mock.calls[0].arguments[0]?.headers, {
+        token: 'some-token',
+        'content-type': 'application/nonsense',
+      });
     });
   });
 });

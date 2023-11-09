@@ -108,16 +108,17 @@ export class Endpoint {
     if (method !== 'GET') body = this.#buildPayload(responses);
     let callPath = this.#path;
     if (Object.keys(this.#req.pathParams).length > 0) {
-      callPath = this.#insertPathParams(callPath, this.#buildPathParams(responses));
+      callPath = this.#insertPathParams(callPath, buildObject(this.#req.pathParams, responses));
     }
     if (Object.keys(this.#req.query).length > 0) {
-      callPath = this.#insertQueryParams(callPath, this.#buildQueryParams(responses));
+      callPath = this.#insertQueryParams(callPath, buildObject(this.#req.query, responses));
     }
     const resp = await http.httpReq({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),
+      headers: buildObject(this.#req.headers, responses),
     });
 
     if (!this.#validateResp(resp)) return null;
@@ -152,16 +153,6 @@ export class Endpoint {
         hash,
       });
     }
-  }
-
-  /** Gets path params key-value pairs for making an endpoint call. */
-  #buildPathParams(responses: Responses) {
-    return buildObject(this.#req.pathParams, responses);
-  }
-
-  /** Gets query params key-value pairs for making an endpoint call. */
-  #buildQueryParams(responses: Responses) {
-    return buildObject(this.#req.query, responses);
   }
 
   /** Inserts actual path params into path. */

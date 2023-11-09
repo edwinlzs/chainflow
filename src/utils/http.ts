@@ -32,7 +32,10 @@ const httpReq = async ({
     const res = await request(`http://${addr}${path}`, {
       method,
       body,
-      headers,
+      headers: {
+        ...defaultHeaders,
+        ...headers,
+      },
     });
     return res;
   } catch (err) {
