@@ -90,8 +90,14 @@ export class Endpoint {
   }
 
   /** Sets the request query parameters. */
-  query(payload: any) {
-    this.#req.query = payload;
+  query(params: any) {
+    this.#req.query = params;
+    return this;
+  }
+
+  /** Sets custom headers for requests. */
+  headers(params: Record<string, string>) {
+    this.#req.headers = params;
     return this;
   }
 
