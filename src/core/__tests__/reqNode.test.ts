@@ -30,7 +30,12 @@ describe('#reqNode', () => {
     });
   });
 
-  describe('when the node value is an object', () => {
+  describe('when the node value is an array', () => {
+    const testNode = new ReqNode({ val: ['hello', 40, false], hash: 'some-hash' });
+    assert.deepEqual(testNode[getNodeValue]({}), ['hello', 40, false]);
+  });
+
+  describe('when the node value is a non-array object', () => {
     const testNode = new ReqNode({ val: testVal, hash: 'some-hash' });
     it('should save the object info as children within the node', () => {
       assert.deepEqual(Object.keys(testNode), Object.keys(testVal));
@@ -38,35 +43,6 @@ describe('#reqNode', () => {
 
     it('should reconstruct the object as node value', () => {
       assert.deepEqual(testNode[getNodeValue]({}), testVal);
-    });
-  });
-
-  describe('when the node value is an unhandled data type', () => {
-    it('should throw an error', () => {
-      assert.throws(
-        () => new ReqNode({ val: Symbol('some-symbol'), hash: 'some-hash' }),
-        /Value with type: "symbol" is not supported.$/,
-      );
-    });
-  });
-
-  // TODO: implement array handling
-  describe('when the node value is an array', () => {
-    it('should throw an error', () => {
-      assert.throws(
-        () => new ReqNode({ val: ['some-string', 50, false], hash: 'some-hash' }),
-        /Value with type: "array" is not supported.$/,
-      );
-    });
-  });
-
-  // TODO: implement null handling?
-  describe('when the node value is null', () => {
-    it('should throw an error', () => {
-      assert.throws(
-        () => new ReqNode({ val: null, hash: 'some-hash' }),
-        /Value with type: "null" is not supported.$/,
-      );
     });
   });
 
