@@ -221,7 +221,6 @@ describe('#endpoint', () => {
     testEndpoint.headers(testHeaders);
 
     it('should call the endpoint with the given headers and override conflicting defaults', async () => {
-
       client
         .intercept({
           path: '/auth',

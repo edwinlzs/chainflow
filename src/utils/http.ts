@@ -24,7 +24,7 @@ const httpReq = async ({
   path: string;
   method: SUPPORTED_METHOD_UPPERCASE;
   body?: any;
-  headers?: Record<string, string>,
+  headers?: Record<string, string>;
 }) => {
   log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
 
