@@ -212,6 +212,35 @@ describe('#endpoint', () => {
     });
   });
 
+  describe('when multiple query params are assigned to an endpoint', () => {
+    const testQuery = {
+      cute: true,
+      iq: 200,
+    };
+    const testEndpoint = new Endpoint({ addr, path: '/pet', method: 'get' });
+    testEndpoint.query(testQuery);
+
+    it('should expose its path params for setting up links', () => {
+      testEndpoint.set((nodes) => {
+        assert.deepEqual(Object.keys(nodes.query), ['cute', 'iq']);
+      });
+    });
+
+    it('should call the endpoint with the given query params', async () => {
+      client
+        .intercept({
+          path: '/pet?cute=true&iq=true',
+          method: 'GET',
+        })
+        .reply(200, {});
+      const tracker = mock.method(http, 'httpReq');
+      tracker.mock.resetCalls();
+
+      await testEndpoint.call({});
+      assert.equal(tracker.mock.callCount(), 1);
+    });
+  });
+
   describe('when custom headers are assigned to an endpoint', () => {
     const testHeaders = {
       token: 'some-token',
@@ -219,6 +248,12 @@ describe('#endpoint', () => {
     };
     const testEndpoint = new Endpoint({ addr, path: '/auth', method: 'get' });
     testEndpoint.headers(testHeaders);
+
+    it('should expose its headers for setting up links', () => {
+      testEndpoint.set((nodes) => {
+        assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
+      });
+    });
 
     it('should call the endpoint with the given headers and override conflicting defaults', async () => {
       client

@@ -18,6 +18,7 @@ export interface InputNodes {
   pathParams: ReqNodes;
   body: ReqNodes;
   query: ReqNodes;
+  headers: ReqNodes;
 }
 
 /** Describes a value in the output of an endpoint call. */
@@ -132,6 +133,7 @@ export class Endpoint {
       pathParams: this.#req.pathParams,
       body: this.#req.body,
       query: this.#req.query,
+      headers: this.#req.headers,
     });
   }
 
@@ -167,7 +169,7 @@ export class Endpoint {
   #insertQueryParams(path: string, queryParams: Record<string, string>): string {
     if (Object.keys(queryParams).length > 0) path = `${path}?`;
     Object.entries(queryParams).forEach(([name, val], i) => {
-      path = `${path}${i > 1 ? '&' : ''}${name}=${val}`;
+      path = `${path}${i >= 1 ? '&' : ''}${name}=${val}`;
     });
     return path;
   }
