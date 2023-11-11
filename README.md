@@ -1,6 +1,6 @@
 # Chainflow
 
-Create dynamic and flexible workflows of API calls by linking outputs from one call to the input of another.
+Chainflow is a library for creating dynamic and flexible API call workflows by linking outputs from one call to the inputs of another.
 
 ## Use Cases
 
@@ -93,6 +93,8 @@ The above setup will result in the following API calls:
 
 3. `GET` Request to `/user?roleType=['type' from response to step 2]`
 
+&nbsp;
+
 ## More Features
 
 ### Path params
@@ -108,9 +110,23 @@ const getGroupsWithUser = factory.get('/groups/{userId}');
 Define query params with the `query` method on an endpoint.
 
 ```typescript
-const getUsersInGroup = factory.get('/user').query({
-  groupId: 'some-id',
-});
+const getUsersInGroup = factory.get('/user').query({ groupId: 'some-id' });
+```
+
+### Headers
+
+Specify headers with `headers` method on endpoints.
+
+```typescript
+const getInfo = factory.get('/info').headers({ token: 'some-token' });
+```
+
+You can also use `headers` on an `EndpointFactory` to have all endpoints made from that factory bear those headers.
+
+```typescript
+const factory = endpointFactory('127.0.0.1:3001').headers({ token: 'some-token' });
+
+const getInfo = factory.get('/info'); // getInfo endpoint will have the headers defined above
 ```
 
 The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
@@ -119,7 +135,7 @@ However, you can also use the following features to more flexibly define the val
 
 ### `pool`
 
-Define a pool of values to take from when building requests.
+Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.
 
 ```typescript
 const userPost = factory.post('/user').body({
@@ -132,13 +148,15 @@ const userPost = factory.post('/user').body({
 
 ### `gen`
 
-Define a callback that produces values for building requests.
+Provide a callback that generates values for building requests.
 
 ```typescript
+const randAge = () => Math.floor(Math.random() * 100);
+
 const userPost = factory.post('/user').body({
   name: 'Tom',
   details: {
-    age: gen(() => Math.floor(Math.random() * 100)),
+    age: gen(randAge),
   },
 });
 ```
@@ -148,13 +166,8 @@ const userPost = factory.post('/user').body({
 Link multiple response values to a single request node, providing a callback to transform the values into a single output.
 
 ```typescript
-const mergeValues = ({
-  userName,
-  favAnimal,
-}: {
-  userName: string;
-  favAnimal: string;
-}) => `${userName} likes ${favAnimal}.`;
+const mergeValues = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+  `${userName} likes ${favAnimal}.`;
 
 createNotification.set(({ body: { msg } }) => {
   linkMany(
@@ -166,21 +179,12 @@ createNotification.set(({ body: { msg } }) => {
     },
     // callback that takes the response values as its argument
     // and returns a single output value for the request node
-    mergeValues, 
+    mergeValues,
   );
 });
 ```
 
-### Headers
-
-Specify headers with `headers` method on endpoints.
-
-```typescript
-const getInfo = factory.get('/info').headers({
-  token: 'some-token',
-});
-
-```
+&nbsp;
 
 ## Development
 
