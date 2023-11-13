@@ -186,6 +186,14 @@ createNotification.set(({ body: { msg } }) => {
 
 &nbsp;
 
+## Future Updates
+
+Below features are currently not yet supported but are planned in future releases.
+
+1. Content types other than `application/json`
+2. HTTPS
+3. Cookies
+
 ## Development
 
 Run specific test files:

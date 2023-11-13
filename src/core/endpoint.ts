@@ -106,20 +106,20 @@ export class Endpoint {
   async call(responses: any): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
     let body = undefined;
-    if (method !== 'GET') body = this.#buildPayload(responses);
+    if (method !== 'GET' && this.#req.body) body = this.#req.body[getNodeValue](responses);
     let callPath = this.#path;
-    if (Object.keys(this.#req.pathParams).length > 0) {
-      callPath = this.#insertPathParams(callPath, buildObject(this.#req.pathParams, responses));
+    if (this.#req.pathParams && Object.keys(this.#req.pathParams).length > 0) {
+      callPath = this.#insertPathParams(callPath, this.#req.pathParams[getNodeValue](responses));
     }
-    if (Object.keys(this.#req.query).length > 0) {
-      callPath = this.#insertQueryParams(callPath, buildObject(this.#req.query, responses));
+    if (this.#req.query && Object.keys(this.#req.query).length > 0) {
+      callPath = this.#insertQueryParams(callPath, this.#req.query[getNodeValue](responses));
     }
     const resp = await http.httpReq({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),
-      headers: buildObject(this.#req.headers, responses),
+      headers: this.#req.headers && this.#req.headers[getNodeValue](responses),
     });
 
     if (!this.#validateResp(resp)) return null;
@@ -130,16 +130,11 @@ export class Endpoint {
   /** Configure linking of this Req's input nodes. */
   set(setter: (nodes: InputNodes) => void) {
     setter({
-      pathParams: this.#req.pathParams,
-      body: this.#req.body,
-      query: this.#req.query,
-      headers: this.#req.headers,
+      pathParams: this.#req.pathParams ?? {},
+      body: this.#req.body ?? {},
+      query: this.#req.query ?? {},
+      headers: this.#req.headers ?? {},
     });
-  }
-
-  /** Builds the request payload */
-  #buildPayload(responses: Responses) {
-    return buildObject(this.#req.body, responses);
   }
 
   /** Extracts Path params from a given path */
