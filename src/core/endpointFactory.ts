@@ -35,6 +35,7 @@ export class EndpointFactoryBase {
 
   headers(params: Record<string, string>) {
     this.#headers = params;
+    return this;
   }
 
   constructor(addr: string = '127.0.0.1') {

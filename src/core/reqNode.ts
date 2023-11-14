@@ -1,6 +1,6 @@
 import debug from 'debug';
 import { Responses } from './chainflow';
-import { OutputNode, buildObject } from './endpoint';
+import { OutputNode } from './endpoint';
 import {
   getNodeValue,
   nodeHash,
@@ -75,6 +75,10 @@ export class ReqNode {
 
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
+    if (val == null) {
+      this.#default = val;
+      return;
+    }
 
     switch (val[nodeValueIdentifier]) {
       case NodeValue.ValuePool:
@@ -255,3 +259,16 @@ export class ReqNode {
     }
   }
 }
+
+export type ReqNodes = { [key: string]: ReqNode };
+
+/**
+ * Builds a JSON object from defined request nodes and
+ * available responses as potential sources.
+ */
+export const buildObject = (nodes: ReqNodes, responses: Responses) => {
+  return Object.entries(nodes).reduce((acc, [key, val]) => {
+    acc[key] = val[getNodeValue](responses);
+    return acc;
+  }, {} as any);
+};

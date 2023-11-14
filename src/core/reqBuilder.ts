@@ -1,20 +1,22 @@
 import { ReqNode } from './reqNode';
 
-export type ReqNodes = { [key: string]: ReqNode };
-
 /** Contains node definitions for a request. */
 export class ReqBuilder {
-  #headers: ReqNode | undefined;
-  pathParams: ReqNode | undefined;
-  #queryParams: ReqNode | undefined;
-  #body: ReqNode | undefined;
+  #headers: ReqNode;
+  pathParams: ReqNode;
+  #queryParams: ReqNode;
+  #body: ReqNode;
   #hash: string;
 
   constructor({ hash }: { hash: string }) {
     this.#hash = hash;
+    this.#headers = new ReqNode({ val: undefined, hash: this.#hash });
+    this.pathParams = new ReqNode({ val: undefined, hash: this.#hash });
+    this.#queryParams = new ReqNode({ val: undefined, hash: this.#hash });
+    this.#body = new ReqNode({ val: undefined, hash: this.#hash });
   }
 
-  get body(): ReqNode | undefined {
+  get body(): ReqNode {
     return this.#body;
   }
 
@@ -25,7 +27,7 @@ export class ReqBuilder {
     });
   }
 
-  get query(): ReqNode | undefined {
+  get query(): ReqNode {
     return this.#queryParams;
   }
 
@@ -36,7 +38,7 @@ export class ReqBuilder {
     });
   }
 
-  get headers(): ReqNode | undefined {
+  get headers(): ReqNode {
     return this.#headers;
   }
 

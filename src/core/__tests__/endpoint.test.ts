@@ -160,27 +160,57 @@ describe('#endpoint', () => {
     });
   });
 
-  describe('when a path with params in it is assigned to an endpoint', () => {
-    const testEndpoint = new Endpoint({ addr, path: '/pet/{petId}', method: 'get' });
+  describe('#pathParams', () => {
+    describe('when a path has one param', () => {
+      const testEndpoint = new Endpoint({ addr, path: '/pet/{petId}', method: 'get' });
 
-    it('should expose its path params for setting up links', () => {
-      testEndpoint.set((nodes) => {
-        assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
+      it('should expose its path params for setting up links', () => {
+        testEndpoint.set((nodes) => {
+          assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
+        });
+      });
+
+      it('should call the endpoint with the given path params', async () => {
+        client
+          .intercept({
+            path: '/pet/petId',
+            method: 'GET',
+          })
+          .reply(200, {});
+        const tracker = mock.method(http, 'httpReq');
+        tracker.mock.resetCalls();
+
+        await testEndpoint.call({});
+        assert.equal(tracker.mock.callCount(), 1);
       });
     });
 
-    it('should call the endpoint with the given path params', async () => {
-      client
-        .intercept({
-          path: '/pet/petId',
-          method: 'GET',
-        })
-        .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
-      tracker.mock.resetCalls();
+    describe('when the path has multiple params', () => {
+      const testEndpoint = new Endpoint({
+        addr,
+        path: '/user/{userId}/pet/{petId}',
+        method: 'get',
+      });
 
-      await testEndpoint.call({});
-      assert.equal(tracker.mock.callCount(), 1);
+      it('should expose its path params for setting up links', () => {
+        testEndpoint.set((nodes) => {
+          assert.deepEqual(Object.keys(nodes.pathParams), ['userId', 'petId']);
+        });
+      });
+
+      it('should call the endpoint with the given path params', async () => {
+        client
+          .intercept({
+            path: '/user/userId/pet/petId',
+            method: 'GET',
+          })
+          .reply(200, {});
+        const tracker = mock.method(http, 'httpReq');
+        tracker.mock.resetCalls();
+
+        await testEndpoint.call({});
+        assert.equal(tracker.mock.callCount(), 1);
+      });
     });
   });
 

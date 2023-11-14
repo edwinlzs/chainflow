@@ -1,8 +1,7 @@
 import { hashEndpoint } from '../utils/hash';
-import { Responses } from './chainflow';
 import { ReqNode } from './reqNode';
 import debug from 'debug';
-import { ReqBuilder, ReqNodes } from './reqBuilder';
+import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
@@ -15,10 +14,10 @@ const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
-  pathParams: ReqNodes;
-  body: ReqNodes;
-  query: ReqNodes;
-  headers: ReqNodes;
+  pathParams: ReqNode;
+  body: ReqNode;
+  query: ReqNode;
+  headers: ReqNode;
 }
 
 /** Describes a value in the output of an endpoint call. */
@@ -130,10 +129,10 @@ export class Endpoint {
   /** Configure linking of this Req's input nodes. */
   set(setter: (nodes: InputNodes) => void) {
     setter({
-      pathParams: this.#req.pathParams ?? {},
-      body: this.#req.body ?? {},
-      query: this.#req.query ?? {},
-      headers: this.#req.headers ?? {},
+      pathParams: this.#req.pathParams,
+      body: this.#req.body,
+      query: this.#req.query,
+      headers: this.#req.headers,
     });
   }
 
@@ -181,14 +180,3 @@ export class Endpoint {
     return true;
   }
 }
-
-/**
- * Builds a JSON object from defined request nodes and
- * available responses as potential sources.
- */
-export const buildObject = (nodes: ReqNodes, responses: Responses) => {
-  return Object.entries(nodes).reduce((acc, [key, val]) => {
-    acc[key] = val[getNodeValue](responses);
-    return acc;
-  }, {} as any);
-};
