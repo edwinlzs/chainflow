@@ -32,12 +32,13 @@ class Chainflow {
       // call endpoint
       const hash = endpoint.getHash();
       log(`Making a call to endpoint with hash "${hash}"`);
-      const resp = await endpoint.call(this.#responses);
-      if (resp == null) {
-        log('Chainflow failed to run.');
+      try {
+        const resp = await endpoint.call(this.#responses);
+        this.#responses[hash] = [resp];
+      } catch (e) {
+        log(`Chainflow stopped at endpoint with hash "${hash}" due to invalid response.`);
         break;
       }
-      this.#responses[hash] = [resp];
     }
     this.reset();
     log('Finished running chainflow.');

@@ -9,6 +9,7 @@ import {
   setSources,
   setValuePool,
 } from '../utils/symbols';
+import { RequiredValueNotFoundError } from './errors';
 
 const log = debug('chainflow:reqNode');
 
@@ -20,6 +21,7 @@ const nodeValueIdentifier = Symbol('nodeValueIdentifier');
 enum NodeValue {
   ValuePool,
   Generator,
+  Required,
 }
 
 /** Defines a set of values to choose from when making an endpoint call. */
@@ -32,6 +34,12 @@ export const pool = (valuePool: any[]) => ({
 export const gen = (generator: () => any) => ({
   generator,
   [nodeValueIdentifier]: NodeValue.Generator,
+});
+
+/** Used to mark a param without a default value as required
+ * to be sourced from another response. */
+export const required = () => ({
+  [nodeValueIdentifier]: NodeValue.Required,
 });
 
 /** Details of a source node. */
@@ -64,6 +72,8 @@ export class ReqNode {
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
+  /** Whether this node requires a value from a source response. */
+  #required: boolean = false;
   /** Stores what response node values can be passed into this node. */
   #sources: { [nodeHash: string]: ISource | ISources } = {};
   /** Stores possible values this node can take. */
@@ -89,6 +99,8 @@ export class ReqNode {
         log(`Defined value generator for ReqNode with hash "${hash}"`);
         this.#generator = val.generator;
         return;
+      case NodeValue.Required:
+        this.#required = true;
     }
 
     switch (typeof val) {
@@ -179,6 +191,8 @@ export class ReqNode {
     }
 
     // if other options are exhausted, revert to default
+    if (this.#required && this.#default === undefined)
+      throw new RequiredValueNotFoundError(this[nodeHash]);
     return this.#default;
   }
 

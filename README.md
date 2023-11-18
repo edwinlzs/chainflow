@@ -133,6 +133,16 @@ The request payloads under `Basic Usage` are defined with only _default_ values 
 
 However, you can also use the following features to more flexibly define the values used in a request.
 
+### `required`
+
+Marks a value as required but without a default. The chainflow will expect this value to be sourced from another node. If no such source is available, the endpoint call will throw an error.
+
+```typescript
+const createUser = factory.post('/user').body({
+  name: required(),
+});
+```
+
 ### `pool`
 
 Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.

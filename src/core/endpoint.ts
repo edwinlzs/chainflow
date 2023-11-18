@@ -5,7 +5,7 @@ import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
-import { UnsupportedMethodError } from './errors';
+import { InvalidResponseError, UnsupportedMethodError } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
 
 const log = debug('chainflow:endpoint');
@@ -121,7 +121,7 @@ export class Endpoint {
       headers: this.#req.headers && this.#req.headers[getNodeValue](responses),
     });
 
-    if (!this.#validateResp(resp)) return null;
+    if (resp == null || !this.#validateResp(resp)) throw new InvalidResponseError();
 
     return resp?.body.json();
   }
@@ -171,8 +171,7 @@ export class Endpoint {
   /** Checks that endpoint call succeeded -
    * request did not throw error,
    * and status code is within 200 - 299. */
-  #validateResp(resp: Dispatcher.ResponseData | null): boolean {
-    if (resp == null) return false;
+  #validateResp(resp: Dispatcher.ResponseData): boolean {
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
       log(`Request failed with status code: ${resp.statusCode}`);
       return false;

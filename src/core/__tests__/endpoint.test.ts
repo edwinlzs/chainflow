@@ -259,7 +259,7 @@ describe('#endpoint', () => {
     it('should call the endpoint with the given query params', async () => {
       client
         .intercept({
-          path: '/pet?cute=true&iq=true',
+          path: '/pet?cute=true&iq=200',
           method: 'GET',
         })
         .reply(200, {});
@@ -268,6 +268,7 @@ describe('#endpoint', () => {
 
       await testEndpoint.call({});
       assert.equal(tracker.mock.callCount(), 1);
+      assert.deepEqual(tracker.mock.calls[0].arguments[0]?.path, '/pet?cute=true&iq=200');
     });
   });
 

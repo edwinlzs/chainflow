@@ -41,5 +41,5 @@ export const addPet = factory.post('/pet').body(
 );
 
 export const placeOrder = factory.post('/store/order').body({
-
+  petId: '',
 });
