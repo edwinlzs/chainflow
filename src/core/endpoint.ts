@@ -7,6 +7,10 @@ import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
 import { InvalidResponseError, UnsupportedMethodError } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
+import { CallOpts } from './chainflow';
+import deepmergeSetup from '@fastify/deepmerge';
+
+const deepmerge = deepmergeSetup();
 
 const log = debug('chainflow:endpoint');
 
@@ -102,23 +106,39 @@ export class Endpoint {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: any): Promise<any> {
+  async call(responses: any, opts?: CallOpts): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
-    let body = undefined;
-    if (method !== 'GET' && this.#req.body) body = this.#req.body[getNodeValue](responses);
+
+    let body = {};
+    if (method !== 'GET') body = this.#req.body[getNodeValue](responses);
+    if (opts?.body) body = deepmerge(body, opts.body);
+
     let callPath = this.#path;
+
+    let pathParams = {};
+    // TODO: need to fix this
     if (this.#req.pathParams && Object.keys(this.#req.pathParams).length > 0) {
-      callPath = this.#insertPathParams(callPath, this.#req.pathParams[getNodeValue](responses));
+      pathParams = this.#req.pathParams[getNodeValue](responses);
     }
+    if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);
+    callPath = this.#insertPathParams(callPath, pathParams);
+
+    let queryParams = {};
     if (this.#req.query && Object.keys(this.#req.query).length > 0) {
-      callPath = this.#insertQueryParams(callPath, this.#req.query[getNodeValue](responses));
+      queryParams = this.#req.query[getNodeValue](responses);
     }
+    if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
+    callPath = this.#insertQueryParams(callPath, queryParams);
+
+    let headers = this.#req.headers[getNodeValue](responses);
+    if (opts?.headers) headers = deepmerge(headers, opts.headers);
+
     const resp = await http.httpReq({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),
-      headers: this.#req.headers && this.#req.headers[getNodeValue](responses),
+      headers,
     });
 
     if (resp == null || !this.#validateResp(resp)) throw new InvalidResponseError();

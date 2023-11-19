@@ -16,9 +16,14 @@ interface CallNode {
   endpoint: Endpoint;
   opts?: CallOpts;
 }
+
+// TODO: test call opts
 /** Options for configuring an endpoint call. */
-interface CallOpts {
-  count?: number;
+export interface CallOpts {
+  headers: Record<string, string>;
+  query: Record<string, string>;
+  pathParams: Record<string, string>;
+  body: Record<string, any>;
 }
 
 class Chainflow {
@@ -33,7 +38,7 @@ class Chainflow {
       const hash = endpoint.getHash();
       log(`Making a call to endpoint with hash "${hash}"`);
       try {
-        const resp = await endpoint.call(this.#responses);
+        const resp = await endpoint.call(this.#responses, opts);
         this.#responses[hash] = [resp];
       } catch (e) {
         log(`Chainflow stopped at endpoint with hash "${hash}" due to invalid response.`);

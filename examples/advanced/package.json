@@ -12,7 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "@faker-js/faker": "^8.2.0",
-    "chainflow": "file:../.."
+    "chainflow": "file:..\\.."
   },
   "dependencies": {
     "@types/express": "^4.17.21",

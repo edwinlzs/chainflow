@@ -326,4 +326,10 @@ describe('#chainflow', () => {
       assert.doesNotReject(chainflow().call(getRandName).call(createUser).run());
     });
   });
+
+  // describe('when call options are provided', () => {
+  //   describe('when body is provided at endpoint call', () => {
+  //     const createUser = factory.post('/user').query('');
+  //   });
+  // });
 });
