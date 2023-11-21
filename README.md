@@ -194,6 +194,22 @@ createNotification.set(({ body: { msg } }) => {
 });
 ```
 
+### Call Options
+
+You can declare manual values for an endpoint call in the chainflow itself, should you need to do so, by passing in a Call Options object as a second argument in the `call` method.
+
+`body`, `pathParams`, `query` and `headers` can be set this way.
+
+```typescript
+const createUser = factory.post('/user').body({
+  name: 'Tom',
+});
+
+chainflow()
+  .call(createUser, { body: { name: 'Harry' } })
+  .run();
+```
+
 &nbsp;
 
 ## Future Updates
