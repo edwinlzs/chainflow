@@ -20,10 +20,10 @@ interface CallNode {
 // TODO: test call opts
 /** Options for configuring an endpoint call. */
 export interface CallOpts {
-  headers: Record<string, string>;
-  query: Record<string, string>;
-  pathParams: Record<string, string>;
-  body: Record<string, any>;
+  headers?: Record<string, string>;
+  query?: Record<string, string>;
+  pathParams?: Record<string, string>;
+  body?: Record<string, any>;
 }
 
 class Chainflow {

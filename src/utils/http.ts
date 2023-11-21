@@ -5,7 +5,7 @@ const log = debug('chainflow:http');
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
-const defaultHeaders = {
+export const defaultHeaders = {
   connection: 'keep-alive',
   accept: '*/*',
   'content-type': 'application/json',

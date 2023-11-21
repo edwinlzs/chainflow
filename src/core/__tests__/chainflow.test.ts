@@ -327,9 +327,55 @@ describe('#chainflow', () => {
     });
   });
 
-  // describe('when call options are provided', () => {
-  //   describe('when body is provided at endpoint call', () => {
-  //     const createUser = factory.post('/user').query('');
-  //   });
-  // });
+  describe('when call options are provided', () => {
+    const getUser = factory
+      .post('/{groupId}/user')
+      .body({
+        name: 'default',
+      })
+      .query({
+        role: 'default',
+      })
+      .headers({
+        token: 'default',
+      });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should call the endpoint with the given call options', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'GET',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+
+      chainflow()
+        .call(getUser, {
+          body: {
+            name: 'some name',
+          },
+          pathParams: {
+            groupId: 'someGroup',
+          },
+          query: {
+            role: 'someRole',
+          },
+          headers: {
+            token: 'some token',
+          },
+        })
+        .run();
+      assert.equal(tracker.mock.callCount(), 1);
+      const arg = tracker.mock.calls[0].arguments[0];
+      assert.deepEqual(JSON.parse(arg?.body), {
+        name: 'some name',
+      });
+      assert.equal(arg?.path, '/someGroup/user?role=someRole');
+      assert.deepEqual(arg?.headers, {
+        token: 'some token',
+      });
+    });
+  });
 });
