@@ -154,6 +154,7 @@ export class Endpoint {
       query: this.#req.query,
       headers: this.#req.headers,
     });
+    return this;
   }
 
   /** Extracts Path params from a given path */

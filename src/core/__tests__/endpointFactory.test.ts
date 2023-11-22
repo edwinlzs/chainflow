@@ -37,4 +37,15 @@ describe('#endpointFactory', () => {
       'content-type': 'application/text',
     });
   });
+
+  it('should allow exposing headers to link resp nodes to them', () => {
+    const testFactory = endpointFactory('127.0.0.1:5000').headers({
+      token: 'some-token',
+      'content-type': 'application/text',
+    });
+
+    testFactory.set((nodes) => {
+      assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
+    });
+  });
 });

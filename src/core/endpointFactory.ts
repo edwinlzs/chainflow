@@ -1,5 +1,7 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
+import { ReqNode } from './reqNode';
+import { getNodeValue } from '../utils/symbols';
 
 const log = debug('chainflow:route');
 
@@ -31,21 +33,37 @@ export type EndpointFactory = EndpointFactoryBase & {
 /** Stores the base address and defines methods to build endpoints with methods. */
 export class EndpointFactoryBase {
   #addr: string;
-  #headers: Record<string, string> = {};
+  #headers: ReqNode;
+  #hash: string;
 
   headers(params: Record<string, string>) {
-    this.#headers = params;
+    this.#headers = new ReqNode({
+      val: params,
+      hash: this.#hash,
+    });
+    return this;
+  }
+
+  /** Configure linking of this Req's input nodes. */
+  set(setter: ({ headers }: { headers: ReqNode }) => void) {
+    setter({
+      headers: this.#headers,
+    });
     return this;
   }
 
   constructor(addr: string = '127.0.0.1') {
     this.#addr = addr;
+    this.#headers = new ReqNode({ val: undefined, hash: addr });
+    this.#hash = addr;
     SUPPORTED_METHODS.forEach((method) => {
       /** Makes a call for the given route and endpoint. */
       Reflect.defineProperty(this, method, {
         value: (path: string) => {
           log(`Creating endpoint for "${method} ${this.#addr}${path}"`);
-          return new Endpoint({ addr: this.#addr, method, path }).headers(this.#headers);
+          return new Endpoint({ addr: this.#addr, method, path }).headers(
+            this.#headers[getNodeValue]({}),
+          );
         },
       });
     });
