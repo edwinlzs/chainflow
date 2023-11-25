@@ -116,7 +116,6 @@ export class Endpoint {
     let callPath = this.#path;
 
     let pathParams = {};
-    // TODO: need to fix this
     if (this.#req.pathParams && Object.keys(this.#req.pathParams).length > 0) {
       pathParams = this.#req.pathParams[getNodeValue](responses);
     }
