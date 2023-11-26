@@ -7,7 +7,7 @@ import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
 import { InvalidResponseError, UnsupportedMethodError } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts } from './chainflow';
+import { CallOpts, Responses, SEED_HASH } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 
 const deepmerge = deepmergeSetup();
@@ -47,6 +47,12 @@ const RespNodeHandler = {
     ) as unknown as OutputNode;
   },
 };
+
+/** Special object used to link a ReqNode to a chainflow seed. */
+export const seed = new Proxy(
+  { path: [], hash: SEED_HASH },
+  RespNodeHandler,
+) as unknown as OutputNode;
 
 /**
  * Manages request and response nodes,
@@ -106,7 +112,7 @@ export class Endpoint {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: any, opts?: CallOpts): Promise<any> {
+  async call(responses: Responses, opts?: CallOpts): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body = {};

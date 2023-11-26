@@ -1,24 +1,23 @@
-import { chainflow, InputNodes, link, linkMany } from 'chainflow';
-import { createNotification, createUser, getFavAnimalOfUser } from './src/definitions';
+import { chainflow, seed, link } from 'chainflow';
+import { login } from './src/definitions';
 
 // create the chains
-getFavAnimalOfUser.set(({ pathParams: { userId } }) => {
-  link(userId, createUser.resp.id);
-})
-
-createNotification.set(({ body: { msg } }: InputNodes) => {
-  linkMany(
-    msg,
-    {
-      userName: createUser.resp.name,
-      favAnimal: getFavAnimalOfUser.resp.favAnimal,
-    },
-    ({ userName, favAnimal }) => `${userName} likes ${favAnimal}`,
-  );
+login.set(({ query: { username } }) => {
+  link(username, seed.username);
 });
 
-console.log("Running chainflows");
+console.log('Running chainflows');
+
+const addPetFlow = chainflow().call(login);
 
 // run the chainflows
-const chain = chainflow();
-chain.call(createUser).call(getFavAnimalOfUser).call(createNotification).run();
+
+const usernames = ['tom1997', 'harry2000'];
+
+for (const username of usernames) {
+  addPetFlow.run({
+    seed: {
+      username,
+    },
+  });
+}

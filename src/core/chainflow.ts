@@ -3,6 +3,8 @@ import debug from 'debug';
 
 const log = debug('chainflow:chainflow');
 
+export const SEED_HASH = 'seed';
+
 type RespPayload = any;
 
 /** Stores responses accumulated from endpoint calls in the current flow. */
@@ -26,13 +28,23 @@ export interface CallOpts {
   body?: Record<string, any>;
 }
 
+/** Options for running chainflow. */
+export interface RunOpts {
+  seed?: Record<string, any>;
+}
+
 class Chainflow {
   #responses: Responses = {};
   #callstack: Callstack = [];
 
   /** Run the set up chain */
-  async run() {
+  async run(opts?: RunOpts) {
     log(`Running chainflow...`);
+
+    if (opts?.seed) {
+      this.#responses[SEED_HASH] = [opts.seed];
+    }
+
     for (const { endpoint, opts } of this.#callstack) {
       // call endpoint
       const hash = endpoint.getHash();

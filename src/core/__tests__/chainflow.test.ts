@@ -6,6 +6,7 @@ import { link, linkMany } from '../../utils/inputs';
 import http from '../../utils/http';
 import { endpointFactory } from '../endpointFactory';
 import { required } from '../reqNode';
+import { seed } from '../endpoint';
 
 describe('#chainflow', () => {
   const agent = new MockAgent();
@@ -328,7 +329,7 @@ describe('#chainflow', () => {
   });
 
   describe('when call options are provided', () => {
-    const getUser = factory
+    const addUser = factory
       .post('/{groupId}/user')
       .body({
         name: 'default',
@@ -346,13 +347,13 @@ describe('#chainflow', () => {
       client
         .intercept({
           path: '/user',
-          method: 'GET',
+          method: 'POST',
         })
         .reply(200, {});
       tracker.mock.resetCalls();
 
       chainflow()
-        .call(getUser, {
+        .call(addUser, {
           body: {
             name: 'some name',
           },
@@ -375,6 +376,39 @@ describe('#chainflow', () => {
       assert.equal(arg?.path, '/someGroup/user?role=someRole');
       assert.deepEqual(arg?.headers, {
         token: 'some token',
+      });
+    });
+  });
+
+  describe('when run options are provided', () => {
+    const createUser = factory.post('/user').body({
+      name: 'default',
+    });
+
+    createUser.set(({ body: { name } }) => {
+      link(name, seed.username);
+    });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should call the endpoint with the given seed', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+
+      chainflow()
+        .call(createUser)
+        .run({
+          seed: { username: 'some name' },
+        });
+      assert.equal(tracker.mock.callCount(), 1);
+      const arg = tracker.mock.calls[0].arguments[0];
+      assert.deepEqual(JSON.parse(arg?.body), {
+        name: 'some name',
       });
     });
   });
