@@ -2,6 +2,7 @@ import { ReqNode } from './reqNode';
 
 /** Contains node definitions for a request. */
 export class ReqBuilder {
+  baseHeaders: ReqNode; // headers defined on the factory instead of the endpoint
   #headers: ReqNode;
   pathParams: ReqNode;
   #queryParams: ReqNode;
@@ -10,6 +11,7 @@ export class ReqBuilder {
 
   constructor({ hash }: { hash: string }) {
     this.#hash = hash;
+    this.baseHeaders = new ReqNode({ val: undefined, hash: this.#hash });
     this.#headers = new ReqNode({ val: undefined, hash: this.#hash });
     this.pathParams = new ReqNode({ val: undefined, hash: this.#hash });
     this.#queryParams = new ReqNode({ val: undefined, hash: this.#hash });

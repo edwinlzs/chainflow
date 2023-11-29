@@ -17,6 +17,10 @@ export enum VALUE_POOL_SELECT {
   UNIFORM,
 }
 
+export interface INodeWithValue {
+  [nodeValueIdentifier]: NodeValue;
+}
+
 const nodeValueIdentifier = Symbol('nodeValueIdentifier');
 enum NodeValue {
   ValuePool,

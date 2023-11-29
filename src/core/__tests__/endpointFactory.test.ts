@@ -48,4 +48,35 @@ describe('#endpointFactory', () => {
       assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
     });
   });
+
+  describe('when headers are defined both on the factory and endpoint itself', () => {
+    const testFactory = endpointFactory('127.0.0.1:5000').headers({
+      token: 'some-token',
+      'content-type': 'application/text',
+    });
+
+    const testEndpoint = testFactory.get('/user').headers({
+      'content-type': 'application/xml',
+      animal: 'dog',
+    });
+
+    it('should merge headers with endpoint headers overriding conflicting factory headers', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'GET',
+        })
+        .reply(200, {});
+
+      const tracker = mock.method(http, 'httpReq');
+      await testEndpoint.call({});
+
+      assert.equal(tracker.mock.callCount(), 1);
+      assert.deepEqual(tracker.mock.calls[0].arguments[0].headers, {
+        token: 'some-token',
+        'content-type': 'application/xml',
+        animal: 'dog',
+      });
+    });
+  });
 });

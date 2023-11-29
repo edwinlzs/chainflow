@@ -1,5 +1,5 @@
 import { hashEndpoint } from '../utils/hash';
-import { ReqNode } from './reqNode';
+import { ReqNode, INodeWithValue } from './reqNode';
 import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
@@ -106,8 +106,14 @@ export class Endpoint {
   }
 
   /** Sets custom headers for requests. */
-  headers(params: Record<string, string>) {
+  headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#req.headers = params;
+    return this;
+  }
+
+  /** Sets headers provided by the factory. */
+  baseHeaders(node: ReqNode) {
+    this.#req.baseHeaders = node;
     return this;
   }
 
@@ -135,7 +141,9 @@ export class Endpoint {
     if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
     callPath = this.#insertQueryParams(callPath, queryParams);
 
+    const baseHeaders = this.#req.baseHeaders[getNodeValue](responses);
     let headers = this.#req.headers[getNodeValue](responses);
+    baseHeaders && (headers = deepmerge(baseHeaders, headers));
     if (opts?.headers) headers = deepmerge(headers, opts.headers);
 
     const resp = await http.httpReq({

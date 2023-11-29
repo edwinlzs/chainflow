@@ -1,7 +1,6 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
-import { ReqNode } from './reqNode';
-import { getNodeValue } from '../utils/symbols';
+import { ReqNode, INodeWithValue } from './reqNode';
 
 const log = debug('chainflow:route');
 
@@ -36,7 +35,7 @@ export class EndpointFactoryBase {
   #headers: ReqNode;
   #hash: string;
 
-  headers(params: Record<string, string>) {
+  headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#headers = new ReqNode({
       val: params,
       hash: this.#hash,
@@ -61,9 +60,7 @@ export class EndpointFactoryBase {
       Reflect.defineProperty(this, method, {
         value: (path: string) => {
           log(`Creating endpoint for "${method} ${this.#addr}${path}"`);
-          return new Endpoint({ addr: this.#addr, method, path }).headers(
-            this.#headers[getNodeValue]({}),
-          );
+          return new Endpoint({ addr: this.#addr, method, path }).baseHeaders(this.#headers);
         },
       });
     });
