@@ -9,35 +9,36 @@ app.use(express.json());
 /** Super simple emulation of a DB. */
 const db = {
   users: [] as any[],
-  notifications: [] as any[],
+  pets: [] as any[],
 };
 
-app.post('/user', (req, res) => {
-  console.log(`Received POST call at /user with body: ${JSON.stringify(req.body)}`);
+app.get('/user', (req, res) => {
+  console.log(`Received POST call at /user with query: ${JSON.stringify(req.query)}`);
 
-  const user = req.body;
-  user.id = faker.string.uuid();
+  const { username, password } = req.query;
+  const id = faker.string.uuid();
+  const user = {
+    id,
+    username,
+    password,
+  };
   db.users.push(user);
 
   res.send(user);
 });
 
-app.get('/favAnimal/:userId', (req, res) => {
-  console.log(`Received GET call at /favAnimal/:userId with path parameters: ${JSON.stringify(req.params, null, 2)}`);
+app.post('/pet', (req, res) => {
+  const { name, category } = req.body;
 
-  const { userId } = req.params;
-  const favAnimal = db.users.filter((user) => user.id === userId)[0]?.favAnimal;
-
-  res.send({
-    favAnimal,
-  });
-});
-
-app.post('/notification', (req, res) => {
-  console.log(`Received POST call at /notification with body: ${JSON.stringify(req.body, null, 2)}`);
-  db.notifications.push(req.body);
-  res.status(200).send({});
+  
 })
+
+app.get('/pet/findByStatus', (req, res) => {
+  const { status } = req.query;
+
+  const result = db.pets.filter((pet) => pet.status === status);
+  res.send(result);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
