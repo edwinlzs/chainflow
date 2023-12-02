@@ -19,7 +19,6 @@ interface CallNode {
   opts?: CallOpts;
 }
 
-// TODO: test call opts
 /** Options for configuring an endpoint call. */
 export interface CallOpts {
   headers?: Record<string, string>;

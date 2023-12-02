@@ -160,7 +160,6 @@ export class ReqNode {
   [getNodeValue](responses: Responses, missingValues: string[][], currentPath: string[]) {
     const usedEndpoints: string[] = []; // stores endpoint responses already tried
     // attempt to get value from any source nodes available
-    // TODO: refactor to match & access source at the same time rather than doing separately
     let endpointHash = this.#matchSourceHash(responses, usedEndpoints);
     while (endpointHash) {
       const respSource = this.#sources[endpointHash]!;
