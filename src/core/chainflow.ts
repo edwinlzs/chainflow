@@ -53,7 +53,7 @@ class Chainflow {
         const resp = await endpoint.call(this.#responses, opts);
         this.#responses[hash] = [resp];
       } catch (e) {
-        log(`Chainflow stopped at endpoint with hash "${hash}" due to invalid response.`);
+        log(`Chainflow stopped at endpoint with hash "${hash}": ${e}`);
         break;
       }
     }

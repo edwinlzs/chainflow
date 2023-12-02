@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "chainflow": "file:../.."
+    "chainflow": "file:..\\.."
   },
   "dependencies": {
     "@types/express": "^4.17.19",

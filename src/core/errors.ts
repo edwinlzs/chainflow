@@ -7,10 +7,14 @@ export class UnsupportedMethodError extends Error {
 }
 
 /** When there is no value available for a required input node. */
-export class RequiredValueNotFoundError extends Error {
-  constructor(hash: string) {
-    super(`Required value not available for Endpoint with hash "${hash}".`);
-    this.name = 'RequiredValueNotFoundError';
+export class RequiredValuesNotFoundError extends Error {
+  constructor(hash: string, missingValues: string[]) {
+    super(
+      `Endpoint with hash "${hash}" is missing required values with these paths: ${missingValues.join(
+        ', ',
+      )}`,
+    );
+    this.name = 'RequiredValuesNotFoundError';
   }
 }
 

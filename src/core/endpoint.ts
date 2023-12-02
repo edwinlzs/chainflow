@@ -1,11 +1,15 @@
 import { hashEndpoint } from '../utils/hash';
-import { ReqNode, INodeWithValue } from './reqNode';
+import { ReqNode, INodeWithValue, required } from './reqNode';
 import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
-import { InvalidResponseError, UnsupportedMethodError } from './errors';
+import {
+  InvalidResponseError,
+  RequiredValuesNotFoundError,
+  UnsupportedMethodError,
+} from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
 import { CallOpts, Responses, SEED_HASH } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
@@ -122,29 +126,36 @@ export class Endpoint {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body = {};
-    if (method !== 'GET') body = this.#req.body[getNodeValue](responses);
-    if (opts?.body) body = deepmerge(body, opts.body);
+    const missingValues: string[][] = []; // contains path of missing required values
+    if (method !== 'GET') body = this.#req.body[getNodeValue](responses, missingValues, ['body']);
 
     let callPath = this.#path;
 
     let pathParams = {};
-    if (this.#req.pathParams && Object.keys(this.#req.pathParams).length > 0) {
-      pathParams = this.#req.pathParams[getNodeValue](responses);
+    if (Object.keys(this.#req.pathParams).length > 0) {
+      pathParams = this.#req.pathParams[getNodeValue](responses, missingValues, ['pathParams']);
     }
-    if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);
-    callPath = this.#insertPathParams(callPath, pathParams);
 
     let queryParams = {};
-    if (this.#req.query && Object.keys(this.#req.query).length > 0) {
-      queryParams = this.#req.query[getNodeValue](responses);
+    if (Object.keys(this.#req.query).length > 0) {
+      queryParams = this.#req.query[getNodeValue](responses, missingValues, ['queryParams']);
     }
-    if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
-    callPath = this.#insertQueryParams(callPath, queryParams);
 
-    const baseHeaders = this.#req.baseHeaders[getNodeValue](responses);
-    let headers = this.#req.headers[getNodeValue](responses);
+    const baseHeaders = this.#req.baseHeaders[getNodeValue](responses, missingValues, ['headers']);
+    let headers = this.#req.headers[getNodeValue](responses, missingValues, ['headers']);
     baseHeaders && (headers = deepmerge(baseHeaders, headers));
+
+    const finalMissingValues = this.#findMissingValues(missingValues, opts);
+    if (finalMissingValues.length > 0)
+      throw new RequiredValuesNotFoundError(this.getHash(), finalMissingValues);
+
+    if (opts?.body) body = deepmerge(body, opts.body);
+    if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);
+    if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
     if (opts?.headers) headers = deepmerge(headers, opts.headers);
+
+    callPath = this.#insertPathParams(callPath, pathParams);
+    callPath = this.#insertQueryParams(callPath, queryParams);
 
     const resp = await http.httpReq({
       addr: this.#addr,
@@ -175,14 +186,16 @@ export class Endpoint {
     const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
     const hash = this.getHash();
     let param;
+    const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
       log(`Found path parameter ReqNode for hash "${hash}" with name "${paramName}"`);
-      this.#req.pathParams[paramName] = new ReqNode({
-        val: paramName,
-        hash,
-      });
+      params[paramName] = required();
     }
+    this.#req.pathParams = new ReqNode({
+      val: params,
+      hash,
+    });
   }
 
   /** Inserts actual path params into path. */
@@ -211,5 +224,25 @@ export class Endpoint {
       return false;
     }
     return true;
+  }
+
+  /** Looks for missing values in provided object. */
+  #findMissingValues(missingValues: string[][], obj?: Record<string, any>) {
+    const finalMissingValues: string[] = [];
+    for (const path of missingValues) {
+      if (obj === undefined) {
+        finalMissingValues.push(path.join('.'));
+        continue;
+      }
+      let state = obj;
+      for (const accessor of path) {
+        state = state[accessor];
+        if (state === undefined) {
+          finalMissingValues.push(path.join('.'));
+          break;
+        }
+      }
+    }
+    return finalMissingValues;
   }
 }

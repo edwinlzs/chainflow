@@ -4,7 +4,7 @@ import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../utils/inputs';
-import { gen, pool } from '../reqNode';
+import { gen, pool, required } from '../reqNode';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -170,18 +170,18 @@ describe('#endpoint', () => {
         });
       });
 
-      it('should call the endpoint with the given path params', async () => {
+      it('should throw an error when called without values for path params', async () => {
         client
           .intercept({
-            path: '/pet/petId',
+            path: '/pet',
             method: 'GET',
           })
           .reply(200, {});
         const tracker = mock.method(http, 'httpReq');
         tracker.mock.resetCalls();
 
-        await testEndpoint.call({});
-        assert.equal(tracker.mock.callCount(), 1);
+        assert.rejects(async () => await testEndpoint.call({}));
+        assert.equal(tracker.mock.callCount(), 0);
       });
     });
 
@@ -198,18 +198,18 @@ describe('#endpoint', () => {
         });
       });
 
-      it('should call the endpoint with the given path params', async () => {
+      it('should throw an error when called without values for path params', async () => {
         client
           .intercept({
-            path: '/user/userId/pet/petId',
+            path: '/pet',
             method: 'GET',
           })
           .reply(200, {});
         const tracker = mock.method(http, 'httpReq');
         tracker.mock.resetCalls();
 
-        await testEndpoint.call({});
-        assert.equal(tracker.mock.callCount(), 1);
+        assert.rejects(async () => await testEndpoint.call({}));
+        assert.equal(tracker.mock.callCount(), 0);
       });
     });
   });
@@ -303,6 +303,41 @@ describe('#endpoint', () => {
         token: 'some-token',
         'content-type': 'application/nonsense',
       });
+    });
+  });
+
+  describe('when provided call opts do not cover all the required values', () => {
+    const testEndpoint = new Endpoint({ addr, path: '/user', method: 'post' }).body({
+      details: {
+        age: required(),
+        name: required(),
+      },
+    });
+
+    it('should throw an error indicating required values are not found', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      const tracker = mock.method(http, 'httpReq');
+      tracker.mock.resetCalls();
+
+      assert.rejects(
+        async () =>
+          await testEndpoint.call(
+            {},
+            {
+              body: {
+                details: {
+                  name: 'dude',
+                },
+              },
+            },
+          ),
+      );
     });
   });
 });
