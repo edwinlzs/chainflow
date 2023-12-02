@@ -14,9 +14,8 @@ This document track the purposes of dependencies to facilitate removal/swapping 
 
 ### Functionality
 
-1. `swagger-parser`: parse Swagger/OpenAPI specs
-2. `debug`: logging
-3. `undici`: performant HTTP/1.1 client for node
+1. `debug`: logging
+2. `undici`: performant HTTP/1.1 client for node
 
 ### Testing
 

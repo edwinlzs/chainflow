@@ -1,13 +1,20 @@
 import { hashEndpoint } from '../utils/hash';
-import { Responses } from './chainflow';
-import { ReqNode } from './reqNode';
+import { ReqNode, INodeWithValue, required } from './reqNode';
 import debug from 'debug';
-import { ReqBuilder, ReqNodes } from './reqBuilder';
+import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
 import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
-import { UnsupportedMethodError } from './errors';
+import {
+  InvalidResponseError,
+  RequiredValuesNotFoundError,
+  UnsupportedMethodError,
+} from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
+import { CallOpts, Responses, SEED_HASH } from './chainflow';
+import deepmergeSetup from '@fastify/deepmerge';
+
+const deepmerge = deepmergeSetup();
 
 const log = debug('chainflow:endpoint');
 
@@ -15,9 +22,10 @@ const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
-  pathParams: ReqNodes;
-  body: ReqNodes;
-  query: ReqNodes;
+  pathParams: ReqNode;
+  body: ReqNode;
+  query: ReqNode;
+  headers: ReqNode;
 }
 
 /** Describes a value in the output of an endpoint call. */
@@ -43,6 +51,12 @@ const RespNodeHandler = {
     ) as unknown as OutputNode;
   },
 };
+
+/** Special object used to link a ReqNode to a chainflow seed. */
+export const seed = new Proxy(
+  { path: [], hash: SEED_HASH },
+  RespNodeHandler,
+) as unknown as OutputNode;
 
 /**
  * Manages request and response nodes,
@@ -96,32 +110,62 @@ export class Endpoint {
   }
 
   /** Sets custom headers for requests. */
-  headers(params: Record<string, string>) {
+  headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#req.headers = params;
     return this;
   }
 
+  /** Sets headers provided by the factory. */
+  baseHeaders(node: ReqNode) {
+    this.#req.baseHeaders = node;
+    return this;
+  }
+
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: any): Promise<any> {
+  async call(responses: Responses, opts?: CallOpts): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
-    let body = undefined;
-    if (method !== 'GET') body = this.#buildPayload(responses);
+
+    let body = {};
+    const missingValues: string[][] = []; // contains path of missing required values
+    if (method !== 'GET') body = this.#req.body[getNodeValue](responses, missingValues, ['body']);
+
     let callPath = this.#path;
+
+    let pathParams = {};
     if (Object.keys(this.#req.pathParams).length > 0) {
-      callPath = this.#insertPathParams(callPath, buildObject(this.#req.pathParams, responses));
+      pathParams = this.#req.pathParams[getNodeValue](responses, missingValues, ['pathParams']);
     }
+
+    let queryParams = {};
     if (Object.keys(this.#req.query).length > 0) {
-      callPath = this.#insertQueryParams(callPath, buildObject(this.#req.query, responses));
+      queryParams = this.#req.query[getNodeValue](responses, missingValues, ['queryParams']);
     }
+
+    const baseHeaders = this.#req.baseHeaders[getNodeValue](responses, missingValues, ['headers']);
+    let headers = this.#req.headers[getNodeValue](responses, missingValues, ['headers']);
+    baseHeaders && (headers = deepmerge(baseHeaders, headers));
+
+    const finalMissingValues = this.#findMissingValues(missingValues, opts);
+    if (finalMissingValues.length > 0)
+      throw new RequiredValuesNotFoundError(this.getHash(), finalMissingValues);
+
+    if (opts?.body) body = deepmerge(body, opts.body);
+    if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);
+    if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
+    if (opts?.headers) headers = deepmerge(headers, opts.headers);
+
+    callPath = this.#insertPathParams(callPath, pathParams);
+    callPath = this.#insertQueryParams(callPath, queryParams);
+
     const resp = await http.httpReq({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body: body && JSON.stringify(body),
-      headers: buildObject(this.#req.headers, responses),
+      headers,
     });
 
-    if (!this.#validateResp(resp)) return null;
+    if (resp == null || !this.#validateResp(resp)) throw new InvalidResponseError();
 
     return resp?.body.json();
   }
@@ -132,12 +176,9 @@ export class Endpoint {
       pathParams: this.#req.pathParams,
       body: this.#req.body,
       query: this.#req.query,
+      headers: this.#req.headers,
     });
-  }
-
-  /** Builds the request payload */
-  #buildPayload(responses: Responses) {
-    return buildObject(this.#req.body, responses);
+    return this;
   }
 
   /** Extracts Path params from a given path */
@@ -145,14 +186,16 @@ export class Endpoint {
     const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
     const hash = this.getHash();
     let param;
+    const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
       log(`Found path parameter ReqNode for hash "${hash}" with name "${paramName}"`);
-      this.#req.pathParams[paramName] = new ReqNode({
-        val: paramName,
-        hash,
-      });
+      params[paramName] = required();
     }
+    this.#req.pathParams = new ReqNode({
+      val: params,
+      hash,
+    });
   }
 
   /** Inserts actual path params into path. */
@@ -167,7 +210,7 @@ export class Endpoint {
   #insertQueryParams(path: string, queryParams: Record<string, string>): string {
     if (Object.keys(queryParams).length > 0) path = `${path}?`;
     Object.entries(queryParams).forEach(([name, val], i) => {
-      path = `${path}${i > 1 ? '&' : ''}${name}=${val}`;
+      path = `${path}${i >= 1 ? '&' : ''}${name}=${val}`;
     });
     return path;
   }
@@ -175,23 +218,31 @@ export class Endpoint {
   /** Checks that endpoint call succeeded -
    * request did not throw error,
    * and status code is within 200 - 299. */
-  #validateResp(resp: Dispatcher.ResponseData | null): boolean {
-    if (resp == null) return false;
+  #validateResp(resp: Dispatcher.ResponseData): boolean {
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
       log(`Request failed with status code: ${resp.statusCode}`);
       return false;
     }
     return true;
   }
-}
 
-/**
- * Builds a JSON object from defined request nodes and
- * available responses as potential sources.
- */
-export const buildObject = (nodes: ReqNodes, responses: Responses) => {
-  return Object.entries(nodes).reduce((acc, [key, val]) => {
-    acc[key] = val[getNodeValue](responses);
-    return acc;
-  }, {} as any);
-};
+  /** Looks for missing values in provided object. */
+  #findMissingValues(missingValues: string[][], obj?: Record<string, any>) {
+    const finalMissingValues: string[] = [];
+    for (const path of missingValues) {
+      if (obj === undefined) {
+        finalMissingValues.push(path.join('.'));
+        continue;
+      }
+      let state = obj;
+      for (const accessor of path) {
+        state = state[accessor];
+        if (state === undefined) {
+          finalMissingValues.push(path.join('.'));
+          break;
+        }
+      }
+    }
+    return finalMissingValues;
+  }
+}

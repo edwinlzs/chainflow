@@ -1,61 +1,53 @@
 import { ReqNode } from './reqNode';
-import { debug } from 'debug';
-
-const log = debug('chainflow:reqBuilder');
-
-export type ReqNodes = { [key: string]: ReqNode };
 
 /** Contains node definitions for a request. */
 export class ReqBuilder {
-  #headers: ReqNodes = {};
-  pathParams: ReqNodes = {};
-  #queryParams: ReqNodes = {};
-  #body: ReqNodes = {};
+  baseHeaders: ReqNode; // headers defined on the factory instead of the endpoint
+  #headers: ReqNode;
+  pathParams: ReqNode;
+  #queryParams: ReqNode;
+  #body: ReqNode;
   #hash: string;
 
   constructor({ hash }: { hash: string }) {
     this.#hash = hash;
+    this.baseHeaders = new ReqNode({ val: undefined, hash: this.#hash });
+    this.#headers = new ReqNode({ val: undefined, hash: this.#hash });
+    this.pathParams = new ReqNode({ val: undefined, hash: this.#hash });
+    this.#queryParams = new ReqNode({ val: undefined, hash: this.#hash });
+    this.#body = new ReqNode({ val: undefined, hash: this.#hash });
   }
 
-  get body() {
+  get body(): ReqNode {
     return this.#body;
   }
 
   set body(payload: any) {
-    Object.entries(payload).forEach(([key, val]) => {
-      log(`Creating body ReqNode for hash "${this.#hash}" with key "${key}"`);
-      this.#body[key] = new ReqNode({
-        val,
-        hash: this.#hash,
-      });
+    this.#body = new ReqNode({
+      val: payload,
+      hash: this.#hash,
     });
   }
 
-  get query() {
+  get query(): ReqNode {
     return this.#queryParams;
   }
 
   set query(params: any) {
-    Object.entries(params).forEach(([key, val]) => {
-      log(`Creating query param ReqNode for hash "${this.#hash}" with key "${key}"`);
-      this.#queryParams[key] = new ReqNode({
-        val,
-        hash: this.#hash,
-      });
+    this.#queryParams = new ReqNode({
+      val: params,
+      hash: this.#hash,
     });
   }
 
-  get headers() {
+  get headers(): ReqNode {
     return this.#headers;
   }
 
   set headers(params: any) {
-    Object.entries(params).forEach(([key, val]) => {
-      log(`Creating header ReqNode for hash "${this.#hash}" with key "${key}"`);
-      this.#headers[key] = new ReqNode({
-        val,
-        hash: this.#hash,
-      });
+    this.#headers = new ReqNode({
+      val: params,
+      hash: this.#hash,
     });
   }
 }

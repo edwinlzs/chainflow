@@ -1,5 +1,5 @@
 import { describe, it, mock } from 'node:test';
-import http from '../http';
+import http, { defaultHeaders } from '../http';
 import assert from 'node:assert';
 import undici from 'undici';
 
@@ -35,8 +35,7 @@ describe('#http', () => {
 
       assert.equal(tracker.mock.callCount(), 1);
       assert.deepEqual(tracker.mock.calls[0].arguments[1]?.headers, {
-        connection: 'keep-alive',
-        accept: '*/*',
+        ...defaultHeaders,
         token: 'some-token',
         'content-type': 'application/nonsense',
       });

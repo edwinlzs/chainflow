@@ -1,6 +1,6 @@
 import debug from 'debug';
 import { Responses } from './chainflow';
-import { OutputNode, buildObject } from './endpoint';
+import { OutputNode } from './endpoint';
 import {
   getNodeValue,
   nodeHash,
@@ -16,10 +16,15 @@ export enum VALUE_POOL_SELECT {
   UNIFORM,
 }
 
+export interface INodeWithValue {
+  [nodeValueIdentifier]: NodeValue;
+}
+
 const nodeValueIdentifier = Symbol('nodeValueIdentifier');
 enum NodeValue {
   ValuePool,
   Generator,
+  Required,
 }
 
 /** Defines a set of values to choose from when making an endpoint call. */
@@ -32,6 +37,12 @@ export const pool = (valuePool: any[]) => ({
 export const gen = (generator: () => any) => ({
   generator,
   [nodeValueIdentifier]: NodeValue.Generator,
+});
+
+/** Used to mark a param without a default value as required
+ * to be sourced from another response. */
+export const required = () => ({
+  [nodeValueIdentifier]: NodeValue.Required,
 });
 
 /** Details of a source node. */
@@ -64,6 +75,8 @@ export class ReqNode {
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
+  /** Whether this node requires a value from a source response. */
+  #required: boolean = false;
   /** Stores what response node values can be passed into this node. */
   #sources: { [nodeHash: string]: ISource | ISources } = {};
   /** Stores possible values this node can take. */
@@ -75,6 +88,10 @@ export class ReqNode {
 
   constructor({ val, hash }: { val: any; hash: string }) {
     this[nodeHash] = hash;
+    if (val == null) {
+      this.#default = val;
+      return;
+    }
 
     switch (val[nodeValueIdentifier]) {
       case NodeValue.ValuePool:
@@ -84,6 +101,9 @@ export class ReqNode {
       case NodeValue.Generator:
         log(`Defined value generator for ReqNode with hash "${hash}"`);
         this.#generator = val.generator;
+        return;
+      case NodeValue.Required:
+        this.#required = true;
         return;
     }
 
@@ -137,10 +157,9 @@ export class ReqNode {
   }
 
   /** Retrieve value of a node. */
-  [getNodeValue](responses: Responses) {
+  [getNodeValue](responses: Responses, missingValues: string[][], currentPath: string[]) {
     const usedEndpoints: string[] = []; // stores endpoint responses already tried
     // attempt to get value from any source nodes available
-    // TODO: refactor to match & access source at the same time rather than doing separately
     let endpointHash = this.#matchSourceHash(responses, usedEndpoints);
     while (endpointHash) {
       const respSource = this.#sources[endpointHash]!;
@@ -171,7 +190,11 @@ export class ReqNode {
 
     // default will only be undefined for objects that need to be built further
     if (this.#default === undefined) {
-      return buildObject(this as any, responses);
+      if (this.#required) {
+        missingValues.push(currentPath);
+        return;
+      }
+      return this.buildObject(currentPath, missingValues, responses);
     }
 
     // if other options are exhausted, revert to default
@@ -225,7 +248,7 @@ export class ReqNode {
     const respPayload = responses[hash]![0];
 
     log(
-      `Retrieving value for ReqNode with hash "${this[nodeHash]}" from response of endpoint with hash ${hash} via path "${path}"`,
+      `Retrieving value for ReqNode with hash "${this[nodeHash]}" from response of endpoint with hash "${hash}" via path "${path}"`,
     );
 
     // get response value from a linked source
@@ -254,4 +277,18 @@ export class ReqNode {
         return this.#valuePool[Math.floor(Math.random() * this.#valuePool.length)];
     }
   }
+  /**
+   * Builds a JSON object from defined request nodes and
+   * available responses as potential sources.
+   */
+  buildObject(currentPath: string[], missingValues: string[][], responses: Responses) {
+    return Object.entries(this).reduce((acc, [key, val]) => {
+      const nextPath = [...currentPath];
+      nextPath.push(key);
+      acc[key] = val[getNodeValue](responses, missingValues, nextPath);
+      return acc;
+    }, {} as any);
+  }
 }
+
+export type ReqNodes = { [key: string]: ReqNode };

@@ -5,6 +5,8 @@ import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMany } from '../../utils/inputs';
 import http from '../../utils/http';
 import { endpointFactory } from '../endpointFactory';
+import { required } from '../reqNode';
+import { seed } from '../endpoint';
 
 describe('#chainflow', () => {
   const agent = new MockAgent();
@@ -33,16 +35,6 @@ describe('#chainflow', () => {
     assert.equal(userTracker.mock.calls.length, 2);
     assert.equal(roleTracker.mock.calls.length, 1);
   });
-
-  // it('should not execute actual call if method is incorrect', async () => {
-  //   const getUser = factory.get('/user');
-
-  //   const userTracker = mock.method(getUser, 'call', () => ({}));
-
-  //   await chainflow().call(getUser).run();
-
-  //   assert.equal(userTracker.mock.calls.length, 0);
-  // });
 
   describe('when an endpoint call returns an error code', () => {
     const getUser = factory.get('/user');
@@ -289,6 +281,134 @@ describe('#chainflow', () => {
       const notificationCallBody = JSON.parse(notificationCall?.arguments[0]?.body);
       assert.deepEqual(notificationCallBody, {
         msg: 'John likes dogs.',
+      });
+    });
+  });
+
+  describe('when a value is marked as required', () => {
+    const createUser = factory.post('/user').body({
+      name: required(),
+    });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should throw a RequiredValueNotFoundError if value is not provided', async () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+      assert.rejects(chainflow().call(createUser).run, 'RequiredValueNotFoundError');
+    });
+
+    it('should not throw an error if the value is provided', async () => {
+      const getRandName = factory.get('/randName');
+      createUser.set(({ body: { name } }) => {
+        link(name, getRandName.resp.name);
+      });
+
+      client
+        .intercept({
+          path: '/randName',
+          method: 'GET',
+        })
+        .reply(200, {
+          name: 'Tom',
+        });
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+      assert.doesNotReject(chainflow().call(getRandName).call(createUser).run());
+    });
+  });
+
+  describe('when call options are provided', () => {
+    const addUser = factory
+      .post('/{groupId}/user')
+      .body({
+        name: 'default',
+      })
+      .query({
+        role: 'default',
+      })
+      .headers({
+        token: 'default',
+      });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should call the endpoint with the given call options', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+
+      chainflow()
+        .call(addUser, {
+          body: {
+            name: 'some name',
+          },
+          pathParams: {
+            groupId: 'someGroup',
+          },
+          query: {
+            role: 'someRole',
+          },
+          headers: {
+            token: 'some token',
+          },
+        })
+        .run();
+      assert.equal(tracker.mock.callCount(), 1);
+      const arg = tracker.mock.calls[0].arguments[0];
+      assert.deepEqual(JSON.parse(arg?.body), {
+        name: 'some name',
+      });
+      assert.equal(arg?.path, '/someGroup/user?role=someRole');
+      assert.deepEqual(arg?.headers, {
+        token: 'some token',
+      });
+    });
+  });
+
+  describe('when run options are provided', () => {
+    const createUser = factory.post('/user').body({
+      name: 'default',
+    });
+
+    createUser.set(({ body: { name } }) => {
+      link(name, seed.username);
+    });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should call the endpoint with the given seed', () => {
+      client
+        .intercept({
+          path: '/user',
+          method: 'POST',
+        })
+        .reply(200, {});
+      tracker.mock.resetCalls();
+
+      chainflow()
+        .call(createUser)
+        .run({
+          seed: { username: 'some name' },
+        });
+      assert.equal(tracker.mock.callCount(), 1);
+      const arg = tracker.mock.calls[0].arguments[0];
+      assert.deepEqual(JSON.parse(arg?.body), {
+        name: 'some name',
       });
     });
   });

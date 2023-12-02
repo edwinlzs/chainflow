@@ -1,10 +1,9 @@
-# Chainflow
-
-Create dynamic and flexible workflows of API calls by linking outputs from one call to the input of another.
+<h1 align="center" style="border-bottom: none;">⛓🌊hainflow⛓</h1>
+<h3 align="center">Create dynamic and flexible API call workflows.</h3>
 
 ## Use Cases
 
-1. Set up demo data
+1. Insert demo data via your app's APIs
 2. Simulate frontend interactions with backend APIs
 3. Test edge cases on endpoints with input variations
 
@@ -93,6 +92,8 @@ The above setup will result in the following API calls:
 
 3. `GET` Request to `/user?roleType=['type' from response to step 2]`
 
+&nbsp;
+
 ## More Features
 
 ### Path params
@@ -108,18 +109,42 @@ const getGroupsWithUser = factory.get('/groups/{userId}');
 Define query params with the `query` method on an endpoint.
 
 ```typescript
-const getUsersInGroup = factory.get('/user').query({
-  groupId: 'some-id',
-});
+const getUsersInGroup = factory.get('/user').query({ groupId: 'some-id' });
+```
+
+### Headers
+
+Specify headers with `headers` method on endpoints.
+
+```typescript
+const getInfo = factory.get('/info').headers({ token: 'some-token' });
+```
+
+You can also use `headers` on an `EndpointFactory` to have all endpoints made from that factory bear those headers.
+
+```typescript
+const factory = endpointFactory('127.0.0.1:3001').headers({ token: 'some-token' });
+
+const getInfo = factory.get('/info'); // getInfo endpoint will have the headers defined above
 ```
 
 The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
 
 However, you can also use the following features to more flexibly define the values used in a request.
 
+### `required`
+
+Marks a value as required but without a default. The chainflow will expect this value to be sourced from another node. If no such source is available, the endpoint call will throw an error.
+
+```typescript
+const createUser = factory.post('/user').body({
+  name: required(),
+});
+```
+
 ### `pool`
 
-Define a pool of values to take from when building requests.
+Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.
 
 ```typescript
 const userPost = factory.post('/user').body({
@@ -132,13 +157,15 @@ const userPost = factory.post('/user').body({
 
 ### `gen`
 
-Define a callback that produces values for building requests.
+Provide a callback that generates values for building requests.
 
 ```typescript
+const randAge = () => Math.floor(Math.random() * 100);
+
 const userPost = factory.post('/user').body({
   name: 'Tom',
   details: {
-    age: gen(() => Math.floor(Math.random() * 100)),
+    age: gen(randAge),
   },
 });
 ```
@@ -148,13 +175,8 @@ const userPost = factory.post('/user').body({
 Link multiple response values to a single request node, providing a callback to transform the values into a single output.
 
 ```typescript
-const mergeValues = ({
-  userName,
-  favAnimal,
-}: {
-  userName: string;
-  favAnimal: string;
-}) => `${userName} likes ${favAnimal}.`;
+const mergeValues = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+  `${userName} likes ${favAnimal}.`;
 
 createNotification.set(({ body: { msg } }) => {
   linkMany(
@@ -166,21 +188,60 @@ createNotification.set(({ body: { msg } }) => {
     },
     // callback that takes the response values as its argument
     // and returns a single output value for the request node
-    mergeValues, 
+    mergeValues,
   );
 });
 ```
 
-### Headers
+### Call Options
 
-Specify headers with `headers` method on endpoints.
+You can declare manual values for an endpoint call in the chainflow itself, should you need to do so, by passing in a Call Options object as a second argument in the `call` method.
+
+`body`, `pathParams`, `query` and `headers` can be set this way.
 
 ```typescript
-const getInfo = factory.get('/info').headers({
-  token: 'some-token',
+const createUser = factory.post('/user').body({
+  name: 'Tom',
 });
 
+chainflow()
+  .call(createUser, { body: { name: 'Harry' } })
+  .run();
 ```
+
+### Run Options
+
+You can specify request nodes to take values from the chainflow 'seed' by importing the `seed` object and linking nodes to it. Provide seed values by passing them as arguments to a `run` call on a `chainflow`, like below.
+
+```typescript
+import { chainflow, link seed, } from 'chainflow';
+
+const createUser = factory.post('/user').body({
+  name: required(),
+});
+
+createUser.set(({ body: { name }}) => {
+  link(name, seed.username);
+});
+
+chainflow()
+  .call()
+  .run({
+    seed: {
+      username: 'Tom',
+    }
+  });
+```
+
+&nbsp;
+
+## Future Updates
+
+Below features are currently not yet supported but are planned in future releases.
+
+1. Content types other than `application/json`
+2. HTTPS
+3. Cookies
 
 ## Development
 

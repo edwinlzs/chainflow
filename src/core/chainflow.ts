@@ -3,6 +3,8 @@ import debug from 'debug';
 
 const log = debug('chainflow:chainflow');
 
+export const SEED_HASH = 'seed';
+
 type RespPayload = any;
 
 /** Stores responses accumulated from endpoint calls in the current flow. */
@@ -16,9 +18,18 @@ interface CallNode {
   endpoint: Endpoint;
   opts?: CallOpts;
 }
+
 /** Options for configuring an endpoint call. */
-interface CallOpts {
-  count?: number;
+export interface CallOpts {
+  headers?: Record<string, string>;
+  query?: Record<string, string>;
+  pathParams?: Record<string, string>;
+  body?: Record<string, any>;
+}
+
+/** Options for running chainflow. */
+export interface RunOpts {
+  seed?: Record<string, any>;
 }
 
 class Chainflow {
@@ -26,18 +37,24 @@ class Chainflow {
   #callstack: Callstack = [];
 
   /** Run the set up chain */
-  async run() {
+  async run(opts?: RunOpts) {
     log(`Running chainflow...`);
+
+    if (opts?.seed) {
+      this.#responses[SEED_HASH] = [opts.seed];
+    }
+
     for (const { endpoint, opts } of this.#callstack) {
       // call endpoint
       const hash = endpoint.getHash();
       log(`Making a call to endpoint with hash "${hash}"`);
-      const resp = await endpoint.call(this.#responses);
-      if (resp == null) {
-        log('Chainflow failed to run.');
+      try {
+        const resp = await endpoint.call(this.#responses, opts);
+        this.#responses[hash] = [resp];
+      } catch (e) {
+        log(`Chainflow stopped at endpoint with hash "${hash}": ${e}`);
         break;
       }
-      this.#responses[hash] = [resp];
     }
     this.reset();
     log('Finished running chainflow.');

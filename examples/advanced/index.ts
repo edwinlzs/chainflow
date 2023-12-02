@@ -1,24 +1,27 @@
-import { chainflow, InputNodes, link, linkMany } from 'chainflow';
-import { createNotification, createUser, getFavAnimalOfUser } from './src/definitions';
-
-// create the chains
-getFavAnimalOfUser.set(({ pathParams: { userId } }) => {
-  link(userId, createUser.resp.id);
-})
-
-createNotification.set(({ body: { msg } }: InputNodes) => {
-  linkMany(
-    msg,
-    {
-      userName: createUser.resp.name,
-      favAnimal: getFavAnimalOfUser.resp.favAnimal,
-    },
-    ({ userName, favAnimal }) => `${userName} likes ${favAnimal}`,
-  );
-});
-
-console.log("Running chainflows");
-
 // run the chainflows
-const chain = chainflow();
-chain.call(createUser).call(getFavAnimalOfUser).call(createNotification).run();
+import { faker } from '@faker-js/faker';
+import { addPetFlow, buyPetFlow } from './src/flows';
+
+const usernames = ['tom1997', 'harry2000', 'jane9000'];
+
+for (const username of usernames) {
+  addPetFlow.run({
+    seed: {
+      username,
+    },
+  });
+}
+
+const buyerNames = [
+  { name: faker.person.fullName(), creditCardNumber: faker.finance.creditCardNumber() },
+  { name: faker.person.fullName(), creditCardNumber: faker.finance.creditCardNumber() },
+];
+
+for (const { name, creditCardNumber } of buyerNames) {
+  buyPetFlow.run({
+    seed: {
+      username: name,
+      creditCardNumber,
+    },
+  });
+}

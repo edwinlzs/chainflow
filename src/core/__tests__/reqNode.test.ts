@@ -16,23 +16,23 @@ describe('#reqNode', () => {
   describe('when the node value is not an object', () => {
     it('should save string values as the default', () => {
       const testNode = new ReqNode({ val: 'Hello World!', hash: 'some-hash' });
-      assert.equal(testNode[getNodeValue]({}), 'Hello World!');
+      assert.equal(testNode[getNodeValue]({}, [], []), 'Hello World!');
     });
 
     it('should save boolean values as the default', () => {
       const testNode = new ReqNode({ val: false, hash: 'some-hash' });
-      assert.equal(testNode[getNodeValue]({}), false);
+      assert.equal(testNode[getNodeValue]({}, [], []), false);
     });
 
     it('should save number values as the default', () => {
       const testNode = new ReqNode({ val: 40, hash: 'some-hash' });
-      assert.equal(testNode[getNodeValue]({}), 40);
+      assert.equal(testNode[getNodeValue]({}, [], []), 40);
     });
   });
 
   describe('when the node value is an array', () => {
     const testNode = new ReqNode({ val: ['hello', 40, false], hash: 'some-hash' });
-    assert.deepEqual(testNode[getNodeValue]({}), ['hello', 40, false]);
+    assert.deepEqual(testNode[getNodeValue]({}, [], []), ['hello', 40, false]);
   });
 
   describe('when the node value is a non-array object', () => {
@@ -42,7 +42,7 @@ describe('#reqNode', () => {
     });
 
     it('should reconstruct the object as node value', () => {
-      assert.deepEqual(testNode[getNodeValue]({}), testVal);
+      assert.deepEqual(testNode[getNodeValue]({}, [], []), testVal);
     });
   });
 
@@ -50,6 +50,6 @@ describe('#reqNode', () => {
     const testNode = new ReqNode({ val: 40, hash: 'some-hash' });
     const testValuePool = [10, 20, 30];
     testNode[setValuePool](testValuePool);
-    assert.ok(testValuePool.includes(testNode[getNodeValue]({})));
+    assert.ok(testValuePool.includes(testNode[getNodeValue]({}, [], [])));
   });
 });

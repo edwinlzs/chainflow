@@ -1,7 +1,7 @@
 {
   "name": "chainflow",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "build dynamic and flexible API call workflows",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -13,16 +13,16 @@
     "test": "glob -c \"node --loader tsx --test --no-warnings \" \"./src/**/*.test.ts\"",
     "test:file": "glob -c \"node --loader tsx --test --no-warnings \"",
     "test:coverage": "glob -c \"c8 node --test --loader tsx --no-warnings\" \"./src/**/*.test.ts\"",
-    "test:debug": "glob -c \"node -r dotenv/config --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
-    "demo": "tsc && node -r dotenv/config ./dist/demo/index.js"
+    "test:debug": "glob -c \"node --loader tsx --no-warnings --test\" \"./src/**/*.test.ts\"",
+    "demo": "tsc && node ./dist/demo/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.1.0",
+    "@fastify/deepmerge": "^1.3.0",
     "debug": "^4.3.4",
-    "dotenv": "^16.3.1",
     "undici": "^5.26.3"
   },
   "devDependencies": {
