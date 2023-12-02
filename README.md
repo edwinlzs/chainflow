@@ -1,10 +1,9 @@
-# Chainflow
-
-Chainflow is a library for creating dynamic and flexible API call workflows by linking outputs from one call to the inputs of another.
+<h1 align="center" style="border-bottom: none;">⛓🌊 Chainflow</h1>
+<h3 align="center">Create dynamic and flexible API call workflows.</h3>
 
 ## Use Cases
 
-1. Set up demo data
+1. Insert demo data via your app's APIs
 2. Simulate frontend interactions with backend APIs
 3. Test edge cases on endpoints with input variations
 
@@ -212,7 +211,27 @@ chainflow()
 
 ### Run Options
 
-(WIP)
+You can specify request nodes to take values from the chainflow 'seed' by importing the `seed` object and linking nodes to it. Provide seed values by passing them as arguments to a `run` call on a `chainflow`, like below.
+
+```typescript
+import { chainflow, link seed, } from 'chainflow';
+
+const createUser = factory.post('/user').body({
+  name: required(),
+});
+
+createUser.set(({ body: { name }}) => {
+  link(name, seed.username);
+});
+
+chainflow()
+  .call()
+  .run({
+    seed: {
+      username: 'Tom',
+    }
+  });
+```
 
 &nbsp;
 

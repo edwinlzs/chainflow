@@ -1,7 +1,7 @@
 {
   "name": "chainflow",
   "version": "0.1.0",
-  "description": "",
+  "description": "build dynamic and flexible API call workflows",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
