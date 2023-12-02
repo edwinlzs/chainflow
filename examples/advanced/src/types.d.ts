@@ -4,7 +4,24 @@ export interface User {
   password: string;
 }
 
-export interface PetStatus {
-  status: string;
-  category: { name: string };
+export interface Pet {
+  id: string;
+  name: string;
+  category: string;
+  storeInfo: {
+    status: string;
+    price: number;
+  }
+}
+
+export interface Order {
+  id: string;
+  petId: string;
+  paid: boolean;
+}
+
+export interface Payment {
+  id: string;
+  creditCardNumber: string,
+  amount: number;
 }

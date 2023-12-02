@@ -1,20 +1,31 @@
 import { faker } from '@faker-js/faker';
-import express from 'express';
+import express, { Request } from 'express';
+import { Order, Pet, Payment, User } from './types';
 
-const PORT = 3001;
-
-const app = express();
-app.use(express.json());
+type ExpressRequest = Request<unknown, unknown, unknown, Record<string, string>>;
 
 /** Super simple emulation of a DB. */
 const db = {
-  users: [] as any[],
-  pets: [] as any[],
+  users: {} as Record<string, User>,
+  pets: {} as Record<string, Pet>,
+  orders: {} as Record<string, Order>,
+  payments: {} as Record<string, Payment>,
 };
 
-app.get('/user', (req, res) => {
-  console.log(`Received POST call at /user with query: ${JSON.stringify(req.query)}`);
+///
+// Server for a pet store.
+///
+const PET_STORE_PORT = 3030;
 
+const petStoreApp = express();
+petStoreApp.use(express.json());
+
+petStoreApp.use((req, _, next) => {
+  console.log(`Pet store server received a ${req.method} request at ${req.path}`);
+  next();
+});
+
+petStoreApp.get('/user/login', (req: ExpressRequest, res) => {
   const { username, password } = req.query;
   const id = faker.string.uuid();
   const user = {
@@ -22,24 +33,83 @@ app.get('/user', (req, res) => {
     username,
     password,
   };
-  db.users.push(user);
+  db.users[id] = user;
 
-  res.send(user);
+  res.status(200).send(user);
 });
 
-app.post('/pet', (req, res) => {
-  const { name, category } = req.body;
+petStoreApp.post('/pet', (req, res) => {
+  const { name, category, price } = req.body;
+  const id = faker.string.uuid();
 
-  
-})
+  const pet = {
+    id,
+    name,
+    category,
+    storeInfo: {
+      status: 'available',
+      price,
+    },
+  };
+  db.pets[id] = pet;
 
-app.get('/pet/findByStatus', (req, res) => {
+  res.send(pet);
+});
+
+petStoreApp.get('/pet/findByStatus', (req: ExpressRequest, res) => {
   const { status } = req.query;
 
-  const result = db.pets.filter((pet) => pet.status === status);
+  const result = Object.values(db.pets).filter((pet) => pet.storeInfo.status === status);
   res.send(result);
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
+petStoreApp.post('/store/order', (req, res) => {
+  const { petId } = req.body;
+
+  const order = {
+    id: faker.string.uuid(),
+    petId,
+    paid: false,
+  };
+  db.orders[order.id] = order;
+  res.send(order);
+})
+
+petStoreApp.listen(PET_STORE_PORT, () => {
+  console.log(`Pet store server listening on port ${PET_STORE_PORT}`);
+});
+
+///
+// Server for a payments processor.
+///
+const PAYMENTS_PROCESSOR_PORT = 5050;
+
+const paymentsApp = express();
+paymentsApp.use(express.json());
+
+paymentsApp.use((req, _, next) => {
+  console.log(`Payments server received a ${req.method} request at ${req.path}`);
+  next();
+});
+
+paymentsApp.post('/payment/:orderId', (req, res) => {
+  const { creditCardNumber } = req.body;
+  const { orderId } = req.params;
+
+  const petId = db.orders[orderId]?.petId;
+  const amount = db.pets[petId]?.storeInfo.price;
+
+  const payment = {
+    id: faker.string.uuid(),
+    creditCardNumber,
+    amount,
+  };
+
+  db.payments[payment.id] = payment;
+
+  res.send(payment);
+});
+
+paymentsApp.listen(PAYMENTS_PROCESSOR_PORT, () => {
+  console.log(`Payments server listening on port ${PAYMENTS_PROCESSOR_PORT}`);
 });

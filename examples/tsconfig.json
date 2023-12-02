@@ -13,6 +13,7 @@
     "lib": ["es2015"]
   },
   "include": [
+    "advanced",
     "simple"
   ],
   "exclude": [
