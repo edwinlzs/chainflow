@@ -4,7 +4,7 @@ import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../utils/inputs';
-import { gen, pool, required } from '../reqNode';
+import { gen, pool, required } from '../inputNode';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -48,7 +48,7 @@ describe('#endpoint', () => {
       });
     });
 
-    it('should use the default value if no RespNode is linked', async () => {
+    it('should use the default value if no OutputNode is linked', async () => {
       client
         .intercept({
           path: '/user',
@@ -64,7 +64,7 @@ describe('#endpoint', () => {
       assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify(testReqPayload));
     });
 
-    it('should use the available response value after a RespNode is linked to the ReqNode', async () => {
+    it('should use the available response value after a OutputNode is linked to the InputNode', async () => {
       client
         .intercept({
           path: '/user',

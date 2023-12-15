@@ -5,7 +5,7 @@ import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMany } from '../../utils/inputs';
 import http from '../../utils/http';
 import { endpointFactory } from '../endpointFactory';
-import { required } from '../reqNode';
+import { required } from '../inputNode';
 import { seed } from '../endpoint';
 
 describe('#chainflow', () => {
