@@ -290,5 +290,3 @@ export class InputNode {
     }, {} as any);
   }
 }
-
-export type InputNodes = { [key: string]: InputNode };
