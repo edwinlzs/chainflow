@@ -3,7 +3,7 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../../utils/http';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../utils/inputs';
+import { link } from '../../utils/link';
 import { gen, pool, required } from '../inputNode';
 
 describe('#endpoint', () => {
@@ -48,7 +48,7 @@ describe('#endpoint', () => {
       });
     });
 
-    it('should use the default value if no OutputNode is linked', async () => {
+    it('should use the default value if no SourceNode is linked', async () => {
       client
         .intercept({
           path: '/user',
@@ -64,7 +64,7 @@ describe('#endpoint', () => {
       assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify(testReqPayload));
     });
 
-    it('should use the available response value after a OutputNode is linked to the InputNode', async () => {
+    it('should use the available response value after a SourceNode is linked to the InputNode', async () => {
       client
         .intercept({
           path: '/user',
