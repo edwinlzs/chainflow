@@ -1,6 +1,6 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
-import { ReqNode, INodeWithValue } from './reqNode';
+import { InputNode, INodeWithValue } from './inputNode';
 
 const log = debug('chainflow:route');
 
@@ -32,11 +32,11 @@ export type EndpointFactory = EndpointFactoryBase & {
 /** Stores the base address and defines methods to build endpoints with methods. */
 export class EndpointFactoryBase {
   #addr: string;
-  #headers: ReqNode;
+  #headers: InputNode;
   #hash: string;
 
   headers(params: Record<string, string | INodeWithValue | undefined>) {
-    this.#headers = new ReqNode({
+    this.#headers = new InputNode({
       val: params,
       hash: this.#hash,
     });
@@ -44,7 +44,7 @@ export class EndpointFactoryBase {
   }
 
   /** Configure linking of this Req's input nodes. */
-  set(setter: ({ headers }: { headers: ReqNode }) => void) {
+  set(setter: ({ headers }: { headers: InputNode }) => void) {
     setter({
       headers: this.#headers,
     });
@@ -53,7 +53,7 @@ export class EndpointFactoryBase {
 
   constructor(addr: string = '127.0.0.1') {
     this.#addr = addr;
-    this.#headers = new ReqNode({ val: undefined, hash: addr });
+    this.#headers = new InputNode({ val: undefined, hash: addr });
     this.#hash = addr;
     SUPPORTED_METHODS.forEach((method) => {
       /** Makes a call for the given route and endpoint. */

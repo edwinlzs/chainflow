@@ -10,7 +10,7 @@ import {
   setValuePool,
 } from '../utils/symbols';
 
-const log = debug('chainflow:reqNode');
+const log = debug('chainflow:inputNode');
 
 export enum VALUE_POOL_SELECT {
   UNIFORM,
@@ -68,7 +68,7 @@ interface ISourceAccessInfo {
 }
 
 /** A data node for constructing a request. */
-export class ReqNode {
+export class InputNode {
   /** Key-values under this node, if this node represents an object. */
   [key: string]: any;
   /** may not be useful. currently only identifying base endpoint. */
@@ -96,10 +96,10 @@ export class ReqNode {
     switch (val[nodeValueIdentifier]) {
       case NodeValue.ValuePool:
         this.#valuePool = val.valuePool;
-        log(`Defined value pool for ReqNode with hash "${hash}`);
+        log(`Defined value pool for InputNode with hash "${hash}`);
         return;
       case NodeValue.Generator:
-        log(`Defined value generator for ReqNode with hash "${hash}"`);
+        log(`Defined value generator for InputNode with hash "${hash}"`);
         this.#generator = val.generator;
         return;
       case NodeValue.Required:
@@ -115,8 +115,8 @@ export class ReqNode {
         }
 
         Object.entries(val).forEach(([key, val]) => {
-          log(`Creating ReqNode for hash "${hash}" with key "${key}"`);
-          (this as any)[key] = new ReqNode({ val, hash });
+          log(`Creating InputNode for hash "${hash}" with key "${key}"`);
+          (this as any)[key] = new InputNode({ val, hash });
         });
         break;
       default:
@@ -248,7 +248,7 @@ export class ReqNode {
     const respPayload = responses[hash]![0];
 
     log(
-      `Retrieving value for ReqNode with hash "${this[nodeHash]}" from response of endpoint with hash "${hash}" via path "${path}"`,
+      `Retrieving value for InputNode with hash "${this[nodeHash]}" from response of endpoint with hash "${hash}" via path "${path}"`,
     );
 
     // get response value from a linked source
@@ -290,5 +290,3 @@ export class ReqNode {
     }, {} as any);
   }
 }
-
-export type ReqNodes = { [key: string]: ReqNode };

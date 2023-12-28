@@ -1,5 +1,5 @@
 import { debug } from 'debug';
-import { ReqNode } from '../core/reqNode';
+import { InputNode } from '../core/inputNode';
 import { nodeHash, nodePath, setSource, setSources } from './symbols';
 import { OutputNode } from '../core/endpoint';
 
@@ -11,12 +11,12 @@ const log = debug('chainflow:inputs');
  * @param source the response node that will provide the value for a request.
  * @param callback an optional function that is called on the source response value.
  */
-export const link = (dest: ReqNode, source: OutputNode, callback?: (val: any) => any) => {
+export const link = (dest: InputNode, source: OutputNode, callback?: (val: any) => any) => {
   dest[setSource](source[nodeHash], source[nodePath], callback);
   log(
-    `Linked RespNode with hash "${source[nodeHash]}" and path "${source[nodePath].join(
+    `Linked OutputNode with hash "${source[nodeHash]}" and path "${source[nodePath].join(
       '.',
-    )}" to ReqNode with hash "${dest[nodeHash]}"`,
+    )}" to InputNode with hash "${dest[nodeHash]}"`,
   );
 };
 
@@ -27,10 +27,10 @@ export const link = (dest: ReqNode, source: OutputNode, callback?: (val: any) =>
  * @param callback a function to merge the sources into a single output for the dest.
  */
 export const linkMany = (
-  dest: ReqNode,
+  dest: InputNode,
   sources: { [key: string]: OutputNode },
   callback: (val: any) => any,
 ) => {
   dest[setSources](sources, callback);
-  log(`Linked multiple RespNodes object to ReqNode with hash "${dest[nodeHash]}"`);
+  log(`Linked multiple OutputNodes object to InputNode with hash "${dest[nodeHash]}"`);
 };

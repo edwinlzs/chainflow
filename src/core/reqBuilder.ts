@@ -1,51 +1,51 @@
-import { ReqNode } from './reqNode';
+import { InputNode } from './inputNode';
 
 /** Contains node definitions for a request. */
 export class ReqBuilder {
-  baseHeaders: ReqNode; // headers defined on the factory instead of the endpoint
-  #headers: ReqNode;
-  pathParams: ReqNode;
-  #queryParams: ReqNode;
-  #body: ReqNode;
+  baseHeaders: InputNode; // headers defined on the factory instead of the endpoint
+  #headers: InputNode;
+  pathParams: InputNode;
+  #queryParams: InputNode;
+  #body: InputNode;
   #hash: string;
 
   constructor({ hash }: { hash: string }) {
     this.#hash = hash;
-    this.baseHeaders = new ReqNode({ val: undefined, hash: this.#hash });
-    this.#headers = new ReqNode({ val: undefined, hash: this.#hash });
-    this.pathParams = new ReqNode({ val: undefined, hash: this.#hash });
-    this.#queryParams = new ReqNode({ val: undefined, hash: this.#hash });
-    this.#body = new ReqNode({ val: undefined, hash: this.#hash });
+    this.baseHeaders = new InputNode({ val: undefined, hash: this.#hash });
+    this.#headers = new InputNode({ val: undefined, hash: this.#hash });
+    this.pathParams = new InputNode({ val: undefined, hash: this.#hash });
+    this.#queryParams = new InputNode({ val: undefined, hash: this.#hash });
+    this.#body = new InputNode({ val: undefined, hash: this.#hash });
   }
 
-  get body(): ReqNode {
+  get body(): InputNode {
     return this.#body;
   }
 
   set body(payload: any) {
-    this.#body = new ReqNode({
+    this.#body = new InputNode({
       val: payload,
       hash: this.#hash,
     });
   }
 
-  get query(): ReqNode {
+  get query(): InputNode {
     return this.#queryParams;
   }
 
   set query(params: any) {
-    this.#queryParams = new ReqNode({
+    this.#queryParams = new InputNode({
       val: params,
       hash: this.#hash,
     });
   }
 
-  get headers(): ReqNode {
+  get headers(): InputNode {
     return this.#headers;
   }
 
   set headers(params: any) {
-    this.#headers = new ReqNode({
+    this.#headers = new InputNode({
       val: params,
       hash: this.#hash,
     });

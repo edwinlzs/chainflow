@@ -1,5 +1,5 @@
 import { hashEndpoint } from '../utils/hash';
-import { ReqNode, INodeWithValue, required } from './reqNode';
+import { InputNode, INodeWithValue, required } from './inputNode';
 import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
@@ -22,10 +22,10 @@ const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
 /** Describes all the possible input nodes of a HTTP request. */
 export interface InputNodes {
-  pathParams: ReqNode;
-  body: ReqNode;
-  query: ReqNode;
-  headers: ReqNode;
+  pathParams: InputNode;
+  body: InputNode;
+  query: InputNode;
+  headers: InputNode;
 }
 
 /** Describes a value in the output of an endpoint call. */
@@ -36,7 +36,7 @@ export interface OutputNode {
 }
 
 /** Generates proxies recursively to handle nested property access of a response signature. */
-const RespNodeHandler = {
+const OutputNodeHandler = {
   get(obj: { path: string[]; hash: string }, prop: any): any {
     if (prop === nodePath) return obj.path;
     if (prop === nodeHash) return obj.hash;
@@ -47,15 +47,15 @@ const RespNodeHandler = {
         path: newPath,
         hash: obj.hash,
       },
-      RespNodeHandler,
+      OutputNodeHandler,
     ) as unknown as OutputNode;
   },
 };
 
-/** Special object used to link a ReqNode to a chainflow seed. */
+/** Special object used to link a InputNode to a chainflow seed. */
 export const seed = new Proxy(
   { path: [], hash: SEED_HASH },
-  RespNodeHandler,
+  OutputNodeHandler,
 ) as unknown as OutputNode;
 
 /**
@@ -80,7 +80,7 @@ export class Endpoint {
     this.#extractPathParams();
     this.#resp = new Proxy(
       { path: [], hash: this.getHash() },
-      RespNodeHandler,
+      OutputNodeHandler,
     ) as unknown as OutputNode;
   }
 
@@ -116,7 +116,7 @@ export class Endpoint {
   }
 
   /** Sets headers provided by the factory. */
-  baseHeaders(node: ReqNode) {
+  baseHeaders(node: InputNode) {
     this.#req.baseHeaders = node;
     return this;
   }
@@ -189,10 +189,10 @@ export class Endpoint {
     const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
-      log(`Found path parameter ReqNode for hash "${hash}" with name "${paramName}"`);
+      log(`Found path parameter InputNode for hash "${hash}" with name "${paramName}"`);
       params[paramName] = required();
     }
-    this.#req.pathParams = new ReqNode({
+    this.#req.pathParams = new InputNode({
       val: params,
       hash,
     });
