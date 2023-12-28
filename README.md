@@ -233,6 +233,20 @@ chainflow()
   });
 ```
 
+### Allow Undefined Sources Values
+
+By default, an input node will reject and skip a source node's value if it is unavailable or `undefined`. However, you can change this by passing a source node into the `allowUndefined` function, which modifies its properties to inform an input node to use its value regardless of whether the value is `undefined` or not.
+
+```typescript
+import { allowUndefined } from 'chainflow';
+
+createUser.set(({ body: { name } }) => {
+  link(name, allowUndefined(seed.username));
+});
+```
+
+This has important implications - it means that as long as the source (e.g. a response from an endpoint call) is available, then the linked source node's value will be taken and used (even if that value is unavailable, which would be taken as `undefined`). Therefore, any other linked sources will not be used UNLESS 1. they have a higher priority or 2. the source providing the linked node that allows `undefined` is unavailable.
+
 &nbsp;
 
 ## Future Updates
