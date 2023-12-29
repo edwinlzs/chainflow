@@ -1,5 +1,5 @@
 import { hashEndpoint } from '../utils/hash';
-import { InputNode, INodeWithValue, required } from './inputNode';
+import { InputNode, INodeWithValue, required, SourceValues, SourceNode } from './inputNode';
 import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
@@ -11,7 +11,7 @@ import {
   UnsupportedMethodError,
 } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts, Responses, SEED_HASH } from './chainflow';
+import { CallOpts, SEED_HASH } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 
 const deepmerge = deepmergeSetup();
@@ -26,14 +26,6 @@ export interface InputNodes {
   body: InputNode;
   query: InputNode;
   headers: InputNode;
-}
-
-/** Describes a value in a source node e.g. the output of an endpoint call. */
-export interface SourceNode {
-  [nodeHash]: string;
-  [nodePath]: string[];
-  [undefinedAllowed]?: boolean;
-  [key: string]: any;
 }
 
 /** An intermediate object used to contain information on the SourceNode being built. */
@@ -135,7 +127,7 @@ export class Endpoint {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: Responses, opts?: CallOpts): Promise<any> {
+  async call(responses: SourceValues, opts?: CallOpts): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body = {};
