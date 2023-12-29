@@ -1,6 +1,6 @@
 import debug from 'debug';
 import { Responses } from './chainflow';
-import { OutputNode } from './endpoint';
+import { SourceNode } from './endpoint';
 import {
   getNodeValue,
   nodeHash,
@@ -8,6 +8,7 @@ import {
   setSource,
   setSources,
   setValuePool,
+  undefinedAllowed,
 } from '../utils/symbols';
 
 const log = debug('chainflow:inputNode');
@@ -53,6 +54,7 @@ interface ISource {
   path: string[];
   /** A callback that will be used on the source value. */
   callback?: (val: any) => any;
+  undefinedAllowed?: boolean;
 }
 
 /** Multiple source nodes to a request node. */
@@ -64,7 +66,8 @@ interface ISources {
 interface ISourceAccessInfo {
   hash: string;
   path: string[];
-  key: string; // the key given to this value when passing into the callback
+  key: string; // the key assigned to this source value when passed into the callback
+  undefinedAllowed?: boolean;
 }
 
 /** A data node for constructing a request. */
@@ -126,21 +129,23 @@ export class InputNode {
   }
 
   /** Sets a source node for this request node. */
-  [setSource](hash: string, path: string[], callback?: (val: any) => any) {
-    this.#sources[hash] = {
-      path,
+  [setSource](source: SourceNode, callback?: (val: any) => any) {
+    this.#sources[source[nodeHash]] = {
+      path: source[nodePath],
+      undefinedAllowed: source[undefinedAllowed],
       callback,
     };
   }
 
   /** Sets multiple source nodes to be combined into a single input for this request node */
-  [setSources](sources: { [key: string]: OutputNode }, callback: (val: any) => any) {
+  [setSources](sources: { [key: string]: SourceNode }, callback: (val: any) => any) {
     const hashes = new Set<string>();
     const accessInfo: ISourceAccessInfo[] = Object.entries(sources).map(([key, source]) => {
       const hash = source[nodeHash];
       hashes.add(hash);
       return {
         path: source[nodePath],
+        undefinedAllowed: source[undefinedAllowed],
         hash,
         key,
       };
@@ -168,11 +173,20 @@ export class InputNode {
       if ('accessInfo' in respSource) {
         respVal = this.#getMultiSourceNodeValues(respSource, responses);
       } else {
-        respVal = this.#getSingleSourceNodeValue(endpointHash, respSource.path, responses);
+        respVal = this.#getSingleSourceNodeValue(
+          endpointHash,
+          respSource.path,
+          responses,
+          respSource.undefinedAllowed,
+        );
       }
 
-      if (respVal !== undefined)
+      if (
+        respVal !== undefined ||
+        ('undefinedAllowed' in respSource && respSource.undefinedAllowed)
+      ) {
         return respSource.callback ? respSource.callback(respVal) : respVal;
+      }
 
       usedEndpoints.push(...endpointHash.split('|'));
       endpointHash = this.#matchSourceHash(responses, usedEndpoints);
@@ -224,12 +238,19 @@ export class InputNode {
   }
 
   /** Access the source node value in a response payload */
-  #accessSource(payload: any, path: string[], sourceEndpointHash: string): any {
+  #accessSource(
+    payload: any,
+    path: string[],
+    sourceEndpointHash: string,
+    undefinedAllowed?: boolean,
+  ): any {
     let respVal = payload;
 
     let i = 0;
     while (i < path.length) {
+      // recall that `typeof null` returns 'object'
       if (respVal == null || typeof respVal !== 'object') {
+        if (undefinedAllowed) return undefined;
         log(
           `Unable to retrieve source node value from response to endpoint with hash "${sourceEndpointHash}".`,
         );
@@ -244,7 +265,12 @@ export class InputNode {
   }
 
   /** Attempts to retrieve values for a request node from a single source node. */
-  #getSingleSourceNodeValue(hash: string, path: string[], responses: Responses) {
+  #getSingleSourceNodeValue(
+    hash: string,
+    path: string[],
+    responses: Responses,
+    undefinedAllowed?: boolean,
+  ) {
     const respPayload = responses[hash]![0];
 
     log(
@@ -252,7 +278,7 @@ export class InputNode {
     );
 
     // get response value from a linked source
-    return this.#accessSource(respPayload, path, hash);
+    return this.#accessSource(respPayload, path, hash, undefinedAllowed);
   }
 
   /** Attempts to retrieve values for a request node from multiple source nodes. */

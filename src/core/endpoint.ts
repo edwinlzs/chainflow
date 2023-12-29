@@ -4,7 +4,7 @@ import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
 import { Dispatcher } from 'undici';
-import { getNodeValue, nodeHash, nodePath } from '../utils/symbols';
+import { getNodeValue, nodeHash, nodePath, undefinedAllowed } from '../utils/symbols';
 import {
   InvalidResponseError,
   RequiredValuesNotFoundError,
@@ -28,35 +28,48 @@ export interface InputNodes {
   headers: InputNode;
 }
 
-/** Describes a value in the output of an endpoint call. */
-export interface OutputNode {
+/** Describes a value in a source node e.g. the output of an endpoint call. */
+export interface SourceNode {
   [nodeHash]: string;
   [nodePath]: string[];
+  [undefinedAllowed]?: boolean;
   [key: string]: any;
 }
 
+/** An intermediate object used to contain information on the SourceNode being built. */
+interface RawSourceNode {
+  path: string[];
+  hash: string;
+  undefinedAllowed?: boolean;
+}
+
 /** Generates proxies recursively to handle nested property access of a response signature. */
-const OutputNodeHandler = {
-  get(obj: { path: string[]; hash: string }, prop: any): any {
+const SourceNodeHandler = {
+  get(obj: RawSourceNode, prop: any): any {
     if (prop === nodePath) return obj.path;
     if (prop === nodeHash) return obj.hash;
+    if (prop === undefinedAllowed) return obj.undefinedAllowed;
     const newPath = [...obj.path];
     newPath.push(prop);
     return new Proxy(
       {
         path: newPath,
         hash: obj.hash,
+        undefinedAllowed: obj.undefinedAllowed,
       },
-      OutputNodeHandler,
-    ) as unknown as OutputNode;
+      SourceNodeHandler,
+    ) as unknown as SourceNode;
+  },
+  set(obj: RawSourceNode, prop: any, val: any) {
+    if (prop === undefinedAllowed) return (obj.undefinedAllowed = val);
   },
 };
 
 /** Special object used to link a InputNode to a chainflow seed. */
 export const seed = new Proxy(
   { path: [], hash: SEED_HASH },
-  OutputNodeHandler,
-) as unknown as OutputNode;
+  SourceNodeHandler,
+) as unknown as SourceNode;
 
 /**
  * Manages request and response nodes,
@@ -67,7 +80,7 @@ export class Endpoint {
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
-  #resp: OutputNode;
+  #resp: SourceNode;
 
   constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
     method = method.toLowerCase();
@@ -80,8 +93,8 @@ export class Endpoint {
     this.#extractPathParams();
     this.#resp = new Proxy(
       { path: [], hash: this.getHash() },
-      OutputNodeHandler,
-    ) as unknown as OutputNode;
+      SourceNodeHandler,
+    ) as unknown as SourceNode;
   }
 
   get method() {

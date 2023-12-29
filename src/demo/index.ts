@@ -1,7 +1,7 @@
 /** USER TEST ZONE */
 import { chainflow } from '../core/chainflow';
 import { InputNodes } from '../core/endpoint';
-import { link } from '../utils/inputs';
+import { link } from '../utils/link';
 import {
   createProject,
   createRole,

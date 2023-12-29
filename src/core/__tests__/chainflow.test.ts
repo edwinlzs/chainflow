@@ -2,7 +2,7 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { chainflow } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link, linkMany } from '../../utils/inputs';
+import { allowUndefined, link, linkMany } from '../../utils/link';
 import http from '../../utils/http';
 import { endpointFactory } from '../endpointFactory';
 import { required } from '../inputNode';
@@ -123,6 +123,7 @@ describe('#chainflow', () => {
     const getUser = factory.get('/user');
     const createRole = factory.post('/role').body({
       name: 'defaultName',
+      roleName: 'someRole',
     });
 
     createRole.set(({ body: { name } }) => {
@@ -162,6 +163,7 @@ describe('#chainflow', () => {
         const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
         assert.deepEqual(callBody, {
           name: 'A',
+          roleName: 'someRole',
         });
       });
     });
@@ -194,8 +196,53 @@ describe('#chainflow', () => {
         const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
         assert.deepEqual(callBody, {
           name: 'B',
+          roleName: 'someRole',
         });
         tracker.mock.resetCalls();
+      });
+
+      describe('when undefined values are allowed from the linked response', () => {
+        const createRole = factory.post('/role').body({
+          name: 'defaultName',
+          roleName: 'someRole',
+        });
+        createRole.set(({ body: { name } }) => {
+          link(name, allowUndefined(createUser.resp.details.name));
+          link(name, getUser.resp.details.name);
+        });
+        const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
+        const tracker = mock.method(http, 'httpReq');
+
+        it('should use undefined instead of accessing the next linked response ', async () => {
+          client
+            .intercept({
+              path: '/user',
+              method: 'POST',
+            })
+            .reply(200, {
+              details: null,
+            });
+
+          client
+            .intercept({
+              path: '/user',
+              method: 'GET',
+            })
+            .reply(200, {
+              details: {
+                name: 'B',
+              },
+            });
+          tracker.mock.resetCalls();
+          await testFlow.run();
+          assert.equal(tracker.mock.calls.length, 3);
+          const roleCall = tracker.mock.calls[2];
+          const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
+          assert.deepEqual(callBody, {
+            roleName: 'someRole',
+          });
+          tracker.mock.resetCalls();
+        });
       });
     });
   });
