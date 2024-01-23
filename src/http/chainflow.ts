@@ -1,6 +1,6 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
-import { SourceValues } from './inputNode';
+import { SourceValues } from '../core/inputNode';
 
 const log = debug('chainflow:chainflow');
 

@@ -1,5 +1,5 @@
 import { describe, it, mock } from 'node:test';
-import http, { defaultHeaders } from '../http';
+import http, { defaultHeaders } from '../client';
 import assert from 'node:assert';
 import undici from 'undici';
 

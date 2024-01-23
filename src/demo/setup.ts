@@ -1,5 +1,5 @@
 /** TEST ZONE */
-import { endpointFactory } from '../core/endpointFactory';
+import { endpointFactory } from '../http/endpointFactory';
 
 // this section should be derived by the lib from API specs
 // or from utility functions placed within defined routes

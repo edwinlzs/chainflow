@@ -1,13 +1,15 @@
 import debug from 'debug';
+import { SourceNode } from './source';
 import {
   getNodeValue,
   nodeHash,
   nodePath,
+  nodeValueIdentifier,
   setSource,
   setSources,
   setValuePool,
   undefinedAllowed,
-} from '../utils/symbols';
+} from './utils/symbols';
 
 const log = debug('chainflow:inputNode');
 
@@ -15,44 +17,12 @@ export enum VALUE_POOL_SELECT {
   UNIFORM,
 }
 
-export interface INodeWithValue {
-  [nodeValueIdentifier]: NodeValue;
-}
-
-export const nodeValueIdentifier = Symbol('nodeValueIdentifier');
-
 export enum NodeValue {
   ValuePool,
   Generator,
   Required,
   Source,
 }
-
-/** Describes a value in a source node e.g. the response to an endpoint call. */
-export interface SourceNode {
-  [nodeHash]: string;
-  [nodePath]: string[];
-  [undefinedAllowed]?: boolean;
-  [key: string]: any;
-}
-
-/** Defines a set of values to choose from when constructing an input. */
-export const pool = (valuePool: any[]) => ({
-  valuePool,
-  [nodeValueIdentifier]: NodeValue.ValuePool,
-});
-
-/** Provides a generator function to produce a value for an input. */
-export const gen = (generator: () => any) => ({
-  generator,
-  [nodeValueIdentifier]: NodeValue.Generator,
-});
-
-/** Used to mark a param without a default value
- * as required to be taken from another source. */
-export const required = () => ({
-  [nodeValueIdentifier]: NodeValue.Required,
-});
 
 /** Details of a source node. */
 interface ISource {

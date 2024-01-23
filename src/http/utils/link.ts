@@ -1,6 +1,13 @@
 import { debug } from 'debug';
-import { InputNode, SourceNode } from '../core/inputNode';
-import { nodeHash, nodePath, setSource, setSources, undefinedAllowed } from './symbols';
+import { InputNode } from '../../core/inputNode';
+import {
+  nodeHash,
+  nodePath,
+  setSource,
+  setSources,
+  undefinedAllowed,
+} from '../../core/utils/symbols';
+import { SourceNode } from '../../core/source';
 
 const log = debug('chainflow:inputs');
 

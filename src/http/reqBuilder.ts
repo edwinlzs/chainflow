@@ -1,4 +1,4 @@
-import { InputNode } from './inputNode';
+import { InputNode } from '../core/inputNode';
 
 /** Contains node definitions for a request. */
 export class ReqBuilder {

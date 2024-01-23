@@ -1,10 +1,10 @@
 import { describe, it, mock } from 'node:test';
 import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
-import http from '../../utils/http';
+import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../utils/link';
-import { gen, pool, required } from '../inputNode';
+import { link } from '../utils/link';
+import { gen, pool, required } from '../../core/utils/initializers';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();

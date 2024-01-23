@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { InputNode } from '../inputNode';
-import { getNodeValue, setValuePool } from '../../utils/symbols';
+import { getNodeValue, setValuePool } from '../utils/symbols';
 
 describe('#inputNode', () => {
   const testVal = {

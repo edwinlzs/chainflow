@@ -1,7 +1,7 @@
 /** USER TEST ZONE */
-import { chainflow } from '../core/chainflow';
-import { InputNodes } from '../core/endpoint';
-import { link } from '../utils/link';
+import { chainflow } from '../http/chainflow';
+import { InputNodes } from '../http/endpoint';
+import { link } from '../http/utils/link';
 import {
   createProject,
   createRole,

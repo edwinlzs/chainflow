@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { endpointFactory } from '../endpointFactory';
-import http from '../../utils/http';
+import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 
 describe('#endpointFactory', () => {

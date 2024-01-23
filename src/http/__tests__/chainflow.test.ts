@@ -2,10 +2,10 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { chainflow } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { allowUndefined, link, linkMany } from '../../utils/link';
-import http from '../../utils/http';
+import { allowUndefined, link, linkMany } from '../utils/link';
+import http from '../utils/client';
 import { endpointFactory } from '../endpointFactory';
-import { required } from '../inputNode';
+import { required } from '../../core/utils/initializers';
 import { seed } from '../endpoint';
 
 describe('#chainflow', () => {

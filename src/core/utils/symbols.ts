@@ -4,4 +4,5 @@ export const setValuePool = Symbol('setValuePool');
 export const getNodeValue = Symbol('getNodeValue');
 export const nodeHash = Symbol('nodeHash');
 export const nodePath = Symbol('nodePath');
+export const nodeValueIdentifier = Symbol('nodeValueIdentifier');
 export const undefinedAllowed = Symbol('undefinedAllowed');
