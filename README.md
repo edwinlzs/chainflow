@@ -29,15 +29,15 @@ const createUser = factory.post('/user').body({
 
 const createRole = factory.post('/role').body({
   type: 'Engineer',
-  userId: '',
+  userId: createUser.resp.id,
 });
 
 const getUser = factory.get('/user').query({
-  roleType: '',
+  roleType: createRole.resp.type,
 });
 ```
 
-Use the `set` method to expose an endpoint's input nodes.  
+<!-- Use the `set` method to expose an endpoint's input nodes.  
 Use the `link` helper to pass values from a response into a future request.
 
 ```typescript
@@ -50,7 +50,7 @@ createRole.set(({ body: { userId }}) => {
 getUser.set(({ query: { roleType } }) => {
   link(roleType, createRole.resp.type); // link `type` from `POST /role` response to `roleType`
 });
-```
+``` -->
 
 Use a `chainflow` to define a sequence of endpoint calls that take advantage of the values and links provided above.
 

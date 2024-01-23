@@ -42,7 +42,7 @@ describe('#endpoint', () => {
       [respEndpoint.getHash()]: [respPayload],
     };
 
-    it('should expose its request nodes for setting up links', () => {
+    it('should expose its input nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
         assert.deepEqual(Object.keys(nodes.body), Object.keys(testReqPayload));
       });

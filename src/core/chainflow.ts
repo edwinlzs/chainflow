@@ -26,6 +26,7 @@ export interface CallOpts {
 /** Options for running chainflow. */
 export interface RunOpts {
   seed?: Record<string, any>;
+  log?: boolean;
 }
 
 class Chainflow {
@@ -53,8 +54,13 @@ class Chainflow {
         break;
       }
     }
+    let responses = {};
+    if (opts?.log) {
+      responses = this.#responses;
+    }
     this.reset();
     log('Finished running chainflow.');
+    return responses;
   }
 
   /** Adds an endpoint call to the callchain. */

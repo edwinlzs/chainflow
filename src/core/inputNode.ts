@@ -19,11 +19,13 @@ export interface INodeWithValue {
   [nodeValueIdentifier]: NodeValue;
 }
 
-const nodeValueIdentifier = Symbol('nodeValueIdentifier');
-enum NodeValue {
+export const nodeValueIdentifier = Symbol('nodeValueIdentifier');
+
+export enum NodeValue {
   ValuePool,
   Generator,
   Required,
+  Source,
 }
 
 /** Describes a value in a source node e.g. the response to an endpoint call. */
@@ -118,6 +120,9 @@ export class InputNode {
         return;
       case NodeValue.Required:
         this.#required = true;
+        return;
+      case NodeValue.Source:
+        this[setSource](val);
         return;
     }
 

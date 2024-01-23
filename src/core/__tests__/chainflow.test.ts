@@ -20,7 +20,7 @@ describe('#chainflow', () => {
     const tracker = mock.method(endpoint, 'call', () => ({}));
 
     await chainflow().call(endpoint).run();
-    assert.equal(tracker.mock.calls.length, 1);
+    assert.equal(tracker.mock.callCount(), 1);
   });
 
   it('should allow multiple API calls', async () => {
@@ -32,8 +32,8 @@ describe('#chainflow', () => {
 
     await chainflow().call(getUser).call(createRole).call(getUser).run();
 
-    assert.equal(userTracker.mock.calls.length, 2);
-    assert.equal(roleTracker.mock.calls.length, 1);
+    assert.equal(userTracker.mock.callCount(), 2);
+    assert.equal(roleTracker.mock.callCount(), 1);
   });
 
   describe('when an endpoint call returns an error code', () => {
@@ -58,8 +58,8 @@ describe('#chainflow', () => {
         .reply(400, {});
       await chainflow().call(getUser).call(createRole).call(getUser).run();
 
-      assert.equal(userTracker.mock.calls.length, 1);
-      assert.equal(roleTracker.mock.calls.length, 1);
+      assert.equal(userTracker.mock.callCount(), 1);
+      assert.equal(roleTracker.mock.callCount(), 1);
     });
   });
 
@@ -86,7 +86,7 @@ describe('#chainflow', () => {
       roleTracker.mock.resetCalls();
       await testFlow.run();
 
-      assert.equal(roleTracker.mock.calls.length, 1);
+      assert.equal(roleTracker.mock.callCount(), 1);
       assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
         [createUser.getHash()]: [
           {
@@ -107,7 +107,7 @@ describe('#chainflow', () => {
       roleTracker.mock.resetCalls();
       await testFlow.run();
 
-      assert.equal(roleTracker.mock.calls.length, 1);
+      assert.equal(roleTracker.mock.callCount(), 1);
       assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
         [createUser.getHash()]: [
           {
@@ -158,7 +158,7 @@ describe('#chainflow', () => {
           });
         tracker.mock.resetCalls();
         await testFlow.run();
-        assert.equal(tracker.mock.calls.length, 3);
+        assert.equal(tracker.mock.callCount(), 3);
         const roleCall = tracker.mock.calls[2];
         const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
         assert.deepEqual(callBody, {
@@ -191,7 +191,7 @@ describe('#chainflow', () => {
           });
         tracker.mock.resetCalls();
         await testFlow.run();
-        assert.equal(tracker.mock.calls.length, 3);
+        assert.equal(tracker.mock.callCount(), 3);
         const roleCall = tracker.mock.calls[2];
         const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
         assert.deepEqual(callBody, {
@@ -235,7 +235,7 @@ describe('#chainflow', () => {
             });
           tracker.mock.resetCalls();
           await testFlow.run();
-          assert.equal(tracker.mock.calls.length, 3);
+          assert.equal(tracker.mock.callCount(), 3);
           const roleCall = tracker.mock.calls[2];
           const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
           assert.deepEqual(callBody, {
@@ -371,7 +371,7 @@ describe('#chainflow', () => {
         })
         .reply(200, {});
       tracker.mock.resetCalls();
-      assert.doesNotReject(chainflow().call(getRandName).call(createUser).run());
+      await assert.doesNotReject(chainflow().call(getRandName).call(createUser).run());
     });
   });
 
@@ -390,7 +390,7 @@ describe('#chainflow', () => {
 
     const tracker = mock.method(http, 'httpReq');
 
-    it('should call the endpoint with the given call options', () => {
+    it('should call the endpoint with the given call options', async () => {
       client
         .intercept({
           path: '/user',
@@ -399,7 +399,7 @@ describe('#chainflow', () => {
         .reply(200, {});
       tracker.mock.resetCalls();
 
-      chainflow()
+      await chainflow()
         .call(addUser, {
           body: {
             name: 'some name',
@@ -438,7 +438,7 @@ describe('#chainflow', () => {
 
     const tracker = mock.method(http, 'httpReq');
 
-    it('should call the endpoint with the given seed', () => {
+    it('should call the endpoint with the given seed', async () => {
       client
         .intercept({
           path: '/user',
@@ -447,7 +447,7 @@ describe('#chainflow', () => {
         .reply(200, {});
       tracker.mock.resetCalls();
 
-      chainflow()
+      await chainflow()
         .call(createUser)
         .run({
           seed: { username: 'some name' },
@@ -457,6 +457,50 @@ describe('#chainflow', () => {
       assert.deepEqual(JSON.parse(arg?.body), {
         name: 'some name',
       });
+    });
+  });
+
+  describe('when source nodes are provided directly to input nodes', () => {
+    const createUser = factory.post('/usery').body({
+      name: 'Tom',
+    });
+
+    const createRole = factory.post('/roley').body({
+      userId: createUser.resp.id,
+      type: 'ENGINEER',
+    });
+
+    const tracker = mock.method(http, 'httpReq');
+
+    it('should take the value from the specified source', async () => {
+      client
+        .intercept({
+          path: '/usery',
+          method: 'POST',
+        })
+        .reply(200, {
+          id: 'some-id',
+        });
+
+      client
+        .intercept({
+          path: '/roley',
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      tracker.mock.resetCalls();
+
+      await chainflow().call(createUser).call(createRole).run();
+
+      assert.equal(tracker.mock.callCount(), 2);
+      assert.deepEqual(
+        tracker.mock.calls[1].arguments[0]?.body,
+        JSON.stringify({
+          userId: 'some-id',
+          type: 'ENGINEER',
+        }),
+      );
     });
   });
 });
