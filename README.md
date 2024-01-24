@@ -37,21 +37,6 @@ const getUser = factory.get('/user').query({
 });
 ```
 
-<!-- Use the `set` method to expose an endpoint's input nodes.  
-Use the `link` helper to pass values from a response into a future request.
-
-```typescript
-import { generateRoutes, link } from chainflow;
-
-createRole.set(({ body: { userId }}) => {
-  link(userId, createUser.resp.id); // link `id` from `POST /user` response to `userId`
-});
-
-getUser.set(({ query: { roleType } }) => {
-  link(roleType, createRole.resp.type); // link `type` from `POST /role` response to `roleType`
-});
-``` -->
-
 Use a `chainflow` to define a sequence of endpoint calls that take advantage of the values and links provided above.
 
 ```typescript
@@ -147,7 +132,7 @@ const createUser = factory.post('/user').body({
 Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.
 
 ```typescript
-const userPost = factory.post('/user').body({
+const createUser = factory.post('/user').body({
   name: pool(['Tom', 'Harry', 'Jane']),
   details: {
     age: 40,
@@ -162,11 +147,51 @@ Provide a callback that generates values for building requests.
 ```typescript
 const randAge = () => Math.floor(Math.random() * 100);
 
-const userPost = factory.post('/user').body({
+const createUser = factory.post('/user').body({
   name: 'Tom',
   details: {
     age: gen(randAge),
   },
+});
+```
+
+### `source`
+
+Specify a source node with a callback.
+
+```typescript
+const addGreeting = (name: string) => `Hello ${name}`;
+
+createNotification.body({
+  msg: source(getUser.resp.name, addGreeting);
+});
+```
+
+### `sources`
+
+Specify multiple source nodes that a value can be taken from, with an optional callback.
+
+```typescript
+createNotification.body({
+  msg: sources([getUser.resp.name, createUser.resp.name], addGreeting);
+});
+```
+
+### `link`
+
+Link a response values to a single request node.
+
+```typescript
+createNotification.set(({ body: { msg } }) => {
+  link(msg, getUser.resp.name);
+});
+```
+
+Optionally, you can pass a callback to transform the response value before it is passed to the node.
+
+```typescript
+createNotification.set(({ body: { msg } }) => {
+  link(msg, getUser.resp.name, addGreeting);
 });
 ```
 

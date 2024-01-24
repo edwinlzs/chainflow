@@ -1,5 +1,5 @@
 import debug from 'debug';
-import { SourceNode } from './source';
+import { SourceNode } from './sourceNode';
 import {
   getNodeValue,
   nodeHash,
@@ -22,6 +22,8 @@ export enum NodeValue {
   Generator,
   Required,
   Source,
+  SourceWithCallback,
+  Sources,
 }
 
 /** Details of a source node. */
@@ -94,11 +96,21 @@ export class InputNode {
       case NodeValue.Source:
         this[setSource](val);
         return;
+      case NodeValue.SourceWithCallback: // TODO: explore refactoring here
+        this[setSource](val.source, val.callback);
+        return;
+      case NodeValue.Sources:
+        // TODO: validation here
+        val.sources.forEach((source: SourceNode) => {
+          this[setSource](source);
+        });
+        return;
     }
 
     switch (typeof val) {
       case 'object':
         if (Array.isArray(val)) {
+          // this means you can't put a source node into an array
           this.#default = val;
           break;
         }

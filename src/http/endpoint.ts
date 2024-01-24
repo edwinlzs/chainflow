@@ -12,7 +12,7 @@ import {
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
 import { CallOpts, SEED_HASH } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
-import { SourceNode, SourceNodeHandler } from '../core/source';
+import { SourceNode, SourceNodeHandler } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
 

@@ -2,7 +2,7 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { chainflow } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { allowUndefined, link, linkMany } from '../utils/link';
+import { allowUndefined, link, linkMany } from '../../core/utils/link';
 import http from '../utils/client';
 import { endpointFactory } from '../endpointFactory';
 import { required } from '../../core/utils/initializers';

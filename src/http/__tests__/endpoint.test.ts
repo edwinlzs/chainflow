@@ -3,7 +3,7 @@ import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../utils/link';
+import { link } from '../../core/utils/link';
 import { gen, pool, required } from '../../core/utils/initializers';
 
 describe('#endpoint', () => {

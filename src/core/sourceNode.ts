@@ -1,4 +1,4 @@
-import { NodeValue } from '../core/inputNode';
+import { NodeValue } from './inputNode';
 import { nodeHash, nodePath, nodeValueIdentifier, undefinedAllowed } from './utils/symbols';
 
 /** Describes a value in a source node e.g. the output of an endpoint call. */
