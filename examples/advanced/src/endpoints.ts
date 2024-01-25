@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { endpointFactory, gen, link, pool, required } from 'chainflow';
+import { endpointFactory, gen, link, pool, required, seed } from 'chainflow';
 
 const petStoreAddr = '127.0.0.1:3030';
 const paymentsAddr = '127.0.0.1:5050';
@@ -9,7 +9,7 @@ const factory = endpointFactory(petStoreAddr);
 // Defining API signatures
 
 export const login = factory.get('/user/login').query({
-  username: required(),
+  username: seed.username,
   password: gen(() => faker.string.alphanumeric(8)),
 });
 

@@ -1,6 +1,6 @@
-import { Endpoint } from './endpoint';
+import { Endpoint, INodeWithValue } from './endpoint';
 import debug from 'debug';
-import { InputNode, INodeWithValue } from './inputNode';
+import { InputNode } from '../core/inputNode';
 
 const log = debug('chainflow:route');
 

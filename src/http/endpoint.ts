@@ -1,18 +1,20 @@
-import { hashEndpoint } from '../utils/hash';
-import { InputNode, INodeWithValue, required } from './inputNode';
+import { hashEndpoint } from './utils/hash';
+import { InputNode, SourceValues, NodeValue } from '../core/inputNode';
 import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
-import http, { SUPPORTED_METHOD_UPPERCASE } from '../utils/http';
+import http, { SUPPORTED_METHOD_UPPERCASE } from './utils/client';
 import { Dispatcher } from 'undici';
-import { getNodeValue, nodeHash, nodePath, undefinedAllowed } from '../utils/symbols';
 import {
   InvalidResponseError,
   RequiredValuesNotFoundError,
   UnsupportedMethodError,
 } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts, Responses, SEED_HASH } from './chainflow';
+import { CallOpts } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
+import { SourceNode, sourceNode } from '../core/sourceNode';
+import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
+import { required } from '../core/utils/initializers';
 
 const deepmerge = deepmergeSetup();
 
@@ -20,56 +22,17 @@ const log = debug('chainflow:endpoint');
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
+export interface INodeWithValue {
+  [nodeValueIdentifier]: NodeValue;
+}
+
 /** Describes all the possible input nodes of a HTTP request. */
-export interface InputNodes {
+export interface HttpInputNodes {
   pathParams: InputNode;
   body: InputNode;
   query: InputNode;
   headers: InputNode;
 }
-
-/** Describes a value in a source node e.g. the output of an endpoint call. */
-export interface SourceNode {
-  [nodeHash]: string;
-  [nodePath]: string[];
-  [undefinedAllowed]?: boolean;
-  [key: string]: any;
-}
-
-/** An intermediate object used to contain information on the SourceNode being built. */
-interface RawSourceNode {
-  path: string[];
-  hash: string;
-  undefinedAllowed?: boolean;
-}
-
-/** Generates proxies recursively to handle nested property access of a response signature. */
-const SourceNodeHandler = {
-  get(obj: RawSourceNode, prop: any): any {
-    if (prop === nodePath) return obj.path;
-    if (prop === nodeHash) return obj.hash;
-    if (prop === undefinedAllowed) return obj.undefinedAllowed;
-    const newPath = [...obj.path];
-    newPath.push(prop);
-    return new Proxy(
-      {
-        path: newPath,
-        hash: obj.hash,
-        undefinedAllowed: obj.undefinedAllowed,
-      },
-      SourceNodeHandler,
-    ) as unknown as SourceNode;
-  },
-  set(obj: RawSourceNode, prop: any, val: any) {
-    if (prop === undefinedAllowed) return (obj.undefinedAllowed = val);
-  },
-};
-
-/** Special object used to link a InputNode to a chainflow seed. */
-export const seed = new Proxy(
-  { path: [], hash: SEED_HASH },
-  SourceNodeHandler,
-) as unknown as SourceNode;
 
 /**
  * Manages request and response nodes,
@@ -91,10 +54,7 @@ export class Endpoint {
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
-    this.#resp = new Proxy(
-      { path: [], hash: this.getHash() },
-      SourceNodeHandler,
-    ) as unknown as SourceNode;
+    this.#resp = sourceNode(this.getHash());
   }
 
   get method() {
@@ -135,7 +95,7 @@ export class Endpoint {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: Responses, opts?: CallOpts): Promise<any> {
+  async call(responses: SourceValues, opts?: CallOpts): Promise<any> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body = {};
@@ -184,7 +144,7 @@ export class Endpoint {
   }
 
   /** Configure linking of this Req's input nodes. */
-  set(setter: (nodes: InputNodes) => void) {
+  set(setter: (nodes: HttpInputNodes) => void) {
     setter({
       pathParams: this.#req.pathParams,
       body: this.#req.body,

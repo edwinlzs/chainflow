@@ -9,23 +9,6 @@ import {
 } from './src/definitions';
 
 // create the chains
-getUser.set(({ query: { age } }: InputNodes) => {
-  link(age, createUser.resp.details.age);
-});
-
-createRole.set(({ body: { user_id } }: InputNodes) => {
-  link(user_id, createUser.resp.id);
-});
-
-createProject.set(({ body: { creator_id } }: InputNodes) => {
-  link(creator_id, createUser.resp.id);
-});
-
-createSubmission.set(({ body: { creator_id, project_id } }: InputNodes) => {
-  link(creator_id, createUser.resp.id);
-  link(project_id, createProject.resp.id);
-});
-
 getSubmission.set(({ pathParams: { submissionId } }) => {
   link(submissionId, createSubmission.resp.id);
 });

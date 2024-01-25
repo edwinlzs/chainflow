@@ -1,10 +1,10 @@
 import { describe, it, mock } from 'node:test';
 import { Endpoint } from '../endpoint';
 import assert from 'node:assert';
-import http from '../../utils/http';
+import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../utils/link';
-import { gen, pool, required } from '../inputNode';
+import { link } from '../../core/utils/link';
+import { gen, pool, required } from '../../core/utils/initializers';
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -42,7 +42,7 @@ describe('#endpoint', () => {
       [respEndpoint.getHash()]: [respPayload],
     };
 
-    it('should expose its request nodes for setting up links', () => {
+    it('should expose its input nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
         assert.deepEqual(Object.keys(nodes.body), Object.keys(testReqPayload));
       });

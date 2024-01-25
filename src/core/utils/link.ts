@@ -1,9 +1,9 @@
 import { debug } from 'debug';
-import { InputNode } from '../core/inputNode';
+import { InputNode } from '../inputNode';
 import { nodeHash, nodePath, setSource, setSources, undefinedAllowed } from './symbols';
-import { SourceNode } from '../core/endpoint';
+import { SourceNode } from '../sourceNode';
 
-const log = debug('chainflow:inputs');
+const log = debug('chainflow:link');
 
 /**
  * Link a Source node to a Input node.

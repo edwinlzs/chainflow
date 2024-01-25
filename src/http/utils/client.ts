@@ -29,7 +29,7 @@ const httpReq = async ({
   log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
 
   try {
-    const res = await request(`http://${addr}${path}`, {
+    const resp = await request(`http://${addr}${path}`, {
       method,
       body,
       headers: {
@@ -37,7 +37,8 @@ const httpReq = async ({
         ...headers,
       },
     });
-    return res;
+
+    return resp;
   } catch (err) {
     log(`Request failed: ${err}`);
     return null;

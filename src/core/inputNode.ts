@@ -1,15 +1,15 @@
 import debug from 'debug';
-import { Responses } from './chainflow';
-import { SourceNode } from './endpoint';
+import { SourceNode } from './sourceNode';
 import {
   getNodeValue,
   nodeHash,
   nodePath,
+  nodeValueIdentifier,
   setSource,
   setSources,
   setValuePool,
   undefinedAllowed,
-} from '../utils/symbols';
+} from './utils/symbols';
 
 const log = debug('chainflow:inputNode');
 
@@ -17,39 +17,19 @@ export enum VALUE_POOL_SELECT {
   UNIFORM,
 }
 
-export interface INodeWithValue {
-  [nodeValueIdentifier]: NodeValue;
-}
-
-const nodeValueIdentifier = Symbol('nodeValueIdentifier');
-enum NodeValue {
+export enum NodeValue {
   ValuePool,
   Generator,
   Required,
+  Source,
+  SourceWithCallback,
+  Sources,
 }
-
-/** Defines a set of values to choose from when making an endpoint call. */
-export const pool = (valuePool: any[]) => ({
-  valuePool,
-  [nodeValueIdentifier]: NodeValue.ValuePool,
-});
-
-/** Provides a generator function to produce a value for an endpoint call. */
-export const gen = (generator: () => any) => ({
-  generator,
-  [nodeValueIdentifier]: NodeValue.Generator,
-});
-
-/** Used to mark a param without a default value as required
- * to be sourced from another response. */
-export const required = () => ({
-  [nodeValueIdentifier]: NodeValue.Required,
-});
 
 /** Details of a source node. */
 interface ISource {
   /** An array of property accessor strings defining
-   * how to access the source node in a response payload
+   * how to access the source node in a source object
    */
   path: string[];
   /** A callback that will be used on the source value. */
@@ -57,7 +37,7 @@ interface ISource {
   undefinedAllowed?: boolean;
 }
 
-/** Multiple source nodes to a request node. */
+/** Multiple source nodes to one input node. */
 interface ISources {
   accessInfo: ISourceAccessInfo[];
   callback: (val: any) => any;
@@ -70,17 +50,22 @@ interface ISourceAccessInfo {
   undefinedAllowed?: boolean;
 }
 
-/** A data node for constructing a request. */
+type SourceValue = any;
+
+// stores actual values of source objects
+export type SourceValues = { [hash: string]: SourceValue[] };
+
+/** A data node for constructing an input object. */
 export class InputNode {
   /** Key-values under this node, if this node represents an object. */
   [key: string]: any;
-  /** may not be useful. currently only identifying base endpoint. */
+  /** TODO: may not be useful. currently only identifying base object this input node is on. */
   [nodeHash]: string;
   /** Default value of this node */
   #default: any;
-  /** Whether this node requires a value from a source response. */
+  /** Whether this node requires a value from a source object. */
   #required: boolean = false;
-  /** Stores what response node values can be passed into this node. */
+  /** Stores what source node values can be passed into this node. */
   #sources: { [nodeHash: string]: ISource | ISources } = {};
   /** Stores possible values this node can take. */
   #valuePool: any[] = [];
@@ -108,11 +93,24 @@ export class InputNode {
       case NodeValue.Required:
         this.#required = true;
         return;
+      case NodeValue.Source:
+        this[setSource](val);
+        return;
+      case NodeValue.SourceWithCallback: // TODO: explore refactoring here
+        this[setSource](val.source, val.callback);
+        return;
+      case NodeValue.Sources:
+        // TODO: validation here
+        val.sources.forEach((source: SourceNode) => {
+          this[setSource](source, val.callback);
+        });
+        return;
     }
 
     switch (typeof val) {
       case 'object':
         if (Array.isArray(val)) {
+          // this means you can't put a source node into an array
           this.#default = val;
           break;
         }
@@ -128,7 +126,7 @@ export class InputNode {
     }
   }
 
-  /** Sets a source node for this request node. */
+  /** Sets a source node for this input node. */
   [setSource](source: SourceNode, callback?: (val: any) => any) {
     this.#sources[source[nodeHash]] = {
       path: source[nodePath],
@@ -137,7 +135,7 @@ export class InputNode {
     };
   }
 
-  /** Sets multiple source nodes to be combined into a single input for this request node */
+  /** Sets multiple source nodes to be combined into a single value for this input node */
   [setSources](sources: { [key: string]: SourceNode }, callback: (val: any) => any) {
     const hashes = new Set<string>();
     const accessInfo: ISourceAccessInfo[] = Object.entries(sources).map(([key, source]) => {
@@ -156,40 +154,37 @@ export class InputNode {
     };
   }
 
-  /** Sets the pool of values for this request node. */
+  /** Sets the pool of values for this input node. */
   [setValuePool](valuePool: any[]) {
     this.#valuePool = valuePool;
   }
 
   /** Retrieve value of a node. */
-  [getNodeValue](responses: Responses, missingValues: string[][], currentPath: string[]) {
-    const usedEndpoints: string[] = []; // stores endpoint responses already tried
+  [getNodeValue](sourceValues: SourceValues, missingValues: string[][], currentPath: string[]) {
+    const usedSources: string[] = []; // stores sourceValues that are already tried
     // attempt to get value from any source nodes available
-    let endpointHash = this.#matchSourceHash(responses, usedEndpoints);
-    while (endpointHash) {
-      const respSource = this.#sources[endpointHash]!;
+    let sourceHash = this.#matchSourceHash(sourceValues, usedSources);
+    while (sourceHash) {
+      const source = this.#sources[sourceHash]!;
 
-      let respVal;
-      if ('accessInfo' in respSource) {
-        respVal = this.#getMultiSourceNodeValues(respSource, responses);
+      let sourceVal;
+      if ('accessInfo' in source) {
+        sourceVal = this.#getMultiSourceNodeValues(source, sourceValues);
       } else {
-        respVal = this.#getSingleSourceNodeValue(
-          endpointHash,
-          respSource.path,
-          responses,
-          respSource.undefinedAllowed,
+        sourceVal = this.#getSingleSourceNodeValue(
+          sourceHash,
+          source.path,
+          sourceValues,
+          source.undefinedAllowed,
         );
       }
 
-      if (
-        respVal !== undefined ||
-        ('undefinedAllowed' in respSource && respSource.undefinedAllowed)
-      ) {
-        return respSource.callback ? respSource.callback(respVal) : respVal;
+      if (sourceVal !== undefined || ('undefinedAllowed' in source && source.undefinedAllowed)) {
+        return source.callback ? source.callback(sourceVal) : sourceVal;
       }
 
-      usedEndpoints.push(...endpointHash.split('|'));
-      endpointHash = this.#matchSourceHash(responses, usedEndpoints);
+      usedSources.push(...sourceHash.split('|'));
+      sourceHash = this.#matchSourceHash(sourceValues, usedSources);
     }
 
     // attempt to get value from generator function
@@ -208,90 +203,81 @@ export class InputNode {
         missingValues.push(currentPath);
         return;
       }
-      return this.buildObject(currentPath, missingValues, responses);
+      return this.buildObject(currentPath, missingValues, sourceValues);
     }
 
     // if other options are exhausted, revert to default
     return this.#default;
   }
 
-  /** Retrieves a matching endpoint hash from this node's sources, if any,
-   *  excluding endpoints that are already used for the current endpoint call. */
-  #matchSourceHash(responses: Responses, usedEndpoints: string[]) {
-    const sourceEndpointHashes = Object.keys(this.#sources);
-    const availEndpointHashes = Object.keys(responses);
-    return sourceEndpointHashes.find((hash) => {
+  /** Retrieves a matching source hash from this node's sources, if any,
+   *  excluding sources that are already used for the current input. */
+  #matchSourceHash(sourceValues: SourceValues, usedSources: string[]) {
+    const sourceHashes = Object.keys(this.#sources);
+    const availSourceHashes = Object.keys(sourceValues);
+    return sourceHashes.find((hash) => {
       if (hash.includes('|')) {
         // handle combined hash for multi-node source
         const hashes = hash.split('|');
         if (
-          // if every response is available
-          hashes.every(
-            (hash) => availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash),
-          )
+          // if every source is available
+          hashes.every((hash) => availSourceHashes.includes(hash) && !usedSources.includes(hash))
         ) {
           return hash;
         }
       }
-      return availEndpointHashes.includes(hash) && !usedEndpoints.includes(hash);
+      return availSourceHashes.includes(hash) && !usedSources.includes(hash);
     });
   }
 
-  /** Access the source node value in a response payload */
-  #accessSource(
-    payload: any,
-    path: string[],
-    sourceEndpointHash: string,
-    undefinedAllowed?: boolean,
-  ): any {
-    let respVal = payload;
+  /** Access the source node value in a source object */
+  #accessSource(payload: any, path: string[], sourceHash: string, undefinedAllowed?: boolean): any {
+    let sourceVal = payload;
 
     let i = 0;
     while (i < path.length) {
       // recall that `typeof null` returns 'object'
-      if (respVal == null || typeof respVal !== 'object') {
+      if (sourceVal == null || typeof sourceVal !== 'object') {
         if (undefinedAllowed) return undefined;
-        log(
-          `Unable to retrieve source node value from response to endpoint with hash "${sourceEndpointHash}".`,
-        );
+        log(`Unable to retrieve source node value from source object with hash "${sourceHash}".`);
         return;
       }
       const accessor = path[i]!;
-      respVal = respVal[accessor];
+      sourceVal = sourceVal[accessor];
       i += 1;
     }
 
-    return respVal;
+    return sourceVal;
   }
 
-  /** Attempts to retrieve values for a request node from a single source node. */
+  /** Attempts to retrieve values for an input node from a single source node. */
   #getSingleSourceNodeValue(
     hash: string,
     path: string[],
-    responses: Responses,
+    sourceValues: SourceValues,
     undefinedAllowed?: boolean,
   ) {
-    const respPayload = responses[hash]![0];
+    const sourceObject = sourceValues[hash]![0];
 
     log(
-      `Retrieving value for InputNode with hash "${this[nodeHash]}" from response of endpoint with hash "${hash}" via path "${path}"`,
+      `Retrieving value for InputNode with hash "${this[nodeHash]}" from source object with hash "${hash}" via path "${path}"`,
     );
 
-    // get response value from a linked source
-    return this.#accessSource(respPayload, path, hash, undefinedAllowed);
+    // get value from a linked source
+    return this.#accessSource(sourceObject, path, hash, undefinedAllowed);
   }
 
-  /** Attempts to retrieve values for a request node from multiple source nodes. */
-  #getMultiSourceNodeValues(sources: ISources, responses: Responses) {
-    const respVals: { [key: string]: any } = {};
+  /** Attempts to retrieve values for an input node from multiple source nodes. */
+  #getMultiSourceNodeValues(sources: ISources, sourceValues: SourceValues) {
+    const sourceVals: { [key: string]: any } = {};
     for (const info of sources.accessInfo) {
-      const respVal = this.#getSingleSourceNodeValue(info.hash, info.path, responses);
+      const sourceVal = this.#getSingleSourceNodeValue(info.hash, info.path, sourceValues);
       // if one value is unavailable, stop constructing multi-source value
-      if (respVal === undefined) return undefined;
-      respVals[info.key] = respVal;
+      if (sourceVal === undefined) return undefined;
+      sourceVals[info.key] = sourceVal;
     }
     log(`All source values retrieved for multi-source node with hash "${this[nodeHash]}"`);
-    return respVals;
+    return sourceVals;
   }
 
   /** Selects a value from the value pool based on the value pool select strategy. */
@@ -304,14 +290,14 @@ export class InputNode {
     }
   }
   /**
-   * Builds a JSON object from defined request nodes and
-   * available responses as potential sources.
+   * Builds a JSON object from input node values and
+   * any available linked sources.
    */
-  buildObject(currentPath: string[], missingValues: string[][], responses: Responses) {
+  buildObject(currentPath: string[], missingValues: string[][], sourceValues: SourceValues) {
     return Object.entries(this).reduce((acc, [key, val]) => {
       const nextPath = [...currentPath];
       nextPath.push(key);
-      acc[key] = val[getNodeValue](responses, missingValues, nextPath);
+      acc[key] = val[getNodeValue](sourceValues, missingValues, nextPath);
       return acc;
     }, {} as any);
   }

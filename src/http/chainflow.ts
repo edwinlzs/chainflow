@@ -1,14 +1,11 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
+import { SourceValues } from '../core/inputNode';
+import { sourceNode } from '../core/sourceNode';
 
 const log = debug('chainflow:chainflow');
 
 export const SEED_HASH = 'seed';
-
-type RespPayload = any;
-
-/** Stores responses accumulated from endpoint calls in the current flow. */
-export type Responses = { [callSignHash: string]: RespPayload[] };
 
 /** Stores chain of endpoint calls. */
 type Callstack = CallNode[];
@@ -30,10 +27,15 @@ export interface CallOpts {
 /** Options for running chainflow. */
 export interface RunOpts {
   seed?: Record<string, any>;
+  log?: boolean;
 }
 
+/** Special object used to link a InputNode to a chainflow seed. */
+export const seed = sourceNode(SEED_HASH);
+
 class Chainflow {
-  #responses: Responses = {};
+  /** Stores sources accumulated from endpoint calls in the current flow. */
+  #responses: SourceValues = {};
   #callstack: Callstack = [];
 
   /** Run the set up chain */
@@ -56,8 +58,13 @@ class Chainflow {
         break;
       }
     }
+    let responses = {};
+    if (opts?.log) {
+      responses = this.#responses;
+    }
     this.reset();
     log('Finished running chainflow.');
+    return responses;
   }
 
   /** Adds an endpoint call to the callchain. */
