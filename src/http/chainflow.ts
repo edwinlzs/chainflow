@@ -1,6 +1,7 @@
 import { Endpoint } from './endpoint';
 import debug from 'debug';
 import { SourceValues } from '../core/inputNode';
+import { sourceNode } from '../core/sourceNode';
 
 const log = debug('chainflow:chainflow');
 
@@ -28,6 +29,9 @@ export interface RunOpts {
   seed?: Record<string, any>;
   log?: boolean;
 }
+
+/** Special object used to link a InputNode to a chainflow seed. */
+export const seed = sourceNode(SEED_HASH);
 
 class Chainflow {
   /** Stores sources accumulated from endpoint calls in the current flow. */

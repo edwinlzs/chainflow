@@ -1,12 +1,12 @@
-import { describe, it, mock } from 'node:test';
+import { beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { chainflow } from '../chainflow';
+import { chainflow, seed } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { allowUndefined, link, linkMany } from '../../core/utils/link';
 import http from '../utils/client';
 import { endpointFactory } from '../endpointFactory';
 import { required } from '../../core/utils/initializers';
-import { seed } from '../endpoint';
+import { source, sources } from '../../core/utils/source';
 
 describe('#chainflow', () => {
   const agent = new MockAgent();
@@ -14,6 +14,13 @@ describe('#chainflow', () => {
   agent.disableNetConnect();
   const client = agent.get('http://127.0.0.1:5000');
   const factory = endpointFactory('127.0.0.1:5000');
+
+  // used to maintain URL paths uniqueness to avoid one test's calls
+  // from being picked up by another test's interceptor
+  let deconflictor = 0;
+  beforeEach(() => {
+    deconflictor += 1;
+  });
 
   it('should allow API calls', async () => {
     const endpoint = factory.get('/user');
@@ -460,22 +467,22 @@ describe('#chainflow', () => {
     });
   });
 
-  describe('when source nodes are provided directly to input nodes', () => {
-    const createUser = factory.post('/usery').body({
-      name: 'Tom',
-    });
-
-    const createRole = factory.post('/roley').body({
-      userId: createUser.resp.id,
-      type: 'ENGINEER',
-    });
-
-    const tracker = mock.method(http, 'httpReq');
-
+  describe('when a source node is provided directly to input nodes', () => {
     it('should take the value from the specified source', async () => {
+      const createUser = factory.post(`/user-${deconflictor}`).body({
+        name: 'Tom',
+      });
+
+      const createRole = factory.post(`/role-${deconflictor}`).body({
+        userId: createUser.resp.id,
+        type: 'ENGINEER',
+      });
+
+      const tracker = mock.method(http, 'httpReq');
+
       client
         .intercept({
-          path: '/usery',
+          path: `/user-${deconflictor}`,
           method: 'POST',
         })
         .reply(200, {
@@ -484,13 +491,12 @@ describe('#chainflow', () => {
 
       client
         .intercept({
-          path: '/roley',
+          path: `/role-${deconflictor}`,
           method: 'POST',
         })
         .reply(200, {});
 
       tracker.mock.resetCalls();
-
       await chainflow().call(createUser).call(createRole).run();
 
       assert.equal(tracker.mock.callCount(), 2);
@@ -498,6 +504,130 @@ describe('#chainflow', () => {
         tracker.mock.calls[1].arguments[0]?.body,
         JSON.stringify({
           userId: 'some-id',
+          type: 'ENGINEER',
+        }),
+      );
+    });
+  });
+
+  describe('when a source node is provided directly to input nodes with callback', () => {
+    it('should take the value from the specified source', async () => {
+      const createUser = factory.post(`/user-${deconflictor}`).body({
+        name: 'Tom',
+      });
+
+      const createRole = factory.post(`/role-${deconflictor}`).body({
+        name: source(createUser.resp.name, (name: string) => name.toUpperCase()),
+        type: 'ENGINEER',
+      });
+
+      const tracker = mock.method(http, 'httpReq');
+
+      client
+        .intercept({
+          path: `/user-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {
+          name: 'Tom',
+        });
+
+      client
+        .intercept({
+          path: `/role-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      tracker.mock.resetCalls();
+      await chainflow().call(createUser).call(createRole).run();
+
+      assert.equal(tracker.mock.callCount(), 2);
+      assert.deepEqual(
+        tracker.mock.calls[1].arguments[0]?.body,
+        JSON.stringify({
+          name: 'TOM',
+          type: 'ENGINEER',
+        }),
+      );
+    });
+  });
+
+  describe('when multiple source nodes are provided directly to input nodes with callback', () => {
+    it('should take the value from the specified source', async () => {
+      const createUser = factory.post(`/user-${deconflictor}`).body({
+        name: 'Tom',
+      });
+
+      const getUser = factory.get(`/user-${deconflictor}`);
+
+      const createRole = factory.post(`/role-${deconflictor}`).body({
+        name: sources([createUser.resp.name, getUser.resp.name], (name: string) =>
+          name.toUpperCase(),
+        ),
+        type: 'ENGINEER',
+      });
+
+      const tracker = mock.method(http, 'httpReq');
+
+      client
+        .intercept({
+          path: `/user-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {
+          name: 'Tom',
+        })
+        .times(2);
+      client
+        .intercept({
+          path: `/user-${deconflictor}`,
+          method: 'GET',
+        })
+        .reply(200, {
+          name: 'Harry',
+        })
+        .times(2);
+      client
+        .intercept({
+          path: `/role-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {})
+        .times(3);
+
+      tracker.mock.resetCalls();
+      await chainflow().call(createUser).call(createRole).run();
+
+      assert.equal(tracker.mock.callCount(), 2);
+      assert.deepEqual(
+        tracker.mock.calls[1].arguments[0]?.body,
+        JSON.stringify({
+          name: 'TOM',
+          type: 'ENGINEER',
+        }),
+      );
+
+      tracker.mock.resetCalls();
+      await chainflow().call(getUser).call(createRole).run();
+
+      assert.equal(tracker.mock.callCount(), 2);
+      assert.deepEqual(
+        tracker.mock.calls[1].arguments[0]?.body,
+        JSON.stringify({
+          name: 'HARRY',
+          type: 'ENGINEER',
+        }),
+      );
+
+      tracker.mock.resetCalls();
+      await chainflow().call(createUser).call(getUser).call(createRole).run();
+
+      assert.equal(tracker.mock.callCount(), 3);
+      assert.deepEqual(
+        tracker.mock.calls[2].arguments[0]?.body,
+        JSON.stringify({
+          name: 'TOM',
           type: 'ENGINEER',
         }),
       );

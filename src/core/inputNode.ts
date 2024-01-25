@@ -102,7 +102,7 @@ export class InputNode {
       case NodeValue.Sources:
         // TODO: validation here
         val.sources.forEach((source: SourceNode) => {
-          this[setSource](source);
+          this[setSource](source, val.callback);
         });
         return;
     }

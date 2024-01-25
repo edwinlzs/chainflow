@@ -1,6 +1,10 @@
 import { NodeValue } from './inputNode';
 import { nodeHash, nodePath, nodeValueIdentifier, undefinedAllowed } from './utils/symbols';
 
+/** Creates a new Source Node with the given hash. */
+export const sourceNode = (hash: string) =>
+  new Proxy({ path: [], hash }, SourceNodeHandler) as unknown as SourceNode;
+
 /** Describes a value in a source node e.g. the output of an endpoint call. */
 export interface SourceNode {
   [nodeHash]: string;

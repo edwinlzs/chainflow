@@ -10,9 +10,9 @@ import {
   UnsupportedMethodError,
 } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts, SEED_HASH } from './chainflow';
+import { CallOpts } from './chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
-import { SourceNode, SourceNodeHandler } from '../core/sourceNode';
+import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
 
@@ -34,12 +34,6 @@ export interface HttpInputNodes {
   headers: InputNode;
 }
 
-/** Special object used to link a InputNode to a chainflow seed. */
-export const seed = new Proxy(
-  { path: [], hash: SEED_HASH },
-  SourceNodeHandler,
-) as unknown as SourceNode;
-
 /**
  * Manages request and response nodes,
  * as well as calls to that endpoint
@@ -60,10 +54,7 @@ export class Endpoint {
     this.#method = method as SUPPORTED_METHOD;
     this.#req = new ReqBuilder({ hash: this.getHash() });
     this.#extractPathParams();
-    this.#resp = new Proxy(
-      { path: [], hash: this.getHash() },
-      SourceNodeHandler,
-    ) as unknown as SourceNode;
+    this.#resp = sourceNode(this.getHash());
   }
 
   get method() {
