@@ -11,18 +11,18 @@ export const createUser = factory.post('/user').body({
 });
 
 export const getUser = factory.get('/user').query({
-  age: 42,
+  age: createUser.resp.details.age,
 });
 
 // Role
 export const createRole = factory.post('/role').body({
-  user_id: 'role-user_id',
+  user_id: createUser.resp.id,
   type: 'role-type',
 });
 
 // Project
 export const createProject = factory.post('/project').body({
-  creator_id: 'project-user_id',
+  creator_id: createUser.resp.id,
   details: {
     title: 'project-title',
     type: 'project-type',
@@ -31,8 +31,8 @@ export const createProject = factory.post('/project').body({
 
 // Submission
 export const createSubmission = factory.post('/submission').body({
-  creator_id: 'submission-user_id',
-  project_id: 'submission-project_id',
+  creator_id: createUser.resp.id,
+  project_id: createProject.resp.id,
 });
 
 export const getSubmission = factory.get('/submission/{submissionId}');
