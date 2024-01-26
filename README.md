@@ -274,6 +274,30 @@ This has important implications - it means that as long as the source (e.g. a re
 
 &nbsp;
 
+### `clone`
+
+You can create chainflow "templates" with the use of `clone` to create a copy of a chainflow and its endpoint callstack. The clone can have endpoint calls added to it without modifying the initial flow.
+
+```typescript
+const originalFlow = chainflow().call(endpoint1).call(endpoint2);
+
+const clonedFlow = originalFlow.clone();
+
+clonedFlow.call(endpoint3).run(); // calls endpoint 1, 2 and 3
+originalFlow.call(endpoint4).run(); // calls endpoint 1, 2 and 4
+```
+
+### `extend`
+
+You can connect multiple different chainflows together into a longer chainflow using `extend`.
+
+```typescript
+const flow1 = chainflow().call(endpoint1).call(endpoint2);
+const flow2 = chainflow().call(endpoint3);
+
+flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
+```
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.

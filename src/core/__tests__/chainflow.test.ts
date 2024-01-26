@@ -633,4 +633,81 @@ describe('#chainflow', () => {
       );
     });
   });
+
+  describe('when a chainflow is cloned', () => {
+    it('the cloned flow can be extended without changing the original', async () => {
+      const createUser = factory.post(`/user-${deconflictor}`).body({
+        name: 'Tom',
+      });
+
+      const createRole = factory.post(`/role-${deconflictor}`).body({
+        name: createUser.resp.name,
+        type: 'ENGINEER',
+      });
+
+      const tracker = mock.method(http, 'httpReq');
+
+      client
+        .intercept({
+          path: `/user-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {
+          name: 'Tom',
+        })
+        .times(2);
+      client
+        .intercept({
+          path: `/role-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      tracker.mock.resetCalls();
+      const flow1 = chainflow().call(createUser);
+      await flow1.run();
+      assert.equal(tracker.mock.callCount(), 1);
+
+      tracker.mock.resetCalls();
+      const flow2 = flow1.clone().call(createRole);
+      await flow2.run();
+      assert.equal(tracker.mock.callCount(), 2);
+    });
+  });
+
+  describe('when a chainflow is extended', () => {
+    it('the original flow should append the callstack of the extending flow', async () => {
+      const createUser = factory.post(`/user-${deconflictor}`).body({
+        name: 'Tom',
+      });
+
+      const createRole = factory.post(`/role-${deconflictor}`).body({
+        name: createUser.resp.name,
+        type: 'ENGINEER',
+      });
+
+      const tracker = mock.method(http, 'httpReq');
+      const flow1 = chainflow().call(createUser);
+      const flow2 = chainflow().call(createRole);
+
+      client
+        .intercept({
+          path: `/user-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {
+          name: 'Tom',
+        });
+      client
+        .intercept({
+          path: `/role-${deconflictor}`,
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      tracker.mock.resetCalls();
+      await flow1.extend(flow2).run();
+      assert.equal(tracker.mock.callCount(), 2);
+    });
+  });
 });
