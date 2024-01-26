@@ -10,7 +10,7 @@ import {
   UnsupportedMethodError,
 } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts } from './chainflow';
+import { CallOpts, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
@@ -38,7 +38,7 @@ export interface HttpInputNodes {
  * Manages request and response nodes,
  * as well as calls to that endpoint
  */
-export class Endpoint {
+export class Endpoint implements IEndpoint {
   #addr: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;

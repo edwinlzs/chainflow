@@ -2,11 +2,11 @@ import { beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { chainflow, seed } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { allowUndefined, link, linkMany } from '../../core/utils/link';
-import http from '../utils/client';
-import { endpointFactory } from '../endpointFactory';
-import { required } from '../../core/utils/initializers';
-import { source, sources } from '../../core/utils/source';
+import { allowUndefined, link, linkMany } from '../utils/link';
+import http from '../../http/utils/client';
+import { endpointFactory } from '../../http/endpointFactory';
+import { required } from '../utils/initializers';
+import { source, sources } from '../utils/source';
 
 describe('#chainflow', () => {
   const agent = new MockAgent();

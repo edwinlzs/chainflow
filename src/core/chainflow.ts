@@ -1,7 +1,6 @@
-import { Endpoint } from './endpoint';
 import debug from 'debug';
-import { SourceValues } from '../core/inputNode';
-import { sourceNode } from '../core/sourceNode';
+import { SourceValues } from './inputNode';
+import { sourceNode } from './sourceNode';
 
 const log = debug('chainflow:chainflow');
 
@@ -10,9 +9,15 @@ export const SEED_HASH = 'seed';
 /** Stores chain of endpoint calls. */
 type Callstack = CallNode[];
 
+/** Defines an endpoint that a chainflow can call upon. */
+export interface IEndpoint {
+  call: (responses: SourceValues, opts?: CallOpts) => Promise<any>;
+  getHash: () => string;
+}
+
 /** Details on an endpoint call to be made. */
 interface CallNode {
-  endpoint: Endpoint;
+  endpoint: IEndpoint;
   opts?: CallOpts;
 }
 
@@ -68,7 +73,7 @@ class Chainflow {
   }
 
   /** Adds an endpoint call to the callchain. */
-  call(endpoint: Endpoint, opts?: CallOpts) {
+  call(endpoint: IEndpoint, opts?: CallOpts) {
     this.#callstack.push({ endpoint, opts });
     return this;
   }
