@@ -82,6 +82,20 @@ class Chainflow {
   reset() {
     this.#responses = {};
   }
+
+  /** Creates a clone of this chainflow and its callstack
+   *  which can be extended and run independently. */
+  clone(): Chainflow {
+    const clone = new Chainflow();
+    clone.#callstack = [...this.#callstack];
+    return clone;
+  }
+
+  /** Extends this chainflow's callstack with that of another flow. */
+  extend(cf: Chainflow) {
+    this.#callstack.push(...cf.#callstack);
+    return this;
+  }
 }
 
 export const chainflow = (): Chainflow => {
