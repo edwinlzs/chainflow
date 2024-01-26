@@ -12,8 +12,8 @@ dependencies:
     specifier: ^4.3.4
     version: 4.3.4
   undici:
-    specifier: ^5.26.3
-    version: 5.26.3
+    specifier: ^6.4.0
+    version: 6.4.0
 
 devDependencies:
   '@commitlint/cli':
@@ -2768,9 +2768,9 @@ packages:
     resolution: {integrity: sha512-8Y75pvTYkLJW2hWQHXxoqRgV7qb9B+9vFEtidML+7koHUFapnVJAZ6cKs+Qjz5Aw3aZWHMC6u0wJE3At+nSGwA==}
     dev: true
 
-  /undici@5.26.3:
-    resolution: {integrity: sha512-H7n2zmKEWgOllKkIUkLvFmsJQj062lSm3uA4EYApG8gLuiOM0/go9bIoC3HVaSnfg4xunowDE2i9p8drkXuvDw==}
-    engines: {node: '>=14.0'}
+  /undici@6.4.0:
+    resolution: {integrity: sha512-wYaKgftNqf6Je7JQ51YzkEkEevzOgM7at5JytKO7BjaURQpERW8edQSMrr2xb+Yv4U8Yg47J24+lc9+NbeXMFA==}
+    engines: {node: '>=18.0'}
     dependencies:
       '@fastify/busboy': 2.0.0
     dev: false
