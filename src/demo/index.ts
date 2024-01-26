@@ -1,5 +1,5 @@
 /** USER TEST ZONE */
-import { chainflow } from '../http/chainflow';
+import { chainflow } from '../core/chainflow';
 import { InputNodes } from '../http/endpoint';
 import { link } from '../core/utils/link';
 import {
