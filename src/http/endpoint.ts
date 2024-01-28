@@ -34,16 +34,17 @@ export interface HttpInputNodes {
   headers: InputNode;
 }
 
-/** Configures the endpoint */
+/** Configurations for the endpoint. */
 export interface EndpointConfig {
-  respParser: RespParser;
+  respParser: `${RespParser}`;
 }
 
+/** Formats to parse the response body. */
 export enum RespParser {
-  ArrayBuffer,
-  Blob,
-  Json,
-  Text,
+  ArrayBuffer = 'arrayBuffer',
+  Blob = 'blob',
+  Json = 'json',
+  Text = 'text',
 }
 
 /**

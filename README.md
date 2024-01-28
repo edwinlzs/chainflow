@@ -298,6 +298,28 @@ const flow2 = chainflow().call(endpoint3);
 flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 ```
 
+### `config`
+
+By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `EndpointFactory`, to apply it to all endpoints created from it) like so:
+
+```typescript
+import { RespParser } from './chainflow';
+
+const getUser = factory.get('/user').config({
+  respParser: RespParser.Text,
+});
+```
+
+or with camelcase in JavaScript:
+
+```javascript
+const getUser = factory.get('/user').config({
+  respParser: 'text',
+});
+```
+
+There are 4 supported ways to parse response bodies (as provided by the underlying HTTP client, `undici`): `arrayBuffer`, `blob`, `json` and `text`.
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.
