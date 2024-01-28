@@ -1,4 +1,4 @@
-import { Endpoint, INodeWithValue } from './endpoint';
+import { RespParser, Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
 import debug from 'debug';
 import { InputNode } from '../core/inputNode';
 
@@ -34,6 +34,12 @@ export class EndpointFactoryBase {
   #addr: string;
   #headers: InputNode;
   #hash: string;
+  #config: EndpointConfig = { respParser: RespParser.Json };
+
+  config(config: EndpointConfig) {
+    this.#config = config;
+    return this;
+  }
 
   headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#headers = new InputNode({
@@ -56,11 +62,13 @@ export class EndpointFactoryBase {
     this.#headers = new InputNode({ val: undefined, hash: addr });
     this.#hash = addr;
     SUPPORTED_METHODS.forEach((method) => {
-      /** Makes a call for the given route and endpoint. */
+      // define methods to create endpoints from HTTP methods
       Reflect.defineProperty(this, method, {
         value: (path: string) => {
           log(`Creating endpoint for "${method} ${this.#addr}${path}"`);
-          return new Endpoint({ addr: this.#addr, method, path }).baseHeaders(this.#headers);
+          return new Endpoint({ addr: this.#addr, method, path })
+            .baseHeaders(this.#headers)
+            .config(this.#config);
         },
       });
     });

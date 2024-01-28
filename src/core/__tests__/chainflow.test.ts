@@ -94,12 +94,8 @@ describe('#chainflow', () => {
       await testFlow.run();
 
       assert.equal(roleTracker.mock.callCount(), 1);
-      assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
-        [createUser.getHash()]: [
-          {
-            userId: 'userId A',
-          },
-        ],
+      assert.deepEqual(roleTracker.mock.calls[0].arguments[0][createUser.hash][0].body, {
+        userId: 'userId A',
       });
 
       client
@@ -115,12 +111,8 @@ describe('#chainflow', () => {
       await testFlow.run();
 
       assert.equal(roleTracker.mock.callCount(), 1);
-      assert.deepEqual(roleTracker.mock.calls[0].arguments[0], {
-        [createUser.getHash()]: [
-          {
-            userId: 'userId B',
-          },
-        ],
+      assert.deepEqual(roleTracker.mock.calls[0].arguments[0][createUser.hash][0].body, {
+        userId: 'userId B',
       });
     });
   });
@@ -134,8 +126,8 @@ describe('#chainflow', () => {
     });
 
     createRole.set(({ body: { name } }) => {
-      link(name, createUser.resp.details.name);
-      link(name, getUser.resp.details.name);
+      link(name, createUser.resp.body.details.name);
+      link(name, getUser.resp.body.details.name);
     });
     const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
     const tracker = mock.method(http, 'httpReq');
@@ -214,8 +206,8 @@ describe('#chainflow', () => {
           roleName: 'someRole',
         });
         createRole.set(({ body: { name } }) => {
-          link(name, allowUndefined(createUser.resp.details.name));
-          link(name, getUser.resp.details.name);
+          link(name, allowUndefined(createUser.resp.body.details.name));
+          link(name, getUser.resp.body.details.name);
         });
         const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
         const tracker = mock.method(http, 'httpReq');
@@ -264,7 +256,7 @@ describe('#chainflow', () => {
 
     const testCallback = (userId: string) => `${userId} has been modified`;
     createRole.set(({ body: { userId } }) => {
-      link(userId, createUser.resp.userId, testCallback);
+      link(userId, createUser.resp.body.userId, testCallback);
     });
     const tracker = mock.method(http, 'httpReq');
 
@@ -302,8 +294,8 @@ describe('#chainflow', () => {
       linkMany(
         msg,
         {
-          userName: getUser.resp.name,
-          favAnimal: getFavAnimal.resp.favAnimal,
+          userName: getUser.resp.body.name,
+          favAnimal: getFavAnimal.resp.body.favAnimal,
         },
         testCallback,
       );
@@ -360,7 +352,7 @@ describe('#chainflow', () => {
     it('should not throw an error if the value is provided', async () => {
       const getRandName = factory.get('/randName');
       createUser.set(({ body: { name } }) => {
-        link(name, getRandName.resp.name);
+        link(name, getRandName.resp.body.name);
       });
 
       client
@@ -474,7 +466,7 @@ describe('#chainflow', () => {
       });
 
       const createRole = factory.post(`/role-${deconflictor}`).body({
-        userId: createUser.resp.id,
+        userId: createUser.resp.body.id,
         type: 'ENGINEER',
       });
 
@@ -517,7 +509,7 @@ describe('#chainflow', () => {
       });
 
       const createRole = factory.post(`/role-${deconflictor}`).body({
-        name: source(createUser.resp.name, (name: string) => name.toUpperCase()),
+        name: source(createUser.resp.body.name, (name: string) => name.toUpperCase()),
         type: 'ENGINEER',
       });
 
@@ -562,7 +554,7 @@ describe('#chainflow', () => {
       const getUser = factory.get(`/user-${deconflictor}`);
 
       const createRole = factory.post(`/role-${deconflictor}`).body({
-        name: sources([createUser.resp.name, getUser.resp.name], (name: string) =>
+        name: sources([createUser.resp.body.name, getUser.resp.body.name], (name: string) =>
           name.toUpperCase(),
         ),
         type: 'ENGINEER',
@@ -641,7 +633,7 @@ describe('#chainflow', () => {
       });
 
       const createRole = factory.post(`/role-${deconflictor}`).body({
-        name: createUser.resp.name,
+        name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
 
@@ -682,7 +674,7 @@ describe('#chainflow', () => {
       });
 
       const createRole = factory.post(`/role-${deconflictor}`).body({
-        name: createUser.resp.name,
+        name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
 

@@ -11,8 +11,8 @@ type Callstack = CallNode[];
 
 /** Defines an endpoint that a chainflow can call upon. */
 export interface IEndpoint {
+  hash: string;
   call: (responses: SourceValues, opts?: CallOpts) => Promise<any>;
-  getHash: () => string;
 }
 
 /** Details on an endpoint call to be made. */
@@ -22,6 +22,7 @@ interface CallNode {
 }
 
 /** Options for configuring an endpoint call. */
+// TODO: decouple from chainflow in future versions.
 export interface CallOpts {
   headers?: Record<string, string>;
   query?: Record<string, string>;
@@ -53,7 +54,7 @@ class Chainflow {
 
     for (const { endpoint, opts } of this.#callstack) {
       // call endpoint
-      const hash = endpoint.getHash();
+      const hash = endpoint.hash;
       log(`Making a call to endpoint with hash "${hash}"`);
       try {
         const resp = await endpoint.call(this.#responses, opts);

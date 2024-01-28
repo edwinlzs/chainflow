@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import { endpointFactory } from '../endpointFactory';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
+import { RespParser } from '../endpoint';
 
 describe('#endpointFactory', () => {
   const agent = new MockAgent();
@@ -43,9 +44,34 @@ describe('#endpointFactory', () => {
       token: 'some-token',
       'content-type': 'application/text',
     });
-
     testFactory.set((nodes) => {
       assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
+    });
+  });
+
+  describe('when a config is defined on the factory', () => {
+    const testFactory = endpointFactory('127.0.0.1:5000').config({
+      respParser: RespParser.Text,
+    });
+    const testEndpoint = testFactory.get('/test');
+
+    it('should pass the config to any endpoints created from it', async () => {
+      client
+        .intercept({
+          path: '/test',
+          method: 'GET',
+        })
+        .reply(200, {
+          hello: 'world',
+        });
+      const resp = await testEndpoint.call({});
+
+      assert.deepEqual(
+        resp.body,
+        JSON.stringify({
+          hello: 'world',
+        }),
+      );
     });
   });
 
@@ -54,7 +80,6 @@ describe('#endpointFactory', () => {
       token: 'some-token',
       'content-type': 'application/text',
     });
-
     const testEndpoint = testFactory.get('/user').headers({
       'content-type': 'application/xml',
       animal: 'dog',

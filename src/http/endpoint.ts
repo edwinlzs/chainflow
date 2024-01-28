@@ -34,6 +34,18 @@ export interface HttpInputNodes {
   headers: InputNode;
 }
 
+/** Configures the endpoint */
+export interface EndpointConfig {
+  respParser: RespParser;
+}
+
+export enum RespParser {
+  ArrayBuffer,
+  Blob,
+  Json,
+  Text,
+}
+
 /**
  * Manages request and response nodes,
  * as well as calls to that endpoint
@@ -44,6 +56,9 @@ export class Endpoint implements IEndpoint {
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
   #resp: SourceNode;
+  #config: EndpointConfig = { respParser: RespParser.Json };
+  /** A hash that uniquely identifies this endpoint. */
+  hash: string;
 
   constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
     method = method.toLowerCase();
@@ -52,18 +67,19 @@ export class Endpoint implements IEndpoint {
     this.#addr = addr;
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
-    this.#req = new ReqBuilder({ hash: this.getHash() });
+    this.hash = hashEndpoint({ route: this.#path, method: this.#method });
+    this.#req = new ReqBuilder({ hash: this.hash });
     this.#extractPathParams();
-    this.#resp = sourceNode(this.getHash());
+    this.#resp = sourceNode(this.hash);
   }
 
   get method() {
     return this.#method;
   }
 
-  /** Returns a hash that uniquely identifies this endpoint. */
-  getHash() {
-    return hashEndpoint({ route: this.#path, method: this.#method });
+  config(config: EndpointConfig) {
+    this.#config = config;
+    return this;
   }
 
   /** Sets the request body. */
@@ -120,7 +136,7 @@ export class Endpoint implements IEndpoint {
 
     const finalMissingValues = this.#findMissingValues(missingValues, opts);
     if (finalMissingValues.length > 0)
-      throw new RequiredValuesNotFoundError(this.getHash(), finalMissingValues);
+      throw new RequiredValuesNotFoundError(this.hash, finalMissingValues);
 
     if (opts?.body) body = deepmerge(body, opts.body);
     if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);
@@ -140,7 +156,26 @@ export class Endpoint implements IEndpoint {
 
     if (resp == null || !this.#validateResp(resp)) throw new InvalidResponseError();
 
-    return resp?.body.json();
+    let respBody;
+    switch (this.#config.respParser) {
+      case RespParser.ArrayBuffer:
+        respBody = await resp.body.arrayBuffer();
+        break;
+      case RespParser.Blob:
+        respBody = await resp.body.blob();
+        break;
+      case RespParser.Json:
+        respBody = await resp.body.json();
+        break;
+      case RespParser.Text:
+        respBody = await resp.body.text();
+        break;
+    }
+
+    return {
+      ...resp,
+      body: respBody,
+    };
   }
 
   /** Configure linking of this Req's input nodes. */
@@ -157,7 +192,7 @@ export class Endpoint implements IEndpoint {
   /** Extracts Path params from a given path */
   #extractPathParams() {
     const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
-    const hash = this.getHash();
+    const hash = this.hash;
     let param;
     const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {

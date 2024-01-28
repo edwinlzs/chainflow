@@ -5,11 +5,11 @@ import { Pet } from '../types';
 const getDog = (pets: Pet[]) => pets.filter((pet: Pet) => pet.category === 'Dogs')[0].id;
 
 placeOrder.set(({ body: { petId } }) => {
-  link(petId, findPetByStatus.resp, getDog);
+  link(petId, findPetByStatus.resp.body, getDog);
 });
 
 makePayment.set(({ pathParams: { orderId }, body: { creditCardNumber } }) => {
-  link(orderId, placeOrder.resp.id);
+  link(orderId, placeOrder.resp.body.id);
   link(creditCardNumber, seed.creditCardNumber);
 });
 

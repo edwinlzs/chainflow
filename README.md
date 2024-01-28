@@ -29,11 +29,11 @@ const createUser = factory.post('/user').body({
 
 const createRole = factory.post('/role').body({
   type: 'Engineer',
-  userId: createUser.resp.id,
+  userId: createUser.resp.body.id,
 });
 
 const getUser = factory.get('/user').query({
-  roleType: createRole.resp.type,
+  roleType: createRole.resp.body.type,
 });
 ```
 
@@ -163,7 +163,7 @@ Specify a source node with a callback.
 const addGreeting = (name: string) => `Hello ${name}`;
 
 createNotification.body({
-  msg: source(getUser.resp.name, addGreeting);
+  msg: source(getUser.resp.body.name, addGreeting);
 });
 ```
 
@@ -173,7 +173,7 @@ Specify multiple source nodes that a value can be taken from, with an optional c
 
 ```typescript
 createNotification.body({
-  msg: sources([getUser.resp.name, createUser.resp.name], addGreeting);
+  msg: sources([getUser.resp.body.name, createUser.resp.body.name], addGreeting);
 });
 ```
 
@@ -183,7 +183,7 @@ Link a response values to a single request node.
 
 ```typescript
 createNotification.set(({ body: { msg } }) => {
-  link(msg, getUser.resp.name);
+  link(msg, getUser.resp.body.name);
 });
 ```
 
@@ -191,7 +191,7 @@ Optionally, you can pass a callback to transform the response value before it is
 
 ```typescript
 createNotification.set(({ body: { msg } }) => {
-  link(msg, getUser.resp.name, addGreeting);
+  link(msg, getUser.resp.body.name, addGreeting);
 });
 ```
 
@@ -208,8 +208,8 @@ createNotification.set(({ body: { msg } }) => {
     msg, // the request node
     // specify which response nodes to take values from and assigns them to a key
     {
-      userName: getUser.resp.name,
-      favAnimal: getFavAnimal.resp.favAnimal,
+      userName: getUser.resp.body.name,
+      favAnimal: getFavAnimal.resp.body.favAnimal,
     },
     // callback that takes the response values as its argument
     // and returns a single output value for the request node

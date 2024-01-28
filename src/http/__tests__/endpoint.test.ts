@@ -1,5 +1,5 @@
 import { describe, it, mock } from 'node:test';
-import { Endpoint } from '../endpoint';
+import { RespParser, Endpoint } from '../endpoint';
 import assert from 'node:assert';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
@@ -31,6 +31,65 @@ describe('#endpoint', () => {
     });
   });
 
+  describe('when the endpoint is configured', () => {
+    it('should parse a response body as json when json is set', async () => {
+      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/text-config-test' }).config(
+        { respParser: RespParser.Text },
+      );
+      client
+        .intercept({
+          path: '/text-config-test',
+          method: 'POST',
+        })
+        .reply(200, {
+          hello: 'world',
+        });
+
+      const resp = await testEndpoint.call({});
+      assert.deepEqual(
+        resp.body,
+        JSON.stringify({
+          hello: 'world',
+        }),
+      );
+    });
+
+    it('should parse a response body as json when json is set', async () => {
+      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-config-test' });
+      client
+        .intercept({
+          path: '/json-config-test',
+          method: 'POST',
+        })
+        .reply(200, {
+          hello: 'world',
+        });
+
+      const resp = await testEndpoint.call({});
+      assert.deepEqual(resp.body, {
+        hello: 'world',
+      });
+    });
+  });
+
+  describe('when a response is received for an endpoint call', () => {
+    it('should contain standard HTTP response information', async () => {
+      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/response-test' });
+      client
+        .intercept({
+          path: '/response-test',
+          method: 'POST',
+        })
+        .reply(200, {});
+
+      const resp = await testEndpoint.call({});
+      assert.deepEqual(
+        ['statusCode', 'headers', 'body', 'trailers', 'opaque', 'context'].sort(),
+        Object.keys(resp).sort(),
+      );
+    });
+  });
+
   describe('when a request payload is assigned to an endpoint', () => {
     const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/user' }).body(testReqPayload);
 
@@ -39,7 +98,7 @@ describe('#endpoint', () => {
       age: 10,
     };
     const responses = {
-      [respEndpoint.getHash()]: [respPayload],
+      [respEndpoint.hash]: [respPayload],
     };
 
     it('should expose its input nodes for setting up links', () => {
@@ -313,7 +372,6 @@ describe('#endpoint', () => {
         name: required(),
       },
     });
-
     it('should throw an error indicating required values are not found', () => {
       client
         .intercept({
