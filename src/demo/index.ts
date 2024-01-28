@@ -1,7 +1,7 @@
 /** USER TEST ZONE */
 import { chainflow } from '../core/chainflow';
-import { InputNodes } from '../http/endpoint';
 import { link } from '../core/utils/link';
+import { HttpInputNodes } from '../http/endpoint';
 import {
   createProject,
   createRole,
@@ -12,25 +12,25 @@ import {
 } from './setup';
 
 // create the chains
-getUser.set(({ query: { age } }: InputNodes) => {
-  link(age, createUser.resp.details.age);
+getUser.set(({ query: { age } }: HttpInputNodes) => {
+  link(age, createUser.resp.body.details.age);
 });
 
-createRole.set(({ body: { userId } }: InputNodes) => {
-  link(userId, createUser.resp.id);
+createRole.set(({ body: { userId } }: HttpInputNodes) => {
+  link(userId, createUser.resp.body.id);
 });
 
-createProject.set(({ body: { creatorId } }: InputNodes) => {
-  link(creatorId, createUser.resp.id);
+createProject.set(({ body: { creatorId } }: HttpInputNodes) => {
+  link(creatorId, createUser.resp.body.id);
 });
 
-createSubmission.set(({ body: { creatorId, projectId } }: InputNodes) => {
-  link(creatorId, createUser.resp.id);
-  link(projectId, createProject.resp.id);
+createSubmission.set(({ body: { creatorId, projectId } }: HttpInputNodes) => {
+  link(creatorId, createUser.resp.body.id);
+  link(projectId, createProject.resp.body.id);
 });
 
 getSubmission.set(({ pathParams: { submissionId } }) => {
-  link(submissionId, createSubmission.resp.id);
+  link(submissionId, createSubmission.resp.body.id);
 });
 
 // run the chainflows

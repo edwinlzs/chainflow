@@ -18,7 +18,7 @@ const loggedInFactory = endpointFactory(petStoreAddr).headers({
 });
 
 loggedInFactory.set(({ headers }) => {
-  link(headers.Authorization, login.resp.id);
+  link(headers.Authorization, login.resp.body.id);
 });
 
 export const addPet = loggedInFactory.post('/pet').body(
