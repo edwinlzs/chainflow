@@ -1,4 +1,4 @@
-import { RespParser, Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
+import { Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
 import debug from 'debug';
 import { InputNode } from '../core/inputNode';
 
@@ -34,13 +34,15 @@ export class EndpointFactoryBase {
   #addr: string;
   #headers: InputNode;
   #hash: string;
-  #config: EndpointConfig = { respParser: RespParser.Json };
+  #config: EndpointConfig = {};
 
+  /** Sets configuration for all endpoints made by this factory. */
   config(config: EndpointConfig) {
     this.#config = config;
     return this;
   }
 
+  /** Sets the base headers for all endpoints made by this factory. */
   headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#headers = new InputNode({
       val: params,
