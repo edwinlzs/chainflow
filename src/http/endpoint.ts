@@ -15,6 +15,7 @@ import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
+import BodyReadable from 'undici/types/readable';
 
 const deepmerge = deepmergeSetup();
 
@@ -36,7 +37,11 @@ export interface HttpInputNodes {
 
 /** Configurations for the endpoint. */
 export interface EndpointConfig {
-  respParser: `${RespParser}`;
+  respParser?: `${RespParser}`;
+  respValidator?: (resp: Dispatcher.ResponseData) => {
+    valid: boolean;
+    msg?: string;
+  };
 }
 
 /** Formats to parse the response body. */
@@ -57,7 +62,7 @@ export class Endpoint implements IEndpoint {
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
   #resp: SourceNode;
-  #config: EndpointConfig = { respParser: RespParser.Json };
+  #config: EndpointConfig = {};
   /** A hash that uniquely identifies this endpoint. */
   hash: string;
 
@@ -155,27 +160,13 @@ export class Endpoint implements IEndpoint {
       headers,
     });
 
-    if (resp == null || !this.#validateResp(resp)) throw new InvalidResponseError();
-
-    let respBody;
-    switch (this.#config.respParser) {
-      case RespParser.ArrayBuffer:
-        respBody = await resp.body.arrayBuffer();
-        break;
-      case RespParser.Blob:
-        respBody = await resp.body.blob();
-        break;
-      case RespParser.Json:
-        respBody = await resp.body.json();
-        break;
-      case RespParser.Text:
-        respBody = await resp.body.text();
-        break;
-    }
+    if (resp == null) throw new InvalidResponseError('No response received.');
+    const results = this.#config.respValidator?.(resp) ?? this.#validateResp(resp);
+    if (!results.valid) throw new InvalidResponseError(results.msg);
 
     return {
       ...resp,
-      body: respBody,
+      body: await this.#parseResponse(resp.body),
     };
   }
 
@@ -227,12 +218,12 @@ export class Endpoint implements IEndpoint {
   /** Checks that endpoint call succeeded -
    * request did not throw error,
    * and status code is within 200 - 299. */
-  #validateResp(resp: Dispatcher.ResponseData): boolean {
+  #validateResp(resp: Dispatcher.ResponseData): { valid: boolean; msg?: string } {
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
       log(`Request failed with status code: ${resp.statusCode}`);
-      return false;
+      return { valid: false, msg: `Received HTTP status code ${resp.statusCode}` };
     }
-    return true;
+    return { valid: true };
   }
 
   /** Looks for missing values in provided object. */
@@ -253,5 +244,20 @@ export class Endpoint implements IEndpoint {
       }
     }
     return finalMissingValues;
+  }
+
+  /** Parses a response body according to the endpoint config. */
+  async #parseResponse(body: BodyReadable) {
+    switch (this.#config.respParser) {
+      case RespParser.ArrayBuffer:
+        return await body.arrayBuffer();
+      case RespParser.Blob:
+        return await body.blob();
+      case RespParser.Text:
+        return await body.text();
+      case RespParser.Json:
+      default:
+        return await body.json();
+    }
   }
 }

@@ -19,8 +19,10 @@ export class RequiredValuesNotFoundError extends Error {
 }
 
 export class InvalidResponseError extends Error {
-  constructor() {
-    super('Response is invalid or not currently handled by Chainflow.');
+  constructor(msg?: string) {
+    super(
+      `Response is invalid: ${msg ?? '[No error message is configured for this validation error]'}`,
+    );
     this.name = 'InvalidResponseError';
   }
 }

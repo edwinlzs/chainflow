@@ -32,42 +32,91 @@ describe('#endpoint', () => {
   });
 
   describe('when the endpoint is configured', () => {
-    it('should parse a response body as json when json is set', async () => {
-      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/text-config-test' }).config(
-        { respParser: RespParser.Text },
-      );
-      client
-        .intercept({
-          path: '/text-config-test',
+    describe('when the response parser is configured', () => {
+      it('should parse a response body as json when json is set', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
           method: 'POST',
-        })
-        .reply(200, {
+          path: '/text-config-test',
+        }).config({ respParser: RespParser.Text });
+        client
+          .intercept({
+            path: '/text-config-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            hello: 'world',
+          });
+
+        const resp = await testEndpoint.call({});
+        assert.deepEqual(
+          resp.body,
+          JSON.stringify({
+            hello: 'world',
+          }),
+        );
+      });
+
+      it('should parse a response body as json when json is set', async () => {
+        const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-config-test' });
+        client
+          .intercept({
+            path: '/json-config-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            hello: 'world',
+          });
+
+        const resp = await testEndpoint.call({});
+        assert.deepEqual(resp.body, {
           hello: 'world',
         });
-
-      const resp = await testEndpoint.call({});
-      assert.deepEqual(
-        resp.body,
-        JSON.stringify({
-          hello: 'world',
-        }),
-      );
+      });
     });
 
-    it('should parse a response body as json when json is set', async () => {
-      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-config-test' });
-      client
-        .intercept({
-          path: '/json-config-test',
+    describe('when a response validator is configured', () => {
+      it('should validate responses with the given validator', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
           method: 'POST',
-        })
-        .reply(200, {
-          hello: 'world',
+          path: '/validator-config-test',
+        }).config({ respValidator: () => ({ valid: true }) });
+        client
+          .intercept({
+            path: '/validator-config-test',
+            method: 'POST',
+          })
+          .reply(404, {
+            error: 'some-error',
+          });
+        const resp = await testEndpoint.call({});
+        assert.deepEqual(resp.body, { error: 'some-error' });
+        assert.deepEqual(resp.statusCode, 404);
+      });
+      it('should validate responses with a given custom error message', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
+          method: 'POST',
+          path: '/error-config-test',
+        }).config({
+          respValidator: (resp) => {
+            if (resp.statusCode === 404) return { valid: false, msg: 'Received a Not Found error' };
+            return { valid: true };
+          },
         });
-
-      const resp = await testEndpoint.call({});
-      assert.deepEqual(resp.body, {
-        hello: 'world',
+        client
+          .intercept({
+            path: '/error-config-test',
+            method: 'POST',
+          })
+          .reply(404, {
+            error: 'some-error',
+          });
+        assert.rejects(testEndpoint.call({}), {
+          name: 'InvalidResponseError',
+          message: 'Response is invalid: Received a Not Found error',
+        });
       });
     });
   });
