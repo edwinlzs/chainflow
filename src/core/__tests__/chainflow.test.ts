@@ -1,5 +1,3 @@
-import { beforeEach, describe, it, mock } from 'node:test';
-import assert from 'node:assert';
 import { chainflow, seed } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { allowUndefined, link, linkMany } from '../utils/link';
@@ -7,6 +5,15 @@ import http from '../../http/utils/client';
 import { endpointFactory } from '../../http/endpointFactory';
 import { required } from '../utils/initializers';
 import { source, sources } from '../utils/source';
+import { RequiredValuesNotFoundError } from '../../http/errors';
+
+// used to maintain URL paths uniqueness to avoid one test's calls
+// from being picked up by another test's interceptor
+let deconflictor = 0;
+const uniquePath = (path: string) => {
+  ++deconflictor;
+  return `${path}-${deconflictor}`;
+};
 
 describe('#chainflow', () => {
   const agent = new MockAgent();
@@ -15,112 +22,155 @@ describe('#chainflow', () => {
   const client = agent.get('http://127.0.0.1:5000');
   const factory = endpointFactory('127.0.0.1:5000');
 
-  // used to maintain URL paths uniqueness to avoid one test's calls
-  // from being picked up by another test's interceptor
-  let deconflictor = 0;
-  beforeEach(() => {
-    deconflictor += 1;
-  });
-
   it('should allow API calls', async () => {
-    const endpoint = factory.get('/user');
-    const tracker = mock.method(endpoint, 'call', () => ({}));
+    const userPath = uniquePath('/user');
+    const endpoint = factory.get(userPath);
+    const tracker = jest.spyOn(endpoint, 'call');
+    tracker.mockClear();
+    client
+      .intercept({
+        path: userPath,
+        method: 'GET',
+      })
+      .reply(200, {});
 
     await chainflow().call(endpoint).run();
-    assert.equal(tracker.mock.callCount(), 1);
+    expect(tracker).toHaveBeenCalledTimes(1);
   });
 
   it('should allow multiple API calls', async () => {
-    const getUser = factory.get('/user');
-    const createRole = factory.post('/role');
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
+    const getUser = factory.get(userPath);
+    const createRole = factory.post(rolePath);
 
-    const userTracker = mock.method(getUser, 'call', () => ({}));
-    const roleTracker = mock.method(createRole, 'call', () => ({}));
+    client
+      .intercept({
+        path: userPath,
+        method: 'GET',
+      })
+      .reply(200, {})
+      .times(2);
+    client
+      .intercept({
+        path: rolePath,
+        method: 'POST',
+      })
+      .reply(200, {});
+
+    const userTracker = jest.spyOn(getUser, 'call');
+    const roleTracker = jest.spyOn(createRole, 'call');
+    userTracker.mockClear();
+    roleTracker.mockClear();
 
     await chainflow().call(getUser).call(createRole).call(getUser).run();
 
-    assert.equal(userTracker.mock.callCount(), 2);
-    assert.equal(roleTracker.mock.callCount(), 1);
+    expect(userTracker).toHaveBeenCalledTimes(2);
+    expect(roleTracker).toHaveBeenCalledTimes(1);
   });
 
   describe('when an endpoint call returns an error code', () => {
-    const getUser = factory.get('/user');
-    const createRole = factory.post('/role');
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
+    const getUser = factory.get(userPath);
+    const createRole = factory.post(rolePath);
 
-    const userTracker = mock.method(getUser, 'call');
-    const roleTracker = mock.method(createRole, 'call');
+    const userTracker = jest.spyOn(getUser, 'call');
+    const roleTracker = jest.spyOn(createRole, 'call');
 
     it('should break the chainflow', async () => {
+      userTracker.mockClear();
+      roleTracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'GET',
         })
-        .reply(200, {});
+        .reply(200, {})
+        .times(2);
       client
         .intercept({
-          path: '/role',
+          path: rolePath,
           method: 'POST',
         })
         .reply(400, {});
-      await chainflow().call(getUser).call(createRole).call(getUser).run();
+      await expect(
+        chainflow().call(getUser).call(createRole).call(getUser).run(),
+      ).rejects.toThrow();
 
-      assert.equal(userTracker.mock.callCount(), 1);
-      assert.equal(roleTracker.mock.callCount(), 1);
+      expect(userTracker).toHaveBeenCalledTimes(1);
+      expect(roleTracker).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('when a chainflow has finished a run', () => {
-    const createUser = factory.post('/user').body({
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
+    const createUser = factory.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = factory.post('/role').body({
+    const createRole = factory.post(rolePath).body({
       userId: 'defaultId',
     });
 
     const testFlow = chainflow().call(createUser).call(createRole);
-    const roleTracker = mock.method(createRole, 'call');
+    const tracker = jest.spyOn(createRole, 'call');
 
     it('should reset its state so future runs use a clean slate', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
           userId: 'userId A',
         });
-      roleTracker.mock.resetCalls();
+      client
+        .intercept({
+          path: rolePath,
+          method: 'POST',
+        })
+        .reply(200, {});
       await testFlow.run();
 
-      assert.equal(roleTracker.mock.callCount(), 1);
-      assert.deepEqual(roleTracker.mock.calls[0].arguments[0][createUser.hash][0].body, {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0][createUser.hash][0].body).toStrictEqual({
         userId: 'userId A',
       });
+      tracker.mockClear();
 
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
           userId: 'userId B',
         });
 
-      roleTracker.mock.resetCalls();
+      client
+        .intercept({
+          path: rolePath,
+          method: 'POST',
+        })
+        .reply(200, {});
+
       await testFlow.run();
 
-      assert.equal(roleTracker.mock.callCount(), 1);
-      assert.deepEqual(roleTracker.mock.calls[0].arguments[0][createUser.hash][0].body, {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0][createUser.hash][0].body).toStrictEqual({
         userId: 'userId B',
       });
     });
   });
 
   describe('when multiple responses are linked to a request', () => {
-    const createUser = factory.post('/user');
-    const getUser = factory.get('/user');
-    const createRole = factory.post('/role').body({
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
+    const createUser = factory.post(userPath);
+    const getUser = factory.get(userPath);
+    const createRole = factory.post(rolePath).body({
       name: 'defaultName',
       roleName: 'someRole',
     });
@@ -130,13 +180,14 @@ describe('#chainflow', () => {
       link(name, getUser.resp.body.details.name);
     });
     const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     describe('when both linked responses have the source value', () => {
       it('should use the value of the response with higher priority', async () => {
+        tracker.mockClear();
         client
           .intercept({
-            path: '/user',
+            path: userPath,
             method: 'POST',
           })
           .reply(200, {
@@ -144,10 +195,9 @@ describe('#chainflow', () => {
               name: 'A',
             },
           });
-
         client
           .intercept({
-            path: '/user',
+            path: userPath,
             method: 'GET',
           })
           .reply(200, {
@@ -155,12 +205,18 @@ describe('#chainflow', () => {
               name: 'B',
             },
           });
-        tracker.mock.resetCalls();
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
         await testFlow.run();
-        assert.equal(tracker.mock.callCount(), 3);
+        expect(tracker).toHaveBeenCalledTimes(3);
         const roleCall = tracker.mock.calls[2];
-        const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
-        assert.deepEqual(callBody, {
+        const callBody = JSON.parse(roleCall?.[0]?.body);
+        expect(callBody).toStrictEqual({
           name: 'A',
           roleName: 'someRole',
         });
@@ -169,9 +225,10 @@ describe('#chainflow', () => {
 
     describe('when the first available linked response does not have value', () => {
       it('should use value from another linked response ', async () => {
+        tracker.mockClear();
         client
           .intercept({
-            path: '/user',
+            path: userPath,
             method: 'POST',
           })
           .reply(200, {
@@ -180,7 +237,7 @@ describe('#chainflow', () => {
 
         client
           .intercept({
-            path: '/user',
+            path: userPath,
             method: 'GET',
           })
           .reply(200, {
@@ -188,20 +245,25 @@ describe('#chainflow', () => {
               name: 'B',
             },
           });
-        tracker.mock.resetCalls();
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
         await testFlow.run();
-        assert.equal(tracker.mock.callCount(), 3);
+        expect(tracker).toHaveBeenCalledTimes(3);
         const roleCall = tracker.mock.calls[2];
-        const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
-        assert.deepEqual(callBody, {
+        const callBody = JSON.parse(roleCall?.[0]?.body);
+        expect(callBody).toStrictEqual({
           name: 'B',
           roleName: 'someRole',
         });
-        tracker.mock.resetCalls();
       });
 
       describe('when undefined values are allowed from the linked response', () => {
-        const createRole = factory.post('/role').body({
+        const createRole = factory.post(rolePath).body({
           name: 'defaultName',
           roleName: 'someRole',
         });
@@ -210,12 +272,13 @@ describe('#chainflow', () => {
           link(name, getUser.resp.body.details.name);
         });
         const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-        const tracker = mock.method(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'httpReq');
 
         it('should use undefined instead of accessing the next linked response ', async () => {
+          tracker.mockClear();
           client
             .intercept({
-              path: '/user',
+              path: userPath,
               method: 'POST',
             })
             .reply(200, {
@@ -224,7 +287,7 @@ describe('#chainflow', () => {
 
           client
             .intercept({
-              path: '/user',
+              path: userPath,
               method: 'GET',
             })
             .reply(200, {
@@ -232,25 +295,32 @@ describe('#chainflow', () => {
                 name: 'B',
               },
             });
-          tracker.mock.resetCalls();
+          client
+            .intercept({
+              path: rolePath,
+              method: 'POST',
+            })
+            .reply(200, {});
+
           await testFlow.run();
-          assert.equal(tracker.mock.callCount(), 3);
+          expect(tracker).toHaveBeenCalledTimes(3);
           const roleCall = tracker.mock.calls[2];
-          const callBody = JSON.parse(roleCall.arguments?.[0]?.body);
-          assert.deepEqual(callBody, {
+          const callBody = JSON.parse(roleCall?.[0]?.body);
+          expect(callBody).toStrictEqual({
             roleName: 'someRole',
           });
-          tracker.mock.resetCalls();
         });
       });
     });
   });
 
   describe('when a callback is provided for a linked value', () => {
-    const createUser = factory.post('/user').body({
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
+    const createUser = factory.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = factory.post('/role').body({
+    const createRole = factory.post(rolePath).body({
       userId: 'defaultId',
     });
 
@@ -258,33 +328,43 @@ describe('#chainflow', () => {
     createRole.set(({ body: { userId } }) => {
       link(userId, createUser.resp.body.userId, testCallback);
     });
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     it('should call the endpoint with the given query params', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
           userId: 'newUserId',
         });
-      tracker.mock.resetCalls();
+      client
+        .intercept({
+          path: rolePath,
+          method: 'POST',
+        })
+        .reply(200, {});
+
       await chainflow().call(createUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 2);
+      expect(tracker).toHaveBeenCalledTimes(2);
       const roleCall = tracker.mock.calls[1];
-      const roleCallBody = JSON.parse(roleCall?.arguments[0]?.body);
-      assert.deepEqual(roleCallBody, {
+      const roleCallBody = JSON.parse(roleCall[0]?.body);
+      expect(roleCallBody).toStrictEqual({
         userId: 'newUserId has been modified',
       });
     });
   });
 
   describe('when multiple responses are linked to a request', () => {
-    const getUser = factory.get('/user');
-    const getFavAnimal = factory.get('/favAnimal');
-    const createNotification = factory.post('/notification').body({
+    const userPath = uniquePath('/user');
+    const favAnimalPath = uniquePath('/favAnimal');
+    const notificationPath = uniquePath('/notification');
+    const getUser = factory.get(userPath);
+    const getFavAnimal = factory.get(favAnimalPath);
+    const createNotification = factory.post(notificationPath).body({
       msg: 'default msg',
     });
 
@@ -300,12 +380,13 @@ describe('#chainflow', () => {
         testCallback,
       );
     });
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     it('should pass both linked responses to the request', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'GET',
         })
         .reply(200, {
@@ -313,43 +394,50 @@ describe('#chainflow', () => {
         });
       client
         .intercept({
-          path: '/favAnimal',
+          path: favAnimalPath,
           method: 'GET',
         })
         .reply(200, {
           favAnimal: 'dogs',
         });
-      tracker.mock.resetCalls();
+      client
+        .intercept({
+          path: notificationPath,
+          method: 'POST',
+        })
+        .reply(200, {});
       await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
 
-      assert.equal(tracker.mock.callCount(), 3);
+      expect(tracker).toHaveBeenCalledTimes(3);
       const notificationCall = tracker.mock.calls[2];
-      const notificationCallBody = JSON.parse(notificationCall?.arguments[0]?.body);
-      assert.deepEqual(notificationCallBody, {
+      const notificationCallBody = JSON.parse(notificationCall[0]?.body);
+      expect(notificationCallBody).toStrictEqual({
         msg: 'John likes dogs.',
       });
     });
   });
 
   describe('when a value is marked as required', () => {
-    const createUser = factory.post('/user').body({
+    const userPath = uniquePath('/user');
+    const createUser = factory.post(userPath).body({
       name: required(),
     });
 
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     it('should throw a RequiredValueNotFoundError if value is not provided', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      tracker.mock.resetCalls();
-      assert.rejects(chainflow().call(createUser).run, 'RequiredValueNotFoundError');
+      await expect(chainflow().call(createUser).run()).rejects.toThrow(RequiredValuesNotFoundError);
     });
 
     it('should not throw an error if the value is provided', async () => {
+      tracker.mockClear();
       const getRandName = factory.get('/randName');
       createUser.set(({ body: { name } }) => {
         link(name, getRandName.resp.body.name);
@@ -365,12 +453,11 @@ describe('#chainflow', () => {
         });
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      tracker.mock.resetCalls();
-      await assert.doesNotReject(chainflow().call(getRandName).call(createUser).run());
+      expect(chainflow().call(getRandName).call(createUser).run).rejects.not;
     });
   });
 
@@ -387,16 +474,19 @@ describe('#chainflow', () => {
         token: 'default',
       });
 
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     it('should call the endpoint with the given call options', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: '/someGroup/user',
           method: 'POST',
+          query: {
+            role: 'someRole',
+          },
         })
         .reply(200, {});
-      tracker.mock.resetCalls();
 
       await chainflow()
         .call(addUser, {
@@ -414,20 +504,21 @@ describe('#chainflow', () => {
           },
         })
         .run();
-      assert.equal(tracker.mock.callCount(), 1);
-      const arg = tracker.mock.calls[0].arguments[0];
-      assert.deepEqual(JSON.parse(arg?.body), {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      const arg = tracker.mock.calls[0][0];
+      expect(JSON.parse(arg?.body)).toStrictEqual({
         name: 'some name',
       });
-      assert.equal(arg?.path, '/someGroup/user?role=someRole');
-      assert.deepEqual(arg?.headers, {
+      expect(arg?.path).toBe('/someGroup/user?role=someRole');
+      expect(arg?.headers).toStrictEqual({
         token: 'some token',
       });
     });
   });
 
   describe('when run options are provided', () => {
-    const createUser = factory.post('/user').body({
+    const userPath = uniquePath('/user');
+    const createUser = factory.post(userPath).body({
       name: 'default',
     });
 
@@ -435,46 +526,49 @@ describe('#chainflow', () => {
       link(name, seed.username);
     });
 
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
 
     it('should call the endpoint with the given seed', async () => {
+      tracker.mockClear();
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      tracker.mock.resetCalls();
 
       await chainflow()
         .call(createUser)
         .run({
           seed: { username: 'some name' },
         });
-      assert.equal(tracker.mock.callCount(), 1);
-      const arg = tracker.mock.calls[0].arguments[0];
-      assert.deepEqual(JSON.parse(arg?.body), {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      const arg = tracker.mock.calls[0][0];
+      expect(JSON.parse(arg?.body)).toStrictEqual({
         name: 'some name',
       });
     });
   });
 
   describe('when a source node is provided directly to input nodes', () => {
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(`/user-${deconflictor}`).body({
+      const createUser = factory.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(`/role-${deconflictor}`).body({
+      const createRole = factory.post(rolePath).body({
         userId: createUser.resp.body.id,
         type: 'ENGINEER',
       });
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
@@ -483,17 +577,15 @@ describe('#chainflow', () => {
 
       client
         .intercept({
-          path: `/role-${deconflictor}`,
+          path: rolePath,
           method: 'POST',
         })
         .reply(200, {});
 
-      tracker.mock.resetCalls();
       await chainflow().call(createUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 2);
-      assert.deepEqual(
-        tracker.mock.calls[1].arguments[0]?.body,
+      expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[1][0]?.body).toBe(
         JSON.stringify({
           userId: 'some-id',
           type: 'ENGINEER',
@@ -503,21 +595,24 @@ describe('#chainflow', () => {
   });
 
   describe('when a source node is provided directly to input nodes with callback', () => {
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(`/user-${deconflictor}`).body({
+      const createUser = factory.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(`/role-${deconflictor}`).body({
+      const createRole = factory.post(rolePath).body({
         name: source(createUser.resp.body.name, (name: string) => name.toUpperCase()),
         type: 'ENGINEER',
       });
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
@@ -526,17 +621,15 @@ describe('#chainflow', () => {
 
       client
         .intercept({
-          path: `/role-${deconflictor}`,
+          path: rolePath,
           method: 'POST',
         })
         .reply(200, {});
 
-      tracker.mock.resetCalls();
       await chainflow().call(createUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 2);
-      assert.deepEqual(
-        tracker.mock.calls[1].arguments[0]?.body,
+      expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[1][0]?.body).toBe(
         JSON.stringify({
           name: 'TOM',
           type: 'ENGINEER',
@@ -546,25 +639,28 @@ describe('#chainflow', () => {
   });
 
   describe('when multiple source nodes are provided directly to input nodes with callback', () => {
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(`/user-${deconflictor}`).body({
+      const createUser = factory.post(userPath).body({
         name: 'Tom',
       });
 
-      const getUser = factory.get(`/user-${deconflictor}`);
+      const getUser = factory.get(userPath);
 
-      const createRole = factory.post(`/role-${deconflictor}`).body({
+      const createRole = factory.post(rolePath).body({
         name: sources([createUser.resp.body.name, getUser.resp.body.name], (name: string) =>
           name.toUpperCase(),
         ),
         type: 'ENGINEER',
       });
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
@@ -573,7 +669,7 @@ describe('#chainflow', () => {
         .times(2);
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'GET',
         })
         .reply(200, {
@@ -582,42 +678,38 @@ describe('#chainflow', () => {
         .times(2);
       client
         .intercept({
-          path: `/role-${deconflictor}`,
+          path: rolePath,
           method: 'POST',
         })
         .reply(200, {})
         .times(3);
 
-      tracker.mock.resetCalls();
       await chainflow().call(createUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 2);
-      assert.deepEqual(
-        tracker.mock.calls[1].arguments[0]?.body,
+      expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[1][0]?.body).toBe(
         JSON.stringify({
           name: 'TOM',
           type: 'ENGINEER',
         }),
       );
 
-      tracker.mock.resetCalls();
+      tracker.mockClear();
       await chainflow().call(getUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 2);
-      assert.deepEqual(
-        tracker.mock.calls[1].arguments[0]?.body,
+      expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[1][0]?.body).toBe(
         JSON.stringify({
           name: 'HARRY',
           type: 'ENGINEER',
         }),
       );
 
-      tracker.mock.resetCalls();
+      tracker.mockClear();
       await chainflow().call(createUser).call(getUser).call(createRole).run();
 
-      assert.equal(tracker.mock.callCount(), 3);
-      assert.deepEqual(
-        tracker.mock.calls[2].arguments[0]?.body,
+      expect(tracker).toHaveBeenCalledTimes(3);
+      expect(tracker.mock.calls[2][0]?.body).toBe(
         JSON.stringify({
           name: 'TOM',
           type: 'ENGINEER',
@@ -627,21 +719,24 @@ describe('#chainflow', () => {
   });
 
   describe('when a chainflow is cloned', () => {
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
     it('the cloned flow can be extended without changing the original', async () => {
-      const createUser = factory.post(`/user-${deconflictor}`).body({
+      const createUser = factory.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(`/role-${deconflictor}`).body({
+      const createRole = factory.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
@@ -650,41 +745,43 @@ describe('#chainflow', () => {
         .times(2);
       client
         .intercept({
-          path: `/role-${deconflictor}`,
+          path: rolePath,
           method: 'POST',
         })
         .reply(200, {});
 
-      tracker.mock.resetCalls();
       const flow1 = chainflow().call(createUser);
       await flow1.run();
-      assert.equal(tracker.mock.callCount(), 1);
+      expect(tracker).toHaveBeenCalledTimes(1);
 
-      tracker.mock.resetCalls();
+      tracker.mockClear();
       const flow2 = flow1.clone().call(createRole);
       await flow2.run();
-      assert.equal(tracker.mock.callCount(), 2);
+      expect(tracker).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('when a chainflow is extended', () => {
+    const userPath = uniquePath('/user');
+    const rolePath = uniquePath('/role');
     it('the original flow should append the callstack of the extending flow', async () => {
-      const createUser = factory.post(`/user-${deconflictor}`).body({
+      const createUser = factory.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(`/role-${deconflictor}`).body({
+      const createRole = factory.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
       const flow1 = chainflow().call(createUser);
       const flow2 = chainflow().call(createRole);
 
       client
         .intercept({
-          path: `/user-${deconflictor}`,
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {
@@ -692,14 +789,13 @@ describe('#chainflow', () => {
         });
       client
         .intercept({
-          path: `/role-${deconflictor}`,
+          path: rolePath,
           method: 'POST',
         })
         .reply(200, {});
 
-      tracker.mock.resetCalls();
       await flow1.extend(flow2).run();
-      assert.equal(tracker.mock.callCount(), 2);
+      expect(tracker).toHaveBeenCalledTimes(2);
     });
   });
 });

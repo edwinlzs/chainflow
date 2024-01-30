@@ -16,9 +16,9 @@ This document track the purposes of dependencies to facilitate removal/swapping 
 
 1. `debug`: logging
 2. `undici`: performant HTTP/1.1 client for node
+3. `@fastify/deepmerge`: performant deep object merge functionality
 
 ### Testing
 
-1. `glob`: global search util
-2. `tsx`: runs `.ts` files on cli
-3. `c8`: code coverage for node test runner
+1. `jest`: a simple testing framework
+2. `ts-jest`: jest transformer that allows using Jest with TypeScript without directly managing Babel dependencies

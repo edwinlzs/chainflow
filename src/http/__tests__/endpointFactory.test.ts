@@ -1,5 +1,3 @@
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
 import { endpointFactory } from '../endpointFactory';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
@@ -13,7 +11,7 @@ describe('#endpointFactory', () => {
 
   it('should create endpoints with HTTP methods based on the class method used', () => {
     const testFactory = endpointFactory();
-    assert.equal(testFactory.get('/').method, 'get');
+    expect(testFactory.get('/').method).toBe('get');
   });
 
   it('should create endpoints with any custom headers it has', async () => {
@@ -29,11 +27,12 @@ describe('#endpointFactory', () => {
     });
     const testEndpoint = testFactory.get('/');
 
-    const tracker = mock.method(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'httpReq');
+    tracker.mockClear();
     await testEndpoint.call({});
 
-    assert.equal(tracker.mock.callCount(), 1);
-    assert.deepEqual(tracker.mock.calls[0].arguments[0].headers, {
+    expect(tracker).toHaveBeenCalledTimes(1);
+    expect(tracker.mock.calls[0][0].headers).toStrictEqual({
       token: 'some-token',
       'content-type': 'application/text',
     });
@@ -45,7 +44,7 @@ describe('#endpointFactory', () => {
       'content-type': 'application/text',
     });
     testFactory.set((nodes) => {
-      assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
+      expect(Object.keys(nodes.headers)).toStrictEqual(['token', 'content-type']);
     });
   });
 
@@ -66,8 +65,7 @@ describe('#endpointFactory', () => {
         });
       const resp = await testEndpoint.call({});
 
-      assert.deepEqual(
-        resp.body,
+      expect(resp.body).toStrictEqual(
         JSON.stringify({
           hello: 'world',
         }),
@@ -93,11 +91,12 @@ describe('#endpointFactory', () => {
         })
         .reply(200, {});
 
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
       await testEndpoint.call({});
 
-      assert.equal(tracker.mock.callCount(), 1);
-      assert.deepEqual(tracker.mock.calls[0].arguments[0].headers, {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0].headers).toStrictEqual({
         token: 'some-token',
         'content-type': 'application/xml',
         animal: 'dog',
