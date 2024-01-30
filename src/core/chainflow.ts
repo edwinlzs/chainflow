@@ -61,7 +61,7 @@ class Chainflow {
         this.#responses[hash] = [resp];
       } catch (e) {
         log(`Chainflow stopped at endpoint with hash "${hash}": ${e}`);
-        break;
+        throw e;
       }
     }
     let responses = {};

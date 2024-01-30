@@ -1,10 +1,16 @@
-import { describe, it, mock } from 'node:test';
 import { RespParser, Endpoint } from '../endpoint';
-import assert from 'node:assert';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../core/utils/link';
 import { gen, pool, required } from '../../core/utils/initializers';
+
+// used to maintain URL paths uniqueness to avoid one test's calls
+// from being picked up by another test's interceptor
+let deconflictor = 0;
+const uniquePath = (path: string) => {
+  ++deconflictor;
+  return `${path}-${deconflictor}`;
+};
 
 describe('#endpoint', () => {
   const agent = new MockAgent();
@@ -24,8 +30,7 @@ describe('#endpoint', () => {
 
   describe('when an unsupported method is passed to an endpoint', () => {
     it('should throw an error', () => {
-      assert.throws(
-        () => new Endpoint({ addr, method: 'NOnSeNsE', path: '/' }),
+      expect(() => new Endpoint({ addr, method: 'NOnSeNsE', path: '/' })).toThrow(
         /Method "nonsense" is not supported.$/,
       );
     });
@@ -49,8 +54,7 @@ describe('#endpoint', () => {
           });
 
         const resp = await testEndpoint.call({});
-        assert.deepEqual(
-          resp.body,
+        expect(resp.body).toStrictEqual(
           JSON.stringify({
             hello: 'world',
           }),
@@ -69,7 +73,7 @@ describe('#endpoint', () => {
           });
 
         const resp = await testEndpoint.call({});
-        assert.deepEqual(resp.body, {
+        expect(resp.body).toStrictEqual({
           hello: 'world',
         });
       });
@@ -91,8 +95,8 @@ describe('#endpoint', () => {
             error: 'some-error',
           });
         const resp = await testEndpoint.call({});
-        assert.deepEqual(resp.body, { error: 'some-error' });
-        assert.deepEqual(resp.statusCode, 404);
+        expect(resp.body).toStrictEqual({ error: 'some-error' });
+        expect(resp.statusCode).toBe(404);
       });
       it('should validate responses with a given custom error message', async () => {
         const testEndpoint = new Endpoint({
@@ -113,7 +117,7 @@ describe('#endpoint', () => {
           .reply(404, {
             error: 'some-error',
           });
-        assert.rejects(testEndpoint.call({}), {
+        await expect(testEndpoint.call({})).rejects.toThrow({
           name: 'InvalidResponseError',
           message: 'Response is invalid: Received a Not Found error',
         });
@@ -132,16 +136,17 @@ describe('#endpoint', () => {
         .reply(200, {});
 
       const resp = await testEndpoint.call({});
-      assert.deepEqual(
+      expect(
         ['statusCode', 'headers', 'body', 'trailers', 'opaque', 'context'].sort(),
-        Object.keys(resp).sort(),
-      );
+      ).toStrictEqual(Object.keys(resp).sort());
     });
   });
 
   describe('when a request payload is assigned to an endpoint', () => {
-    const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/user' }).body(testReqPayload);
-
+    const userPath = uniquePath('/user');
+    const testEndpoint = new Endpoint({ addr, method: 'POST', path: userPath }).body(
+      testReqPayload,
+    );
     const respEndpoint = new Endpoint({ addr, method: 'GET', path: '/age' });
     const respPayload = {
       age: 10,
@@ -152,34 +157,36 @@ describe('#endpoint', () => {
 
     it('should expose its input nodes for setting up links', () => {
       testEndpoint.set((nodes) => {
-        assert.deepEqual(Object.keys(nodes.body), Object.keys(testReqPayload));
+        expect(Object.keys(nodes.body)).toStrictEqual(Object.keys(testReqPayload));
       });
     });
 
     it('should use the default value if no SourceNode is linked', async () => {
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
       await testEndpoint.call(responses);
 
-      assert.equal(tracker.mock.callCount(), 1);
+      expect(tracker).toHaveBeenCalledTimes(1);
       const call = tracker.mock.calls[0];
 
-      assert.deepEqual(call.arguments?.[0]?.body, JSON.stringify(testReqPayload));
+      expect(call?.[0]?.body).toStrictEqual(JSON.stringify(testReqPayload));
     });
 
     it('should use the available response value after a SourceNode is linked to the InputNode', async () => {
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       testEndpoint.set((nodes) => {
         link(nodes.body.details.age, respEndpoint.resp.age);
@@ -187,8 +194,7 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      assert.deepEqual(
-        call.arguments?.[0]?.body,
+      expect(call?.[0]?.body).toStrictEqual(
         JSON.stringify({
           id: 'some-id',
           name: 'some-name',
@@ -203,11 +209,12 @@ describe('#endpoint', () => {
     it('should use values from a provided value pool', async () => {
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
       const testValuePool = [10, 20, 30];
 
       const testReqPayloadWithValPool = {
@@ -222,9 +229,9 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      const callBody = JSON.parse(call.arguments?.[0]?.body);
-      assert.ok(testValuePool.includes(callBody?.details?.age));
-      assert.deepEqual(callBody, {
+      const callBody = JSON.parse(call?.[0]?.body);
+      expect(testValuePool.includes(callBody?.details?.age)).toBeTruthy();
+      expect(callBody).toStrictEqual({
         id: 'some-id',
         name: 'some-name',
         details: {
@@ -237,11 +244,12 @@ describe('#endpoint', () => {
     it('should use values from a provided generator function', async () => {
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
       const testValGen = () => 'michael-scott';
 
       const testReqPayloadWithValGen = {
@@ -256,8 +264,8 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      const callBody = JSON.parse(call.arguments?.[0]?.body);
-      assert.deepEqual(callBody, {
+      const callBody = JSON.parse(call?.[0]?.body);
+      expect(callBody).toStrictEqual({
         id: 'some-id',
         name: 'michael-scott',
         details: {
@@ -274,7 +282,7 @@ describe('#endpoint', () => {
 
       it('should expose its path params for setting up links', () => {
         testEndpoint.set((nodes) => {
-          assert.deepEqual(Object.keys(nodes.pathParams), ['petId']);
+          expect(Object.keys(nodes.pathParams)).toStrictEqual(['petId']);
         });
       });
 
@@ -285,11 +293,11 @@ describe('#endpoint', () => {
             method: 'GET',
           })
           .reply(200, {});
-        const tracker = mock.method(http, 'httpReq');
-        tracker.mock.resetCalls();
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
 
-        assert.rejects(async () => await testEndpoint.call({}));
-        assert.equal(tracker.mock.callCount(), 0);
+        await expect(testEndpoint.call({})).rejects.toThrow();
+        expect(tracker).toHaveBeenCalledTimes(0);
       });
     });
 
@@ -302,7 +310,7 @@ describe('#endpoint', () => {
 
       it('should expose its path params for setting up links', () => {
         testEndpoint.set((nodes) => {
-          assert.deepEqual(Object.keys(nodes.pathParams), ['userId', 'petId']);
+          expect(Object.keys(nodes.pathParams)).toStrictEqual(['userId', 'petId']);
         });
       });
 
@@ -313,11 +321,11 @@ describe('#endpoint', () => {
             method: 'GET',
           })
           .reply(200, {});
-        const tracker = mock.method(http, 'httpReq');
-        tracker.mock.resetCalls();
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
 
-        assert.rejects(async () => await testEndpoint.call({}));
-        assert.equal(tracker.mock.callCount(), 0);
+        await expect(testEndpoint.call({})).rejects.toThrow();
+        expect(tracker).toHaveBeenCalledTimes(0);
       });
     });
   });
@@ -331,7 +339,7 @@ describe('#endpoint', () => {
 
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((nodes) => {
-        assert.deepEqual(Object.keys(nodes.query), ['cute']);
+        expect(Object.keys(nodes.query)).toStrictEqual(['cute']);
       });
     });
 
@@ -342,11 +350,11 @@ describe('#endpoint', () => {
           method: 'GET',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
-      tracker.mock.resetCalls();
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       await testEndpoint.call({});
-      assert.equal(tracker.mock.callCount(), 1);
+      expect(tracker).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -360,7 +368,7 @@ describe('#endpoint', () => {
 
     it('should expose its path params for setting up links', () => {
       testEndpoint.set((nodes) => {
-        assert.deepEqual(Object.keys(nodes.query), ['cute', 'iq']);
+        expect(Object.keys(nodes.query)).toStrictEqual(['cute', 'iq']);
       });
     });
 
@@ -371,12 +379,12 @@ describe('#endpoint', () => {
           method: 'GET',
         })
         .reply(200, {});
-      const tracker = mock.method(http, 'httpReq');
-      tracker.mock.resetCalls();
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       await testEndpoint.call({});
-      assert.equal(tracker.mock.callCount(), 1);
-      assert.deepEqual(tracker.mock.calls[0].arguments[0]?.path, '/pet?cute=true&iq=200');
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0]?.path).toStrictEqual('/pet?cute=true&iq=200');
     });
   });
 
@@ -390,7 +398,7 @@ describe('#endpoint', () => {
 
     it('should expose its headers for setting up links', () => {
       testEndpoint.set((nodes) => {
-        assert.deepEqual(Object.keys(nodes.headers), ['token', 'content-type']);
+        expect(Object.keys(nodes.headers)).toStrictEqual(['token', 'content-type']);
       });
     });
 
@@ -402,12 +410,12 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
 
-      const tracker = mock.method(http, 'httpReq');
-      tracker.mock.resetCalls();
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
       await testEndpoint.call({});
-      assert.equal(tracker.mock.callCount(), 1);
-      assert.deepEqual(tracker.mock.calls[0].arguments[0]?.headers, {
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0]?.headers).toStrictEqual({
         token: 'some-token',
         'content-type': 'application/nonsense',
       });
@@ -415,36 +423,36 @@ describe('#endpoint', () => {
   });
 
   describe('when provided call opts do not cover all the required values', () => {
-    const testEndpoint = new Endpoint({ addr, path: '/user', method: 'post' }).body({
+    const userPath = uniquePath('/user');
+    const testEndpoint = new Endpoint({ addr, path: userPath, method: 'post' }).body({
       details: {
         age: required(),
         name: required(),
       },
     });
-    it('should throw an error indicating required values are not found', () => {
+    it('should throw an error indicating required values are not found', async () => {
       client
         .intercept({
-          path: '/user',
+          path: userPath,
           method: 'POST',
         })
         .reply(200, {});
 
-      const tracker = mock.method(http, 'httpReq');
-      tracker.mock.resetCalls();
+      const tracker = jest.spyOn(http, 'httpReq');
+      tracker.mockClear();
 
-      assert.rejects(
-        async () =>
-          await testEndpoint.call(
-            {},
-            {
-              body: {
-                details: {
-                  name: 'dude',
-                },
+      await expect(
+        testEndpoint.call(
+          {},
+          {
+            body: {
+              details: {
+                name: 'dude',
               },
             },
-          ),
-      );
+          },
+        ),
+      ).rejects.toThrow();
     });
   });
 });
