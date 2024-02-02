@@ -300,6 +300,7 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 
 ### `config`
 
+`respParser`  
 By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `EndpointFactory`, to apply it to all endpoints created from it) like so:
 
 ```typescript
@@ -320,13 +321,25 @@ const getUser = factory.get('/user').config({
 
 There are 4 supported ways to parse response bodies (as provided by the underlying HTTP client, `undici`): `arrayBuffer`, `blob`, `json` and `text`.
 
+`respValidator`
+Another configuration option is how to validate the response to an endpoint. By default, Chainflow only accepts responses that have HTTP status codes in the 200-299 range, and rejects responses otherwise (meaning their values will not be stored). You can pass in a custom `respValidator` to change this behaviour.
+
+```typescript
+const testEndpoint = factory.post('/user').config({
+  respValidator: (resp) => {
+    if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to create a user.F' };
+    return { valid: true };
+  },
+});
+```
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.
 
-1. Content types other than `application/json`
-2. HTTPS
-3. Cookies
+1. HTTPS
+2. Cookies
+3. API performance testing
 
 ## Development
 
