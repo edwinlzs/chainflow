@@ -42,7 +42,6 @@ export interface CallOpts {
 /** Options for running chainflow. */
 export interface RunOpts {
   seed?: Record<string, any>;
-  log?: boolean;
 }
 
 /** Special object used to link an InputNode to a chainflow seed. */
@@ -81,10 +80,7 @@ class Chainflow {
         throw e;
       }
     }
-    let sources = {};
-    if (opts?.log) {
-      sources = this.#sources;
-    }
+    const sources = this.#sources;
     this.reset();
     log('Finished running chainflow.');
     return sources;
