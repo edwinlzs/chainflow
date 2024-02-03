@@ -304,7 +304,7 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `EndpointFactory`, to apply it to all endpoints created from it) like so:
 
 ```typescript
-import { RespParser } from './chainflow';
+import { RespParser } from 'chainflow';
 
 const getUser = factory.get('/user').config({
   respParser: RespParser.Text,
@@ -325,12 +325,35 @@ There are 4 supported ways to parse response bodies (as provided by the underlyi
 Another configuration option is how to validate the response to an endpoint. By default, Chainflow only accepts responses that have HTTP status codes in the 200-299 range, and rejects responses otherwise (meaning their values will not be stored). You can pass in a custom `respValidator` to change this behaviour.
 
 ```typescript
-const testEndpoint = factory.post('/user').config({
+const testEndpoint = factory.get('/user').config({
   respValidator: (resp) => {
-    if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to create a user.F' };
+    if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to retrieve users.' };
     return { valid: true };
   },
 });
+```
+
+### `store`
+
+Instead of direct links between endpoints, you can use a central store to keep values from some endpoints and have other endpoints take from it via the special `store` object.
+
+```typescript
+import { store } from 'chainflow';
+
+const createUser = factory.post('/user').body({
+  name: 'Tom',
+}).store((resp) => ({
+  // this endpoint will store `id` from a response to `userId` in the store
+  userId: resp.id,
+}));
+
+const addRole = factory.post('/role').body({
+  // this endpoint will take `userId` from the store, if available
+  userId: store.userId,
+  role: 'Engineer',
+});
+
+chainflow().call(createUser).call(addRole).run();
 ```
 
 ## Future Updates

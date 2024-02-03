@@ -10,12 +10,13 @@ import {
   UnsupportedMethodError,
 } from './errors';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
-import { CallOpts, IEndpoint } from '../core/chainflow';
+import { CallOpts, CallResult, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
 import BodyReadable from 'undici/types/readable';
+import { IStore, Store } from '../core/store';
 
 const deepmerge = deepmergeSetup();
 
@@ -63,6 +64,7 @@ export class Endpoint implements IEndpoint {
   #req: ReqBuilder;
   #resp: SourceNode;
   #config: EndpointConfig = {};
+  #store: Store = new Store();
   /** A hash that uniquely identifies this endpoint. */
   hash: string;
 
@@ -83,6 +85,7 @@ export class Endpoint implements IEndpoint {
     return this.#method;
   }
 
+  /** Configures this endpoint. */
   config(config: EndpointConfig) {
     this.#config = config;
     return this;
@@ -116,8 +119,14 @@ export class Endpoint implements IEndpoint {
     return this;
   }
 
+  /** Declare values to store from responses to this endpoint. */
+  store(callback: (resp: SourceNode) => IStore<SourceNode>) {
+    this.#store.def = callback(this.resp);
+    return this;
+  }
+
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: SourceValues, opts?: CallOpts): Promise<any> {
+  async call(responses: SourceValues, opts?: CallOpts): Promise<CallResult> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body = {};
@@ -164,10 +173,12 @@ export class Endpoint implements IEndpoint {
     const results = this.#config.respValidator?.(resp) ?? this.#validateResp(resp);
     if (!results.valid) throw new InvalidResponseError(results.msg);
 
-    return {
+    const parsedResp = {
       ...resp,
       body: await this.#parseResponse(resp.body),
     };
+
+    return this.#store.storeValues(parsedResp);
   }
 
   /** Configure linking of this Req's input nodes. */

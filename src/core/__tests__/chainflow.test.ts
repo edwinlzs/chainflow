@@ -1,4 +1,4 @@
-import { chainflow, seed } from '../chainflow';
+import { chainflow, seed, store } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { allowUndefined, link, linkMany } from '../utils/link';
 import http from '../../http/utils/client';
@@ -796,6 +796,314 @@ describe('#chainflow', () => {
 
       await flow1.extend(flow2).run();
       expect(tracker).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when a chainflow calls endpoints that use its store', () => {
+    describe('when an endpoint defines a store value', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+
+      it('should pass values through the store', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            username: resp.body.name,
+          }));
+
+        const createRole = factory.post(rolePath).body({
+          name: store.username,
+          type: 'ENGINEER',
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, {
+            name: 'Tom',
+          });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(2);
+        expect(tracker.mock.calls[1][0]?.body).toBe(
+          JSON.stringify({
+            name: 'Tom',
+            type: 'ENGINEER',
+          }),
+        );
+      });
+    });
+
+    describe('when an endpoint defines a deeply nested store value', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+      it('should pass values through the store', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            user: {
+              profile: {
+                firstName: resp.body.name,
+              },
+            },
+          }));
+
+        const createRole = factory.post(rolePath).body({
+          name: store.user.profile.firstName,
+          type: 'ENGINEER',
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, {
+            name: 'Tom',
+          });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(2);
+        expect(tracker.mock.calls[1][0]?.body).toBe(
+          JSON.stringify({
+            name: 'Tom',
+            type: 'ENGINEER',
+          }),
+        );
+      });
+    });
+
+    describe('when multiple endpoints put values into the same store key', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+      it('should have the later endpoint call override the store value put by the previous call', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            username: resp.body.name,
+          }));
+        const getUser = factory.get(userPath).store((resp) => ({
+          username: resp.body.name,
+        }));
+
+        const createRole = factory.post(rolePath).body({
+          name: store.username,
+          type: 'ENGINEER',
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, {
+            name: 'Tom',
+          });
+        client
+          .intercept({
+            path: userPath,
+            method: 'GET',
+          })
+          .reply(200, {
+            name: 'Jane',
+          });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(getUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(3);
+        expect(tracker.mock.calls[2][0]?.body).toBe(
+          JSON.stringify({
+            name: 'Jane',
+            type: 'ENGINEER',
+          }),
+        );
+      });
+    });
+
+    describe('when the storeDef instructs the entire response to be put the store', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+      it('should allow the entire response object to be put in the store', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            createUserResponse: resp,
+          }));
+
+        const createRole = factory.post(rolePath).body({
+          name: store.createUserResponse.body.name,
+          type: 'ENGINEER',
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, {
+            name: 'Tom',
+          });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(2);
+        expect(tracker.mock.calls[1][0]?.body).toBe(
+          JSON.stringify({
+            name: 'Tom',
+            type: 'ENGINEER',
+          }),
+        );
+      });
+    });
+
+    describe('when value to be stored is undefined and undefined is not allowed', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+      it('should not store the value', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            username: {
+              firstName: resp.body.username.firstName,
+            },
+          }));
+
+        const createRole = factory.post(rolePath).body({
+          name: 'default-name',
+          type: 'ENGINEER',
+        });
+
+        createRole.set(({ body: { name } }) => {
+          link(name, store.username.firstName);
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, { username: undefined });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(2);
+        expect(tracker.mock.calls[1][0]?.body).toBe(
+          JSON.stringify({
+            name: 'default-name',
+            type: 'ENGINEER',
+          }),
+        );
+      });
+    });
+
+    describe('when value to be stored is undefined and undefined is allowed', () => {
+      const userPath = uniquePath('/user');
+      const rolePath = uniquePath('/role');
+      it('should not store the value', async () => {
+        const createUser = factory
+          .post(userPath)
+          .body({
+            name: 'Tom',
+          })
+          .store((resp) => ({
+            username: {
+              firstName: resp.body.username.firstName,
+            },
+          }));
+
+        const createRole = factory.post(rolePath).body({
+          name: 'default-name',
+          type: 'ENGINEER',
+        });
+
+        createRole.set(({ body: { name } }) => {
+          link(name, allowUndefined(store.username.firstName));
+        });
+
+        const tracker = jest.spyOn(http, 'httpReq');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, { username: undefined });
+        client
+          .intercept({
+            path: rolePath,
+            method: 'POST',
+          })
+          .reply(200, {});
+
+        await chainflow().call(createUser).call(createRole).run();
+        expect(tracker).toHaveBeenCalledTimes(2);
+        expect(tracker.mock.calls[1][0]?.body).toBe(
+          JSON.stringify({
+            name: undefined,
+            type: 'ENGINEER',
+          }),
+        );
+      });
     });
   });
 });

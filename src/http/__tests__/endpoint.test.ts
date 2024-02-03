@@ -38,22 +38,22 @@ describe('#endpoint', () => {
 
   describe('when the endpoint is configured', () => {
     describe('when the response parser is configured', () => {
-      it('should parse a response body as json when json is set', async () => {
+      it('should parse a response body as a string when parser is set to text', async () => {
         const testEndpoint = new Endpoint({
           addr,
           method: 'POST',
-          path: '/text-config-test',
+          path: '/text-parser-test',
         }).config({ respParser: RespParser.Text });
         client
           .intercept({
-            path: '/text-config-test',
+            path: '/text-parser-test',
             method: 'POST',
           })
           .reply(200, {
             hello: 'world',
           });
 
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual(
           JSON.stringify({
             hello: 'world',
@@ -61,21 +61,71 @@ describe('#endpoint', () => {
         );
       });
 
-      it('should parse a response body as json when json is set', async () => {
-        const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-config-test' });
+      it('should parse a response body as an object when parser is set to json', async () => {
+        const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-parser-test' });
         client
           .intercept({
-            path: '/json-config-test',
+            path: '/json-parser-test',
             method: 'POST',
           })
           .reply(200, {
             hello: 'world',
           });
 
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({
           hello: 'world',
         });
+      });
+
+      it('should parse a response body as a blob when parser is set to blob', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
+          method: 'POST',
+          path: '/blob-parser-test',
+        }).config({ respParser: RespParser.Blob });
+        client
+          .intercept({
+            path: '/blob-parser-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            hello: 'world',
+          });
+
+        const { resp } = await testEndpoint.call({});
+        expect(resp.body).toStrictEqual(
+          new Blob([
+            JSON.stringify({
+              hello: 'world',
+            }),
+          ]),
+        );
+      });
+
+      it('should parse a response body as an arrayBuffer when parser is set to arrayBuffer', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
+          method: 'POST',
+          path: '/arrayBuffer-parser-test',
+        }).config({ respParser: RespParser.ArrayBuffer });
+        client
+          .intercept({
+            path: '/arrayBuffer-parser-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            hello: 'world',
+          });
+
+        const { resp } = await testEndpoint.call({});
+        expect(resp.body).toStrictEqual(
+          await new Blob([
+            JSON.stringify({
+              hello: 'world',
+            }),
+          ]).arrayBuffer(),
+        );
       });
     });
 
@@ -94,7 +144,7 @@ describe('#endpoint', () => {
           .reply(404, {
             error: 'some-error',
           });
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({ error: 'some-error' });
         expect(resp.statusCode).toBe(404);
       });
@@ -135,7 +185,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
 
-      const resp = await testEndpoint.call({});
+      const { resp } = await testEndpoint.call({});
       expect(
         ['statusCode', 'headers', 'body', 'trailers', 'opaque', 'context'].sort(),
       ).toStrictEqual(Object.keys(resp).sort());

@@ -63,7 +63,7 @@ describe('#endpointFactory', () => {
         .reply(200, {
           hello: 'world',
         });
-      const resp = await testEndpoint.call({});
+      const { resp } = await testEndpoint.call({});
 
       expect(resp.body).toStrictEqual(
         JSON.stringify({
