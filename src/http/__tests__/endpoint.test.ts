@@ -53,7 +53,7 @@ describe('#endpoint', () => {
             hello: 'world',
           });
 
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual(
           JSON.stringify({
             hello: 'world',
@@ -72,7 +72,7 @@ describe('#endpoint', () => {
             hello: 'world',
           });
 
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({
           hello: 'world',
         });
@@ -94,7 +94,7 @@ describe('#endpoint', () => {
           .reply(404, {
             error: 'some-error',
           });
-        const resp = await testEndpoint.call({});
+        const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({ error: 'some-error' });
         expect(resp.statusCode).toBe(404);
       });
@@ -135,7 +135,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
 
-      const resp = await testEndpoint.call({});
+      const { resp } = await testEndpoint.call({});
       expect(
         ['statusCode', 'headers', 'body', 'trailers', 'opaque', 'context'].sort(),
       ).toStrictEqual(Object.keys(resp).sort());

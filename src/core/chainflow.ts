@@ -1,10 +1,19 @@
 import debug from 'debug';
 import { SourceValues } from './inputNode';
 import { sourceNode } from './sourceNode';
+import deepmergeSetup from '@fastify/deepmerge';
+import { IStore } from './store';
 
 const log = debug('chainflow:chainflow');
+const deepmerge = deepmergeSetup();
 
 export const SEED_HASH = 'seed';
+export const STORE_HASH = 'store';
+
+export interface CallResult {
+  resp: any;
+  store: IStore<unknown>;
+}
 
 /** Stores chain of endpoint calls. */
 type Callstack = CallNode[];
@@ -12,7 +21,7 @@ type Callstack = CallNode[];
 /** Defines an endpoint that a chainflow can call upon. */
 export interface IEndpoint {
   hash: string;
-  call: (responses: SourceValues, opts?: CallOpts) => Promise<any>;
+  call: (sources: SourceValues, opts?: CallOpts) => Promise<CallResult>;
 }
 
 /** Details on an endpoint call to be made. */
@@ -36,12 +45,18 @@ export interface RunOpts {
   log?: boolean;
 }
 
-/** Special object used to link a InputNode to a chainflow seed. */
+/** Special object used to link an InputNode to a chainflow seed. */
 export const seed = sourceNode(SEED_HASH);
 
+/** Special object that acts as a central "gateway" between input and source values. */
+export const store = sourceNode(STORE_HASH);
+
 class Chainflow {
-  /** Stores sources accumulated from endpoint calls in the current flow. */
-  #responses: SourceValues = {};
+  /** Stores sources such as the seed or values accumulated from
+   * endpoint calls in the current flow. */
+  #sources: SourceValues = {
+    [STORE_HASH]: [{}],
+  };
   #callstack: Callstack = [];
 
   /** Run the set up chain */
@@ -49,7 +64,7 @@ class Chainflow {
     log(`Running chainflow...`);
 
     if (opts?.seed) {
-      this.#responses[SEED_HASH] = [opts.seed];
+      this.#sources[SEED_HASH] = [opts.seed];
     }
 
     for (const { endpoint, opts } of this.#callstack) {
@@ -57,20 +72,22 @@ class Chainflow {
       const hash = endpoint.hash;
       log(`Making a call to endpoint with hash "${hash}"`);
       try {
-        const resp = await endpoint.call(this.#responses, opts);
-        this.#responses[hash] = [resp];
+        const { resp, store } = await endpoint.call(this.#sources, opts);
+        if (Object.keys(store).length > 0)
+          this.#sources[STORE_HASH][0] = deepmerge(this.#sources[STORE_HASH][0], store);
+        this.#sources[hash] = [resp];
       } catch (e) {
         log(`Chainflow stopped at endpoint with hash "${hash}": ${e}`);
         throw e;
       }
     }
-    let responses = {};
+    let sources = {};
     if (opts?.log) {
-      responses = this.#responses;
+      sources = this.#sources;
     }
     this.reset();
     log('Finished running chainflow.');
-    return responses;
+    return sources;
   }
 
   /** Adds an endpoint call to the callchain. */
@@ -79,9 +96,9 @@ class Chainflow {
     return this;
   }
 
-  /** Resets the chainflow's state by clearing its accumulated responses. */
+  /** Resets the chainflow's state by clearing its accumulated sources. */
   reset() {
-    this.#responses = {};
+    this.#sources = {};
   }
 
   /** Creates a clone of this chainflow and its callstack
