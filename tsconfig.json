@@ -9,12 +9,11 @@
     "declaration": true,
     "strict": true,
     "strictNullChecks": true,
-    // "noUnusedLocals": true,
+    "noUnusedLocals": true,
     "skipLibCheck": true,
-    // "pretty": true,
     "outDir": "dist",
     "lib": ["ES2022"]
   },
   "include": ["src"],
-  "exclude": ["node_modules", "examples", "*.test.ts"]
+  "exclude": ["node_modules", "examples", "src/**/*.test.ts"]
 }
