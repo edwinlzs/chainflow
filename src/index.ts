@@ -4,4 +4,4 @@ export * from './core/inputNode';
 export * from './core/utils/link';
 export * from './http/endpoint';
 export * from './http/reqBuilder';
-export * from './http/endpointFactory';
+export * from './http/originServer';

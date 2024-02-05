@@ -1,27 +1,27 @@
-import { endpointFactory } from 'chainflow';
+import { originServer } from 'chainflow';
 
-const factory = endpointFactory('127.0.0.1:3001');
+const origin = originServer('127.0.0.1:3001');
 
 // Defining API signatures
-export const createUser = factory.post('/user').body({
+export const createUser = origin.post('/user').body({
   name: 'user-name',
   details: {
     age: 42,
   },
 });
 
-export const getUser = factory.get('/user').query({
+export const getUser = origin.get('/user').query({
   age: createUser.resp.body.details.age,
 });
 
 // Role
-export const createRole = factory.post('/role').body({
+export const createRole = origin.post('/role').body({
   user_id: createUser.resp.body.id,
   type: 'role-type',
 });
 
 // Project
-export const createProject = factory.post('/project').body({
+export const createProject = origin.post('/project').body({
   creator_id: createUser.resp.body.id,
   details: {
     title: 'project-title',
@@ -30,9 +30,9 @@ export const createProject = factory.post('/project').body({
 });
 
 // Submission
-export const createSubmission = factory.post('/submission').body({
+export const createSubmission = origin.post('/submission').body({
   creator_id: createUser.resp.body.id,
   project_id: createProject.resp.body.id,
 });
 
-export const getSubmission = factory.get('/submission/{submissionId}');
+export const getSubmission = origin.get('/submission/{submissionId}');

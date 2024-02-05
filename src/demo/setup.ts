@@ -1,11 +1,11 @@
 /** TEST ZONE */
-import { endpointFactory } from '../http/endpointFactory';
+import { originServer } from '../http/originServer';
 
 // this section should be derived by the lib from API specs
 // or from utility functions placed within defined routes
 // to capture input/output payloads
 
-const factory = endpointFactory('127.0.0.1:5000');
+const origin = originServer('127.0.0.1:5000');
 
 // User
 const userPostRequest = {
@@ -15,13 +15,13 @@ const userPostRequest = {
   },
 };
 
-export const createUser = factory.post('/user').body(userPostRequest);
+export const createUser = origin.post('/user').body(userPostRequest);
 
 const userQuery = {
   age: 42,
 };
 
-export const getUser = factory.get('/user').query(userQuery);
+export const getUser = origin.get('/user').query(userQuery);
 
 // Role
 const rolePostRequest = {
@@ -29,7 +29,7 @@ const rolePostRequest = {
   type: 'role-type',
 };
 
-export const createRole = factory.post('/role').body(rolePostRequest);
+export const createRole = origin.post('/role').body(rolePostRequest);
 
 // Project
 const projectPostRequest = {
@@ -40,7 +40,7 @@ const projectPostRequest = {
   },
 };
 
-export const createProject = factory.post('/project').body(projectPostRequest);
+export const createProject = origin.post('/project').body(projectPostRequest);
 
 // Submission
 const submissionPostRequest = {
@@ -48,6 +48,6 @@ const submissionPostRequest = {
   projectId: 'submission-projectId',
 };
 
-export const createSubmission = factory.post('/submission').body(submissionPostRequest);
+export const createSubmission = origin.post('/submission').body(submissionPostRequest);
 
-export const getSubmission = factory.get('/submission/{submissionId}');
+export const getSubmission = origin.get('/submission/{submissionId}');

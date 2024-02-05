@@ -1,27 +1,27 @@
 import { faker } from '@faker-js/faker';
-import { endpointFactory, gen, link, pool, required, seed } from 'chainflow';
+import { originServer, gen, link, pool, required, seed } from 'chainflow';
 
 const petStoreAddr = '127.0.0.1:3030';
 const paymentsAddr = '127.0.0.1:5050';
 
-const factory = endpointFactory(petStoreAddr);
+const origin = originServer(petStoreAddr);
 
 // Defining API signatures
 
-export const login = factory.get('/user/login').query({
+export const login = origin.get('/user/login').query({
   username: seed.username,
   password: gen(() => faker.string.alphanumeric(8)),
 });
 
-const loggedInFactory = endpointFactory(petStoreAddr).headers({
+const loggedInOrigin = originServer(petStoreAddr).headers({
   Authorization: required(),
 });
 
-loggedInFactory.set(({ headers }) => {
+loggedInOrigin.set(({ headers }) => {
   link(headers.Authorization, login.resp.body.id);
 });
 
-export const addPet = loggedInFactory.post('/pet').body(
+export const addPet = loggedInOrigin.post('/pet').body(
   pool([
     {
       name: 'woofer',
@@ -45,18 +45,18 @@ export const addPet = loggedInFactory.post('/pet').body(
   ]),
 );
 
-export const findPetByStatus = loggedInFactory.get('/pet/findByStatus').query({
+export const findPetByStatus = loggedInOrigin.get('/pet/findByStatus').query({
   status: 'available',
 });
 
-export const placeOrder = loggedInFactory.post('/store/order').body({
+export const placeOrder = loggedInOrigin.post('/store/order').body({
   petId: required(),
 });
 
-// export const findOrder = loggedInFactory.get('/store/order/{orderId}');
+// export const findOrder = loggedInOrigin.get('/store/order/{orderId}');
 
-const paymentsFactory = endpointFactory(paymentsAddr);
+const paymentsOrigin = originServer(paymentsAddr);
 
-export const makePayment = paymentsFactory.post('/payment/{orderId}').body({
+export const makePayment = paymentsOrigin.post('/payment/{orderId}').body({
   creditCardNumber: required(),
 });

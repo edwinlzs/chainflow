@@ -13,26 +13,26 @@
 npm install --save-dev chainflow
 ```
 
-Use `endpointFactory` to define your endpoints and their request/response signatures with the `endpoint` method.
+Use `originServer` to define your endpoints and their request/response signatures with the `endpoint` method.
 
 ```typescript
-import { endpointFactory } from chainflow;
+import { originServer } from chainflow;
 
-const factory = endpointFactory('127.0.0.1:5000');
+const origin = originServer('127.0.0.1:5000');
 
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: 'Tom',
   details: {
     age: 40,
   },
 });
 
-const createRole = factory.post('/role').body({
+const createRole = origin.post('/role').body({
   type: 'Engineer',
   userId: createUser.resp.body.id,
 });
 
-const getUser = factory.get('/user').query({
+const getUser = origin.get('/user').query({
   roleType: createRole.resp.body.type,
 });
 ```
@@ -86,7 +86,7 @@ The above setup will result in the following API calls:
 Define path params by wrapping a param name with `{}` in the endpoint path.
 
 ```typescript
-const getGroupsWithUser = factory.get('/groups/{userId}');
+const getGroupsWithUser = origin.get('/groups/{userId}');
 ```
 
 ### Query params
@@ -94,7 +94,7 @@ const getGroupsWithUser = factory.get('/groups/{userId}');
 Define query params with the `query` method on an endpoint.
 
 ```typescript
-const getUsersInGroup = factory.get('/user').query({ groupId: 'some-id' });
+const getUsersInGroup = origin.get('/user').query({ groupId: 'some-id' });
 ```
 
 ### Headers
@@ -102,15 +102,15 @@ const getUsersInGroup = factory.get('/user').query({ groupId: 'some-id' });
 Specify headers with `headers` method on endpoints.
 
 ```typescript
-const getInfo = factory.get('/info').headers({ token: 'some-token' });
+const getInfo = origin.get('/info').headers({ token: 'some-token' });
 ```
 
-You can also use `headers` on an `EndpointFactory` to have all endpoints made from that factory bear those headers.
+You can also use `headers` on an `OriginServer` to have all endpoints made for that origin bear those headers.
 
 ```typescript
-const factory = endpointFactory('127.0.0.1:3001').headers({ token: 'some-token' });
+const origin = originServer('127.0.0.1:3001').headers({ token: 'some-token' });
 
-const getInfo = factory.get('/info'); // getInfo endpoint will have the headers defined above
+const getInfo = origin.get('/info'); // getInfo endpoint will have the headers defined above
 ```
 
 The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
@@ -122,7 +122,7 @@ However, you can also use the following features to more flexibly define the val
 Marks a value as required but without a default. The chainflow will expect this value to be sourced from another node. If no such source is available, the endpoint call will throw an error.
 
 ```typescript
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: required(),
 });
 ```
@@ -132,7 +132,7 @@ const createUser = factory.post('/user').body({
 Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.
 
 ```typescript
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: pool(['Tom', 'Harry', 'Jane']),
   details: {
     age: 40,
@@ -147,7 +147,7 @@ Provide a callback that generates values for building requests.
 ```typescript
 const randAge = () => Math.floor(Math.random() * 100);
 
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: 'Tom',
   details: {
     age: gen(randAge),
@@ -225,7 +225,7 @@ You can declare manual values for an endpoint call in the chainflow itself, shou
 `body`, `pathParams`, `query` and `headers` can be set this way.
 
 ```typescript
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: 'Tom',
 });
 
@@ -241,7 +241,7 @@ You can specify request nodes to take values from the chainflow 'seed' by import
 ```typescript
 import { chainflow, link seed, } from 'chainflow';
 
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: required(),
 });
 
@@ -279,12 +279,12 @@ This has important implications - it means that as long as the source (e.g. a re
 You can create chainflow "templates" with the use of `clone` to create a copy of a chainflow and its endpoint callstack. The clone can have endpoint calls added to it without modifying the initial flow.
 
 ```typescript
-const originalFlow = chainflow().call(endpoint1).call(endpoint2);
+const initialFlow = chainflow().call(endpoint1).call(endpoint2);
 
-const clonedFlow = originalFlow.clone();
+const clonedFlow = initialFlow.clone();
 
 clonedFlow.call(endpoint3).run(); // calls endpoint 1, 2 and 3
-originalFlow.call(endpoint4).run(); // calls endpoint 1, 2 and 4
+initialFlow.call(endpoint4).run(); // calls endpoint 1, 2 and 4
 ```
 
 ### `extend`
@@ -301,12 +301,12 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 ### `config`
 
 `respParser`  
-By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `EndpointFactory`, to apply it to all endpoints created from it) like so:
+By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
 
 ```typescript
 import { RespParser } from 'chainflow';
 
-const getUser = factory.get('/user').config({
+const getUser = origin.get('/user').config({
   respParser: RespParser.Text,
 });
 ```
@@ -314,7 +314,7 @@ const getUser = factory.get('/user').config({
 or with camelcase in JavaScript:
 
 ```javascript
-const getUser = factory.get('/user').config({
+const getUser = origin.get('/user').config({
   respParser: 'text',
 });
 ```
@@ -325,7 +325,7 @@ There are 4 supported ways to parse response bodies (as provided by the underlyi
 Another configuration option is how to validate the response to an endpoint. By default, Chainflow only accepts responses that have HTTP status codes in the 200-299 range, and rejects responses otherwise (meaning their values will not be stored). You can pass in a custom `respValidator` to change this behaviour.
 
 ```typescript
-const testEndpoint = factory.get('/user').config({
+const testEndpoint = origin.get('/user').config({
   respValidator: (resp) => {
     if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to retrieve users.' };
     return { valid: true };
@@ -340,14 +340,14 @@ Instead of direct links between endpoints, you can use a central store to keep v
 ```typescript
 import { store } from 'chainflow';
 
-const createUser = factory.post('/user').body({
+const createUser = origin.post('/user').body({
   name: 'Tom',
 }).store((resp) => ({
   // this endpoint will store `id` from a response to `userId` in the store
   userId: resp.id,
 }));
 
-const addRole = factory.post('/role').body({
+const addRole = origin.post('/role').body({
   // this endpoint will take `userId` from the store, if available
   userId: store.userId,
   role: 'Engineer',
