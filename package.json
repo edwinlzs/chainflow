@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",
+    "docs": "typedoc --excludeInternal --out docs/api src",
     "lint": "eslint ./src/ --ext .ts",
     "lint:fix": "eslint ./src/ --ext .ts --fix",
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
@@ -20,16 +21,16 @@
   "dependencies": {
     "@fastify/deepmerge": "^1.3.0",
     "debug": "^4.3.4",
-    "undici": "^6.5.0"
+    "undici": "^6.6.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.8.1",
+    "@commitlint/cli": "^18.6.0",
     "@commitlint/config-conventional": "^18.6.0",
     "@types/debug": "^4.1.12",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.16",
-    "@typescript-eslint/eslint-plugin": "^6.20.0",
-    "@typescript-eslint/parser": "^6.20.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
@@ -38,6 +39,7 @@
     "markdownlint-cli": "^0.37.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
+    "typedoc": "^0.25.7",
     "typescript": "^5.3.3"
   }
 }
