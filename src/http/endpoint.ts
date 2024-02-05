@@ -127,7 +127,7 @@ export class Endpoint implements IEndpoint {
   async call(responses: SourceValues, opts?: CallOpts): Promise<CallResult> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
-    let body = {};
+    let body;
     const missingValues: string[][] = []; // contains path of missing required values
     if (method !== 'GET') body = this.#req.body[getNodeValue](responses, missingValues, ['body']);
 

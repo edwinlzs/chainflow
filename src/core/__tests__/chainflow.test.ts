@@ -215,7 +215,7 @@ describe('#chainflow', () => {
         await testFlow.run();
         expect(tracker).toHaveBeenCalledTimes(3);
         const roleCall = tracker.mock.calls[2];
-        const callBody = JSON.parse(roleCall?.[0]?.body);
+        const callBody = roleCall?.[0]?.body;
         expect(callBody).toStrictEqual({
           name: 'A',
           roleName: 'someRole',
@@ -255,7 +255,7 @@ describe('#chainflow', () => {
         await testFlow.run();
         expect(tracker).toHaveBeenCalledTimes(3);
         const roleCall = tracker.mock.calls[2];
-        const callBody = JSON.parse(roleCall?.[0]?.body);
+        const callBody = roleCall?.[0]?.body;
         expect(callBody).toStrictEqual({
           name: 'B',
           roleName: 'someRole',
@@ -305,8 +305,9 @@ describe('#chainflow', () => {
           await testFlow.run();
           expect(tracker).toHaveBeenCalledTimes(3);
           const roleCall = tracker.mock.calls[2];
-          const callBody = JSON.parse(roleCall?.[0]?.body);
+          const callBody = roleCall?.[0]?.body;
           expect(callBody).toStrictEqual({
+            name: undefined,
             roleName: 'someRole',
           });
         });
@@ -351,7 +352,7 @@ describe('#chainflow', () => {
 
       expect(tracker).toHaveBeenCalledTimes(2);
       const roleCall = tracker.mock.calls[1];
-      const roleCallBody = JSON.parse(roleCall[0]?.body);
+      const roleCallBody = roleCall[0]?.body;
       expect(roleCallBody).toStrictEqual({
         userId: 'newUserId has been modified',
       });
@@ -410,7 +411,7 @@ describe('#chainflow', () => {
 
       expect(tracker).toHaveBeenCalledTimes(3);
       const notificationCall = tracker.mock.calls[2];
-      const notificationCallBody = JSON.parse(notificationCall[0]?.body);
+      const notificationCallBody = notificationCall[0]?.body;
       expect(notificationCallBody).toStrictEqual({
         msg: 'John likes dogs.',
       });
@@ -506,7 +507,7 @@ describe('#chainflow', () => {
         .run();
       expect(tracker).toHaveBeenCalledTimes(1);
       const arg = tracker.mock.calls[0][0];
-      expect(JSON.parse(arg?.body)).toStrictEqual({
+      expect(arg?.body).toStrictEqual({
         name: 'some name',
       });
       expect(arg?.path).toBe('/someGroup/user?role=someRole');
@@ -544,7 +545,7 @@ describe('#chainflow', () => {
         });
       expect(tracker).toHaveBeenCalledTimes(1);
       const arg = tracker.mock.calls[0][0];
-      expect(JSON.parse(arg?.body)).toStrictEqual({
+      expect(arg?.body).toStrictEqual({
         name: 'some name',
       });
     });
@@ -585,12 +586,10 @@ describe('#chainflow', () => {
       await chainflow().call(createUser).call(createRole).run();
 
       expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toBe(
-        JSON.stringify({
-          userId: 'some-id',
-          type: 'ENGINEER',
-        }),
-      );
+      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+        userId: 'some-id',
+        type: 'ENGINEER',
+      });
     });
   });
 
@@ -629,12 +628,10 @@ describe('#chainflow', () => {
       await chainflow().call(createUser).call(createRole).run();
 
       expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toBe(
-        JSON.stringify({
-          name: 'TOM',
-          type: 'ENGINEER',
-        }),
-      );
+      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+        name: 'TOM',
+        type: 'ENGINEER',
+      });
     });
   });
 
@@ -687,34 +684,28 @@ describe('#chainflow', () => {
       await chainflow().call(createUser).call(createRole).run();
 
       expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toBe(
-        JSON.stringify({
-          name: 'TOM',
-          type: 'ENGINEER',
-        }),
-      );
+      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+        name: 'TOM',
+        type: 'ENGINEER',
+      });
 
       tracker.mockClear();
       await chainflow().call(getUser).call(createRole).run();
 
       expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toBe(
-        JSON.stringify({
-          name: 'HARRY',
-          type: 'ENGINEER',
-        }),
-      );
+      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+        name: 'HARRY',
+        type: 'ENGINEER',
+      });
 
       tracker.mockClear();
       await chainflow().call(createUser).call(getUser).call(createRole).run();
 
       expect(tracker).toHaveBeenCalledTimes(3);
-      expect(tracker.mock.calls[2][0]?.body).toBe(
-        JSON.stringify({
-          name: 'TOM',
-          type: 'ENGINEER',
-        }),
-      );
+      expect(tracker.mock.calls[2][0]?.body).toStrictEqual({
+        name: 'TOM',
+        type: 'ENGINEER',
+      });
     });
   });
 
@@ -839,12 +830,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
-        expect(tracker.mock.calls[1][0]?.body).toBe(
-          JSON.stringify({
-            name: 'Tom',
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+          name: 'Tom',
+          type: 'ENGINEER',
+        });
       });
     });
 
@@ -890,12 +879,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
-        expect(tracker.mock.calls[1][0]?.body).toBe(
-          JSON.stringify({
-            name: 'Tom',
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+          name: 'Tom',
+          type: 'ENGINEER',
+        });
       });
     });
 
@@ -948,12 +935,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(getUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(3);
-        expect(tracker.mock.calls[2][0]?.body).toBe(
-          JSON.stringify({
-            name: 'Jane',
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[2][0]?.body).toStrictEqual({
+          name: 'Jane',
+          type: 'ENGINEER',
+        });
       });
     });
 
@@ -995,12 +980,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
-        expect(tracker.mock.calls[1][0]?.body).toBe(
-          JSON.stringify({
-            name: 'Tom',
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+          name: 'Tom',
+          type: 'ENGINEER',
+        });
       });
     });
 
@@ -1046,12 +1029,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
-        expect(tracker.mock.calls[1][0]?.body).toBe(
-          JSON.stringify({
-            name: 'default-name',
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+          name: 'default-name',
+          type: 'ENGINEER',
+        });
       });
     });
 
@@ -1097,12 +1078,10 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
-        expect(tracker.mock.calls[1][0]?.body).toBe(
-          JSON.stringify({
-            name: undefined,
-            type: 'ENGINEER',
-          }),
-        );
+        expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+          name: undefined,
+          type: 'ENGINEER',
+        });
       });
     });
   });
