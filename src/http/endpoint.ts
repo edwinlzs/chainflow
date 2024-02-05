@@ -1,6 +1,5 @@
 import { hashEndpoint } from './utils/hash';
 import { InputNode, SourceValues, NodeValue } from '../core/inputNode';
-import debug from 'debug';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from './utils/client';
 import { Dispatcher } from 'undici';
@@ -17,10 +16,9 @@ import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
 import BodyReadable from 'undici/types/readable';
 import { IStore, Store } from '../core/store';
+import { warn } from './logger';
 
 const deepmerge = deepmergeSetup();
-
-const log = debug('chainflow:endpoint');
 
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
@@ -165,7 +163,7 @@ export class Endpoint implements IEndpoint {
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
-      body: body && JSON.stringify(body),
+      body,
       headers,
     });
 
@@ -200,7 +198,6 @@ export class Endpoint implements IEndpoint {
     const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
-      log(`Found path parameter InputNode for hash "${hash}" with name "${paramName}"`);
       params[paramName] = required();
     }
     this.#req.pathParams = new InputNode({
@@ -228,10 +225,10 @@ export class Endpoint implements IEndpoint {
 
   /** Checks that endpoint call succeeded -
    * request did not throw error,
-   * and status code is within 200 - 299. */
+   * and status code is not 4xx or 5xx. */
   #validateResp(resp: Dispatcher.ResponseData): { valid: boolean; msg?: string } {
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      log(`Request failed with status code: ${resp.statusCode}`);
+    if (resp.statusCode >= 400) {
+      warn(`Request failed with status code: ${resp.statusCode}`);
       return { valid: false, msg: `Received HTTP status code ${resp.statusCode}` };
     }
     return { valid: true };

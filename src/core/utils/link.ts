@@ -1,9 +1,6 @@
-import { debug } from 'debug';
 import { InputNode } from '../inputNode';
-import { nodeHash, nodePath, setSource, setSources, undefinedAllowed } from './symbols';
+import { setSource, setSources, undefinedAllowed } from './symbols';
 import { SourceNode } from '../sourceNode';
-
-const log = debug('chainflow:link');
 
 /**
  * Link a Source node to a Input node.
@@ -13,11 +10,6 @@ const log = debug('chainflow:link');
  */
 export const link = (dest: InputNode, source: SourceNode, callback?: (val: any) => any) => {
   dest[setSource](source, callback);
-  log(
-    `Linked SourceNode with hash "${source[nodeHash]}" and path "${source[nodePath].join(
-      '.',
-    )}" to InputNode with hash "${dest[nodeHash]}"`,
-  );
 };
 
 /**
@@ -32,7 +24,6 @@ export const linkMany = (
   callback: (val: any) => any,
 ) => {
   dest[setSources](sources, callback);
-  log(`Linked multiple SourceNodes object to InputNode with hash "${dest[nodeHash]}"`);
 };
 
 /**

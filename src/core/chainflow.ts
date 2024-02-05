@@ -1,10 +1,9 @@
-import debug from 'debug';
 import { SourceValues } from './inputNode';
 import { sourceNode } from './sourceNode';
 import deepmergeSetup from '@fastify/deepmerge';
 import { IStore } from './store';
+import { log, warn } from './logger';
 
-const log = debug('chainflow:chainflow');
 const deepmerge = deepmergeSetup();
 
 export const SEED_HASH = 'seed';
@@ -69,14 +68,14 @@ class Chainflow {
     for (const { endpoint, opts } of this.#callstack) {
       // call endpoint
       const hash = endpoint.hash;
-      log(`Making a call to endpoint with hash "${hash}"`);
+      log(`Calling endpoint with hash "${hash}"`);
       try {
         const { resp, store } = await endpoint.call(this.#sources, opts);
         if (Object.keys(store).length > 0)
           this.#sources[STORE_HASH][0] = deepmerge(this.#sources[STORE_HASH][0], store);
         this.#sources[hash] = [resp];
       } catch (e) {
-        log(`Chainflow stopped at endpoint with hash "${hash}": ${e}`);
+        warn(`Chainflow stopped at endpoint with hash "${hash}" and error: ${e}`);
         throw e;
       }
     }
