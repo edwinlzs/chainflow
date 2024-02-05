@@ -1,4 +1,3 @@
-import debug from 'debug';
 import { SourceNode } from './sourceNode';
 import {
   getNodeValue,
@@ -10,8 +9,6 @@ import {
   setValuePool,
   undefinedAllowed,
 } from './utils/symbols';
-
-const log = debug('chainflow:inputNode');
 
 export enum VALUE_POOL_SELECT {
   UNIFORM,
@@ -84,10 +81,8 @@ export class InputNode {
     switch (val[nodeValueIdentifier]) {
       case NodeValue.ValuePool:
         this.#valuePool = val.valuePool;
-        log(`Defined value pool for InputNode with hash "${hash}`);
         return;
       case NodeValue.Generator:
-        log(`Defined value generator for InputNode with hash "${hash}"`);
         this.#generator = val.generator;
         return;
       case NodeValue.Required:
@@ -116,7 +111,6 @@ export class InputNode {
         }
 
         Object.entries(val).forEach(([key, val]) => {
-          log(`Creating InputNode for hash "${hash}" with key "${key}"`);
           (this as any)[key] = new InputNode({ val, hash });
         });
         break;
@@ -239,7 +233,6 @@ export class InputNode {
       // recall that `typeof null` returns 'object'
       if (sourceVal == null || typeof sourceVal !== 'object') {
         if (undefinedAllowed) return undefined;
-        log(`Unable to retrieve source node value from source object with hash "${sourceHash}".`);
         return;
       }
       const accessor = path[i]!;
@@ -259,10 +252,6 @@ export class InputNode {
   ) {
     const sourceObject = sourceValues[hash]![0];
 
-    log(
-      `Retrieving value for InputNode with hash "${this[nodeHash]}" from source object with hash "${hash}" via path "${path}"`,
-    );
-
     // get value from a linked source
     return this.#accessSource(sourceObject, path, hash, undefinedAllowed);
   }
@@ -276,7 +265,6 @@ export class InputNode {
       if (sourceVal === undefined) return undefined;
       sourceVals[info.key] = sourceVal;
     }
-    log(`All source values retrieved for multi-source node with hash "${this[nodeHash]}"`);
     return sourceVals;
   }
 

@@ -1,8 +1,5 @@
 import { Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
-import debug from 'debug';
 import { InputNode } from '../core/inputNode';
-
-const log = debug('chainflow:route');
 
 export type SUPPORTED_METHOD = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
 export const SUPPORTED_METHODS: SUPPORTED_METHOD[] = [
@@ -67,7 +64,6 @@ export class EndpointFactoryBase {
       // define methods to create endpoints from HTTP methods
       Reflect.defineProperty(this, method, {
         value: (path: string) => {
-          log(`Creating endpoint for "${method} ${this.#addr}${path}"`);
           return new Endpoint({ addr: this.#addr, method, path })
             .baseHeaders(this.#headers)
             .config(this.#config);

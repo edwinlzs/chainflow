@@ -54,7 +54,7 @@ describe('#endpoint', () => {
           });
 
         const { resp } = await testEndpoint.call({});
-        expect(resp.body).toStrictEqual(
+        expect(resp.body).toBe(
           JSON.stringify({
             hello: 'world',
           }),
@@ -225,7 +225,7 @@ describe('#endpoint', () => {
       expect(tracker).toHaveBeenCalledTimes(1);
       const call = tracker.mock.calls[0];
 
-      expect(call?.[0]?.body).toStrictEqual(JSON.stringify(testReqPayload));
+      expect(call?.[0]?.body).toStrictEqual(testReqPayload);
     });
 
     it('should use the available response value after a SourceNode is linked to the InputNode', async () => {
@@ -244,16 +244,14 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      expect(call?.[0]?.body).toStrictEqual(
-        JSON.stringify({
-          id: 'some-id',
-          name: 'some-name',
-          details: {
-            age: 10,
-            member: true,
-          },
-        }),
-      );
+      expect(call?.[0]?.body).toStrictEqual({
+        id: 'some-id',
+        name: 'some-name',
+        details: {
+          age: 10,
+          member: true,
+        },
+      });
     });
 
     it('should use values from a provided value pool', async () => {
@@ -279,7 +277,7 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      const callBody = JSON.parse(call?.[0]?.body);
+      const callBody = call?.[0]?.body;
       expect(testValuePool.includes(callBody?.details?.age)).toBeTruthy();
       expect(callBody).toStrictEqual({
         id: 'some-id',
@@ -314,7 +312,7 @@ describe('#endpoint', () => {
       await testEndpoint.call(responses);
 
       const call = tracker.mock.calls[0];
-      const callBody = JSON.parse(call?.[0]?.body);
+      const callBody = call?.[0]?.body;
       expect(callBody).toStrictEqual({
         id: 'some-id',
         name: 'michael-scott',

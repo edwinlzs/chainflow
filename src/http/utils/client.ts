@@ -1,7 +1,5 @@
-import { debug } from 'debug';
 import { request } from 'undici';
-
-const log = debug('chainflow:http');
+import { log, warn } from '../logger';
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
@@ -26,21 +24,27 @@ const httpReq = async ({
   body?: any;
   headers?: Record<string, string>;
 }) => {
-  log(`${method} ${addr}${path} ${body ? 'with payload' + JSON.stringify(body) : ''}`);
+  const finalHeaders = {
+    ...defaultHeaders,
+    ...headers,
+  };
+
+  log(
+    `[${method}] [http://${addr}${path}] with headers %O${body ? ' and payload %O' : ''}`,
+    finalHeaders,
+    body,
+  );
 
   try {
     const resp = await request(`http://${addr}${path}`, {
       method,
-      body,
-      headers: {
-        ...defaultHeaders,
-        ...headers,
-      },
+      body: JSON.stringify(body),
+      headers: finalHeaders,
     });
 
     return resp;
   } catch (err) {
-    log(`Request failed: ${err}`);
+    warn(`Request failed: ${err}`);
     return null;
   }
 };
