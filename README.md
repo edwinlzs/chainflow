@@ -358,6 +358,10 @@ chainflow().call(createUser).call(addRole).run();
 
 This is usually useful when you have endpoints that could take a value from any one of many other endpoints for the same input node. Having a store to centralise these many-to-many relationships (like an API Gateway) can improve the developer experience.
 
+### `logging`
+
+Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables.
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.
