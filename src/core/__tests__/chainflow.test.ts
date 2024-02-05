@@ -2,7 +2,7 @@ import { chainflow, seed, store } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { allowUndefined, link, linkMany } from '../utils/link';
 import http from '../../http/utils/client';
-import { endpointFactory } from '../../http/endpointFactory';
+import { originServer } from '../../http/originServer';
 import { required } from '../utils/initializers';
 import { source, sources } from '../utils/source';
 import { RequiredValuesNotFoundError } from '../../http/errors';
@@ -20,11 +20,11 @@ describe('#chainflow', () => {
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
   const client = agent.get('http://127.0.0.1:5000');
-  const factory = endpointFactory('127.0.0.1:5000');
+  const origin = originServer('127.0.0.1:5000');
 
   it('should allow API calls', async () => {
     const userPath = uniquePath('/user');
-    const endpoint = factory.get(userPath);
+    const endpoint = origin.get(userPath);
     const tracker = jest.spyOn(endpoint, 'call');
     tracker.mockClear();
     client
@@ -41,8 +41,8 @@ describe('#chainflow', () => {
   it('should allow multiple API calls', async () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const getUser = factory.get(userPath);
-    const createRole = factory.post(rolePath);
+    const getUser = origin.get(userPath);
+    const createRole = origin.post(rolePath);
 
     client
       .intercept({
@@ -72,8 +72,8 @@ describe('#chainflow', () => {
   describe('when an endpoint call returns an error code', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const getUser = factory.get(userPath);
-    const createRole = factory.post(rolePath);
+    const getUser = origin.get(userPath);
+    const createRole = origin.post(rolePath);
 
     const userTracker = jest.spyOn(getUser, 'call');
     const roleTracker = jest.spyOn(createRole, 'call');
@@ -106,10 +106,10 @@ describe('#chainflow', () => {
   describe('when a chainflow has finished a run', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = factory.post(userPath).body({
+    const createUser = origin.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = factory.post(rolePath).body({
+    const createRole = origin.post(rolePath).body({
       userId: 'defaultId',
     });
 
@@ -168,9 +168,9 @@ describe('#chainflow', () => {
   describe('when multiple responses are linked to a request', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = factory.post(userPath);
-    const getUser = factory.get(userPath);
-    const createRole = factory.post(rolePath).body({
+    const createUser = origin.post(userPath);
+    const getUser = origin.get(userPath);
+    const createRole = origin.post(rolePath).body({
       name: 'defaultName',
       roleName: 'someRole',
     });
@@ -263,7 +263,7 @@ describe('#chainflow', () => {
       });
 
       describe('when undefined values are allowed from the linked response', () => {
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: 'defaultName',
           roleName: 'someRole',
         });
@@ -318,10 +318,10 @@ describe('#chainflow', () => {
   describe('when a callback is provided for a linked value', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = factory.post(userPath).body({
+    const createUser = origin.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = factory.post(rolePath).body({
+    const createRole = origin.post(rolePath).body({
       userId: 'defaultId',
     });
 
@@ -363,9 +363,9 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const favAnimalPath = uniquePath('/favAnimal');
     const notificationPath = uniquePath('/notification');
-    const getUser = factory.get(userPath);
-    const getFavAnimal = factory.get(favAnimalPath);
-    const createNotification = factory.post(notificationPath).body({
+    const getUser = origin.get(userPath);
+    const getFavAnimal = origin.get(favAnimalPath);
+    const createNotification = origin.post(notificationPath).body({
       msg: 'default msg',
     });
 
@@ -420,7 +420,7 @@ describe('#chainflow', () => {
 
   describe('when a value is marked as required', () => {
     const userPath = uniquePath('/user');
-    const createUser = factory.post(userPath).body({
+    const createUser = origin.post(userPath).body({
       name: required(),
     });
 
@@ -439,7 +439,7 @@ describe('#chainflow', () => {
 
     it('should not throw an error if the value is provided', async () => {
       tracker.mockClear();
-      const getRandName = factory.get('/randName');
+      const getRandName = origin.get('/randName');
       createUser.set(({ body: { name } }) => {
         link(name, getRandName.resp.body.name);
       });
@@ -463,7 +463,7 @@ describe('#chainflow', () => {
   });
 
   describe('when call options are provided', () => {
-    const addUser = factory
+    const addUser = origin
       .post('/{groupId}/user')
       .body({
         name: 'default',
@@ -519,7 +519,7 @@ describe('#chainflow', () => {
 
   describe('when run options are provided', () => {
     const userPath = uniquePath('/user');
-    const createUser = factory.post(userPath).body({
+    const createUser = origin.post(userPath).body({
       name: 'default',
     });
 
@@ -555,11 +555,11 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(userPath).body({
+      const createUser = origin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(rolePath).body({
+      const createRole = origin.post(rolePath).body({
         userId: createUser.resp.body.id,
         type: 'ENGINEER',
       });
@@ -597,11 +597,11 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(userPath).body({
+      const createUser = origin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(rolePath).body({
+      const createRole = origin.post(rolePath).body({
         name: source(createUser.resp.body.name, (name: string) => name.toUpperCase()),
         type: 'ENGINEER',
       });
@@ -639,13 +639,13 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = factory.post(userPath).body({
+      const createUser = origin.post(userPath).body({
         name: 'Tom',
       });
 
-      const getUser = factory.get(userPath);
+      const getUser = origin.get(userPath);
 
-      const createRole = factory.post(rolePath).body({
+      const createRole = origin.post(rolePath).body({
         name: sources([createUser.resp.body.name, getUser.resp.body.name], (name: string) =>
           name.toUpperCase(),
         ),
@@ -713,11 +713,11 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('the cloned flow can be extended without changing the original', async () => {
-      const createUser = factory.post(userPath).body({
+      const createUser = origin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(rolePath).body({
+      const createRole = origin.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
@@ -756,11 +756,11 @@ describe('#chainflow', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('the original flow should append the callstack of the extending flow', async () => {
-      const createUser = factory.post(userPath).body({
+      const createUser = origin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = factory.post(rolePath).body({
+      const createRole = origin.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
@@ -796,7 +796,7 @@ describe('#chainflow', () => {
       const rolePath = uniquePath('/role');
 
       it('should pass values through the store', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -805,7 +805,7 @@ describe('#chainflow', () => {
             username: resp.body.name,
           }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: store.username,
           type: 'ENGINEER',
         });
@@ -841,7 +841,7 @@ describe('#chainflow', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should pass values through the store', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -854,7 +854,7 @@ describe('#chainflow', () => {
             },
           }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: store.user.profile.firstName,
           type: 'ENGINEER',
         });
@@ -890,7 +890,7 @@ describe('#chainflow', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should have the later endpoint call override the store value put by the previous call', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -898,11 +898,11 @@ describe('#chainflow', () => {
           .store((resp) => ({
             username: resp.body.name,
           }));
-        const getUser = factory.get(userPath).store((resp) => ({
+        const getUser = origin.get(userPath).store((resp) => ({
           username: resp.body.name,
         }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: store.username,
           type: 'ENGINEER',
         });
@@ -946,7 +946,7 @@ describe('#chainflow', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should allow the entire response object to be put in the store', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -955,7 +955,7 @@ describe('#chainflow', () => {
             createUserResponse: resp,
           }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: store.createUserResponse.body.name,
           type: 'ENGINEER',
         });
@@ -991,7 +991,7 @@ describe('#chainflow', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should not store the value', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1002,7 +1002,7 @@ describe('#chainflow', () => {
             },
           }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: 'default-name',
           type: 'ENGINEER',
         });
@@ -1040,7 +1040,7 @@ describe('#chainflow', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should not store the value', async () => {
-        const createUser = factory
+        const createUser = origin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1051,7 +1051,7 @@ describe('#chainflow', () => {
             },
           }));
 
-        const createRole = factory.post(rolePath).body({
+        const createRole = origin.post(rolePath).body({
           name: 'default-name',
           type: 'ENGINEER',
         });

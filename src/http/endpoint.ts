@@ -8,7 +8,7 @@ import {
   RequiredValuesNotFoundError,
   UnsupportedMethodError,
 } from './errors';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './endpointFactory';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './originServer';
 import { CallOpts, CallResult, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
@@ -111,7 +111,7 @@ export class Endpoint implements IEndpoint {
     return this;
   }
 
-  /** Sets headers provided by the factory. */
+  /** Sets headers provided by the originServer object. */
   baseHeaders(node: InputNode) {
     this.#req.baseHeaders = node;
     return this;

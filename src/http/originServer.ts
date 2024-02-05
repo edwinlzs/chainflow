@@ -12,12 +12,12 @@ export const SUPPORTED_METHODS: SUPPORTED_METHOD[] = [
 ];
 
 /** Convenience function for creating an endpoint builder with supported methods defined on it. */
-export const endpointFactory = (addr?: string) => new EndpointFactoryBase(addr) as EndpointFactory;
+export const originServer = (addr?: string) => new OriginBase(addr) as Origin;
 
 /** Function for making a new endpoint. */
 type MakeEndpoint = (path: string) => Endpoint;
 
-export type EndpointFactory = EndpointFactoryBase & {
+export type Origin = OriginBase & {
   get: MakeEndpoint;
   post: MakeEndpoint;
   put: MakeEndpoint;
@@ -27,19 +27,19 @@ export type EndpointFactory = EndpointFactoryBase & {
 };
 
 /** Stores the base address and defines methods to build endpoints with methods. */
-export class EndpointFactoryBase {
+export class OriginBase {
   #addr: string;
   #headers: InputNode;
   #hash: string;
   #config: EndpointConfig = {};
 
-  /** Sets configuration for all endpoints made by this factory. */
+  /** Sets configuration for all endpoints made by this origin. */
   config(config: EndpointConfig) {
     this.#config = config;
     return this;
   }
 
-  /** Sets the base headers for all endpoints made by this factory. */
+  /** Sets the base headers for all endpoints made by this origin. */
   headers(params: Record<string, string | INodeWithValue | undefined>) {
     this.#headers = new InputNode({
       val: params,

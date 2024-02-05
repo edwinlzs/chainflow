@@ -2,7 +2,7 @@ import { InputNode } from '../core/inputNode';
 
 /** Contains node definitions for a request. */
 export class ReqBuilder {
-  baseHeaders: InputNode; // headers defined on the factory instead of the endpoint
+  baseHeaders: InputNode; // headers defined on the origin instead of the endpoint
   #headers: InputNode;
   pathParams: InputNode;
   #queryParams: InputNode;
