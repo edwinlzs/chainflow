@@ -2,8 +2,6 @@
 import fs from 'fs';
 
 const DOCS_FOLDER = './docs/api';
-const MD_LINK_RELATIVE_PATH_REGEX = /\[((?:[^\])])+)\]\((?:https*:\/\/){0}([\w\d./?=#]+)\)/g;
-const CD_PARENT_DIR_REGEX = /(\.\.\/)/g;
 const MD_EXTENSION_LINK_REGEX = /(\.md(\)|#))/g;
 
 const findFiles = (
@@ -32,7 +30,7 @@ const isMdFile = (path: string): boolean => {
   return parts.length > 1 && parts[parts.length - 1] === 'md';
 };
 
-const postprocess = (filename: string, currentDir: string) => {
+const postprocess = (filename: string) => {
   let content: string = fs.readFileSync(filename).toString();
 
   // Don't touch the README content
@@ -44,8 +42,6 @@ const postprocess = (filename: string, currentDir: string) => {
     content = readMeContent[0];
   }
 
-  const subPath = currentDir.replace(DOCS_FOLDER, ''); // for files in nested dirs
-  content = content.replace(MD_LINK_RELATIVE_PATH_REGEX, updateRelativeLink(subPath));
   content = content.replace(
     MD_EXTENSION_LINK_REGEX,
     (_match: string, _ext: string, end: string) => end,
@@ -53,23 +49,6 @@ const postprocess = (filename: string, currentDir: string) => {
 
   if (isReadMe) content = `${content}<!-- README -->${readMeContent[1]}`;
   fs.writeFileSync(filename, content);
-};
-
-const updateRelativeLink = (_subPath: string) => (match: string, _text: string, link: string) => {
-  // const numCdParent = [...link.matchAll(CD_PARENT_DIR_REGEX)].length;
-
-  // if (numCdParent) {
-  //   let dirs = subPath.split('/');
-  //   if (dirs.length < numCdParent)
-  //     throw Error(`Something wrong with number of ../ versus subpath ${subPath}`);
-  //   subPath = dirs.slice(0, dirs.length - numCdParent).join('/');
-  // }
-
-  // let strippedLink = link.replace(CD_PARENT_DIR_REGEX, '');
-  // return match.replace(link, `/docs${subPath}/${strippedLink}`);
-  
-  if (link.match(CD_PARENT_DIR_REGEX) !== null) return match;
-  return match.replace(link, `./${link}`);
 };
 
 findFiles(DOCS_FOLDER, isMdFile, postprocess);

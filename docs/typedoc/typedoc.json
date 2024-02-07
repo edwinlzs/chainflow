@@ -6,10 +6,13 @@
   "exclude": ["**/*.test.ts", "**/logger.ts"],
   "plugin": [
     "typedoc-material-theme",
-    // "typedoc-plugin-markdown",
-    // "typedoc-plugin-frontmatter"
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-frontmatter"
   ],
-  // "frontmatterGlobals": {
-  //   "layout": "/src/layouts/docs/DocsLayout.astro",
-  // }
+  // markdown
+  "publicPath": "/docs/",
+  // frontmatter
+  "frontmatterGlobals": {
+    "layout": "/src/layouts/docs/DocsLayout.astro",
+  }
 }
