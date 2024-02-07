@@ -1,0 +1,15 @@
+{
+  // "customCss": "./style.css",
+  "out": "../api",
+  "entryPointStrategy": "expand",
+  "entryPoints": ["../../src/core", "../../src/http"],
+  "exclude": ["**/*.test.ts", "**/logger.ts"],
+  "plugin": [
+    "typedoc-material-theme",
+    // "typedoc-plugin-markdown",
+    // "typedoc-plugin-frontmatter"
+  ],
+  // "frontmatterGlobals": {
+  //   "layout": "/src/layouts/docs/DocsLayout.astro",
+  // }
+}

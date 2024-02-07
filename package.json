@@ -6,10 +6,11 @@
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",
-    "docs": "typedoc --excludeInternal --out docs/api src",
+    "docs": "typedoc --options ./docs/typedoc/typedoc.json",
+    "docs:post": "ts-node ./docs/typedoc/postprocess.ts",
     "lint": "eslint ./src/ --ext .ts",
     "lint:fix": "eslint ./src/ --ext .ts --fix",
-    "markdownlint": "markdownlint **/*.md --ignore node_modules",
+    "markdownlint": "markdownlint **/*.md --ignore node_modules --ignore docs/api",
     "prepare": "husky install",
     "test": "jest",
     "test:coverage": "jest --coverage",
@@ -39,7 +40,11 @@
     "markdownlint-cli": "^0.37.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.25.7",
+    "typedoc-material-theme": "^1.0.2",
+    "typedoc-plugin-frontmatter": "^0.0.2",
+    "typedoc-plugin-markdown": "^3.17.1",
     "typescript": "^5.3.3"
   }
 }

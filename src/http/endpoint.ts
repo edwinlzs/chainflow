@@ -8,7 +8,6 @@ import {
   RequiredValuesNotFoundError,
   UnsupportedMethodError,
 } from './errors';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './originServer';
 import { CallOpts, CallResult, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
@@ -17,6 +16,7 @@ import { required } from '../core/utils/initializers';
 import BodyReadable from 'undici/types/readable';
 import { IStore, Store } from '../core/store';
 import { warn } from './logger';
+import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './utils/constants';
 
 const deepmerge = deepmergeSetup();
 
