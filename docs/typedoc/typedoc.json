@@ -5,7 +5,6 @@
   "entryPoints": ["../../src/core", "../../src/http"],
   "exclude": ["**/*.test.ts", "**/logger.ts"],
   "plugin": [
-    "typedoc-material-theme",
     "typedoc-plugin-markdown",
     "typedoc-plugin-frontmatter"
   ],
