@@ -1,15 +1,6 @@
 import { Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
 import { InputNode } from '../core/inputNode';
-
-export type SUPPORTED_METHOD = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
-export const SUPPORTED_METHODS: SUPPORTED_METHOD[] = [
-  'get',
-  'post',
-  'put',
-  'delete',
-  'patch',
-  'options',
-];
+import { SUPPORTED_METHODS } from './utils/constants';
 
 /** Convenience function for creating an endpoint builder with supported methods defined on it. */
 export const originServer = (addr?: string) => new OriginBase(addr) as Origin;
@@ -27,7 +18,7 @@ export type Origin = OriginBase & {
 };
 
 /** Stores the base address and defines methods to build endpoints with methods. */
-export class OriginBase {
+class OriginBase {
   #addr: string;
   #headers: InputNode;
   #hash: string;

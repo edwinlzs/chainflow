@@ -3,11 +3,9 @@ import { sourceNode } from './sourceNode';
 import deepmergeSetup from '@fastify/deepmerge';
 import { IStore } from './store';
 import { log, warn } from './logger';
+import { SEED_HASH, STORE_HASH } from './utils/constants';
 
 const deepmerge = deepmergeSetup();
-
-export const SEED_HASH = 'seed';
-export const STORE_HASH = 'store';
 
 export interface CallResult {
   resp: any;
@@ -49,7 +47,7 @@ export const seed = sourceNode(SEED_HASH);
 /** Special object that acts as a central "gateway" between input and source values. */
 export const store = sourceNode(STORE_HASH);
 
-class Chainflow {
+export class Chainflow {
   /** Stores sources such as the seed or values accumulated from
    * endpoint calls in the current flow. */
   #sources: SourceValues = {
