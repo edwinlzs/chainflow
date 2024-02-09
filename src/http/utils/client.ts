@@ -1,4 +1,4 @@
-import { request } from 'undici';
+import { request as undiciRequest } from 'undici';
 import { log, warn } from '../logger';
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
@@ -11,7 +11,7 @@ export const defaultHeaders = {
 };
 
 /** Sends a HTTP request. */
-const httpReq = async ({
+const request = async ({
   addr,
   path,
   method,
@@ -30,13 +30,13 @@ const httpReq = async ({
   };
 
   log(
-    `[${method}] [http://${addr}${path}] with headers %O${body ? ' and payload %O' : ''}`,
+    `[${method}] [${addr}${path}] with headers %O${body ? ' and payload %O' : ''}`,
     finalHeaders,
     body,
   );
 
   try {
-    const resp = await request(`http://${addr}${path}`, {
+    const resp = await undiciRequest(`${addr}${path}`, {
       method,
       body: JSON.stringify(body),
       headers: finalHeaders,
@@ -49,4 +49,4 @@ const httpReq = async ({
   }
 };
 
-export default { httpReq };
+export default { request };

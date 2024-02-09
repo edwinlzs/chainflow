@@ -56,7 +56,7 @@ export class OriginBase {
     return this;
   }
 
-  constructor(addr: string = '127.0.0.1') {
+  constructor(addr: string = 'http://127.0.0.1') {
     this.#addr = addr;
     this.#headers = new InputNode({ val: undefined, hash: addr });
     this.#hash = addr;
