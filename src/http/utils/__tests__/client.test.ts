@@ -1,14 +1,14 @@
 import http, { defaultHeaders } from '../client';
 import undici from 'undici';
 
-describe('#http', () => {
+describe('#client', () => {
   describe('when the request throws an error', () => {
     it('should return null', async () => {
       undici.request = jest.fn(() => {
         throw new Error('Request failed!');
       });
-      const resp = await http.httpReq({
-        addr: '127.0.0.1',
+      const resp = await http.request({
+        addr: 'http://127.0.0.1',
         path: '/user',
         method: 'GET',
       });
@@ -22,8 +22,8 @@ describe('#http', () => {
         throw new Error('Request failed!');
       });
       const tracker = jest.spyOn(undici, 'request');
-      await http.httpReq({
-        addr: '127.0.0.1',
+      await http.request({
+        addr: 'http://127.0.0.1',
         path: '/user',
         method: 'GET',
         headers: {

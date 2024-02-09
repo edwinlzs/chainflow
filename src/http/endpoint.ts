@@ -70,6 +70,7 @@ export class Endpoint implements IEndpoint {
     method = method.toLowerCase();
     if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
       throw new UnsupportedMethodError(method);
+    !(addr.startsWith('http://') || addr.startsWith('https://')) && (addr = `http://${addr}`);
     this.#addr = addr;
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
@@ -159,7 +160,7 @@ export class Endpoint implements IEndpoint {
     callPath = this.#insertPathParams(callPath, pathParams);
     callPath = this.#insertQueryParams(callPath, queryParams);
 
-    const resp = await http.httpReq({
+    const resp = await http.request({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,

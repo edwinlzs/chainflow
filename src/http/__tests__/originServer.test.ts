@@ -3,7 +3,7 @@ import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { RespParser } from '../endpoint';
 
-describe('#origin', () => {
+describe('#originServer', () => {
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
@@ -27,7 +27,7 @@ describe('#origin', () => {
     });
     const testEndpoint = testOrigin.get('/');
 
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
     tracker.mockClear();
     await testEndpoint.call({});
 
@@ -91,7 +91,7 @@ describe('#origin', () => {
         })
         .reply(200, {});
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
       await testEndpoint.call({});
 

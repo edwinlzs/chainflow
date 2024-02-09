@@ -180,7 +180,7 @@ describe('#chainflow', () => {
       link(name, getUser.resp.body.details.name);
     });
     const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     describe('when both linked responses have the source value', () => {
       it('should use the value of the response with higher priority', async () => {
@@ -272,7 +272,7 @@ describe('#chainflow', () => {
           link(name, getUser.resp.body.details.name);
         });
         const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
 
         it('should use undefined instead of accessing the next linked response ', async () => {
           tracker.mockClear();
@@ -329,7 +329,7 @@ describe('#chainflow', () => {
     createRole.set(({ body: { userId } }) => {
       link(userId, createUser.resp.body.userId, testCallback);
     });
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     it('should call the endpoint with the given query params', async () => {
       tracker.mockClear();
@@ -381,7 +381,7 @@ describe('#chainflow', () => {
         testCallback,
       );
     });
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     it('should pass both linked responses to the request', async () => {
       tracker.mockClear();
@@ -424,7 +424,7 @@ describe('#chainflow', () => {
       name: required(),
     });
 
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     it('should throw a RequiredValueNotFoundError if value is not provided', async () => {
       tracker.mockClear();
@@ -475,7 +475,7 @@ describe('#chainflow', () => {
         token: 'default',
       });
 
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     it('should call the endpoint with the given call options', async () => {
       tracker.mockClear();
@@ -527,7 +527,7 @@ describe('#chainflow', () => {
       link(name, seed.username);
     });
 
-    const tracker = jest.spyOn(http, 'httpReq');
+    const tracker = jest.spyOn(http, 'request');
 
     it('should call the endpoint with the given seed', async () => {
       tracker.mockClear();
@@ -564,7 +564,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       client
@@ -606,7 +606,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       client
@@ -652,7 +652,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       client
@@ -722,7 +722,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       client
@@ -765,7 +765,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
       const flow1 = chainflow().call(createUser);
       const flow2 = chainflow().call(createRole);
@@ -810,7 +810,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client
@@ -859,7 +859,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client
@@ -907,7 +907,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client
@@ -960,7 +960,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client
@@ -1011,7 +1011,7 @@ describe('#chainflow', () => {
           link(name, store.username.firstName);
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client
@@ -1060,7 +1060,7 @@ describe('#chainflow', () => {
           link(name, allowUndefined(store.username.firstName));
         });
 
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         client

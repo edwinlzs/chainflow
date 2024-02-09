@@ -366,9 +366,9 @@ Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your envir
 
 Below features are currently not yet supported but are planned in future releases.
 
-1. HTTPS
-2. Cookies
-3. API performance testing
+1. More flexibility to log and return responses
+2. API performance testing
+3. (Exploratory) Possibly some sort of UI/diagram generation
 
 ## Development
 

@@ -218,7 +218,7 @@ describe('#endpoint', () => {
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
       await testEndpoint.call(responses);
 
@@ -235,7 +235,7 @@ describe('#endpoint', () => {
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       testEndpoint.set((nodes) => {
@@ -261,7 +261,7 @@ describe('#endpoint', () => {
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
       const testValuePool = [10, 20, 30];
 
@@ -296,7 +296,7 @@ describe('#endpoint', () => {
           method: 'POST',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
       const testValGen = () => 'michael-scott';
 
@@ -341,7 +341,7 @@ describe('#endpoint', () => {
             method: 'GET',
           })
           .reply(200, {});
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         await expect(testEndpoint.call({})).rejects.toThrow();
@@ -369,7 +369,7 @@ describe('#endpoint', () => {
             method: 'GET',
           })
           .reply(200, {});
-        const tracker = jest.spyOn(http, 'httpReq');
+        const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
         await expect(testEndpoint.call({})).rejects.toThrow();
@@ -398,7 +398,7 @@ describe('#endpoint', () => {
           method: 'GET',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -427,7 +427,7 @@ describe('#endpoint', () => {
           method: 'GET',
         })
         .reply(200, {});
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -458,7 +458,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -486,7 +486,7 @@ describe('#endpoint', () => {
         })
         .reply(200, {});
 
-      const tracker = jest.spyOn(http, 'httpReq');
+      const tracker = jest.spyOn(http, 'request');
       tracker.mockClear();
 
       await expect(
