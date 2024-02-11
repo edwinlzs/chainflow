@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "build dynamic and flexible API call workflows",
   "main": "dist/index.js",
+  "author": "edwinlzs",
+  "license": "MIT",
+  "homepage": "https://github.com/edwinlzs/chainflow",
+  "types": "index.d.ts",
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",
@@ -14,9 +18,6 @@
     "test:coverage": "jest --coverage",
     "demo": "tsc && node ./dist/demo/index.js"
   },
-  "keywords": [],
-  "author": "edwinlzs",
-  "license": "ISC",
   "dependencies": {
     "@fastify/deepmerge": "^1.3.0",
     "debug": "^4.3.4",
@@ -39,5 +40,12 @@
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "typescript": "^5.3.3"
-  }
+  },
+  "keywords": [
+    "workflow",
+    "api",
+    "http",
+    "typescript",
+    "javascript"
+  ]
 }

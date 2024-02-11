@@ -321,7 +321,7 @@ const getUser = origin.get('/user').config({
 
 There are 4 supported ways to parse response bodies (as provided by the underlying HTTP client, `undici`): `arrayBuffer`, `blob`, `json` and `text`.
 
-`respValidator`
+`respValidator`  
 Another configuration option is how to validate the response to an endpoint. By default, Chainflow only accepts responses that have HTTP status codes in the 200-299 range, and rejects responses otherwise (meaning their values will not be stored). You can pass in a custom `respValidator` to change this behaviour.
 
 ```typescript
