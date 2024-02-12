@@ -1,4 +1,4 @@
-import { chainflow, link } from 'chainflow';
+import { chainflow } from 'chainflow';
 import {
   createProject,
   createRole,
@@ -6,12 +6,7 @@ import {
   createUser,
   getSubmission,
   getUser,
-} from './src/definitions';
-
-// create the chains
-getSubmission.set(({ pathParams: { submissionId } }) => {
-  link(submissionId, createSubmission.resp.body.id);
-});
+} from './src/endpoints';
 
 console.log('Running chainflows');
 

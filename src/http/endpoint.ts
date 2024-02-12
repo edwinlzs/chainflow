@@ -180,7 +180,7 @@ export class Endpoint implements IEndpoint {
     return this.#store.storeValues(parsedResp);
   }
 
-  /** Configure linking of this Req's input nodes. */
+  /** Passes the request input nodes of this endpoint to a callback. */
   set(setter: (nodes: HttpInputNodes) => void) {
     setter({
       pathParams: this.#req.pathParams,

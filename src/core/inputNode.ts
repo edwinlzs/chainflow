@@ -225,7 +225,7 @@ export class InputNode {
   }
 
   /** Access the source node value in a source object */
-  #accessSource(payload: any, path: string[], sourceHash: string, undefinedAllowed?: boolean): any {
+  #accessSource(payload: any, path: string[], undefinedAllowed?: boolean): any {
     let sourceVal = payload;
 
     let i = 0;
@@ -253,7 +253,7 @@ export class InputNode {
     const sourceObject = sourceValues[hash]![0];
 
     // get value from a linked source
-    return this.#accessSource(sourceObject, path, hash, undefinedAllowed);
+    return this.#accessSource(sourceObject, path, undefinedAllowed);
   }
 
   /** Attempts to retrieve values for an input node from multiple source nodes. */

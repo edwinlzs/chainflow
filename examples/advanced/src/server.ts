@@ -12,9 +12,9 @@ const db = {
   payments: {} as Record<string, Payment>,
 };
 
-///
-// Server for a pet store.
-///
+/**
+ * Server for a pet store.
+ */
 const PET_STORE_PORT = 3030;
 
 const petStoreApp = express();
@@ -79,9 +79,9 @@ petStoreApp.listen(PET_STORE_PORT, () => {
   console.log(`Pet store server listening on port ${PET_STORE_PORT}`);
 });
 
-///
-// Server for a payments processor.
-///
+/**
+ * Server for a payments processor.
+ */
 const PAYMENTS_PROCESSOR_PORT = 5050;
 
 const paymentsApp = express();

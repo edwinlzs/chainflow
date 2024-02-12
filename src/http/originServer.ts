@@ -3,12 +3,12 @@ import { InputNode } from '../core/inputNode';
 import { SUPPORTED_METHODS } from './utils/constants';
 
 /** Convenience function for creating an endpoint builder with supported methods defined on it. */
-export const originServer = (addr?: string) => new OriginBase(addr) as Origin;
+export const originServer = (addr?: string) => new OriginBase(addr) as OriginServer;
 
 /** Function for making a new endpoint. */
 type MakeEndpoint = (path: string) => Endpoint;
 
-export type Origin = OriginBase & {
+export type OriginServer = OriginBase & {
   get: MakeEndpoint;
   post: MakeEndpoint;
   put: MakeEndpoint;

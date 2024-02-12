@@ -1,4 +1,4 @@
-import { originServer } from 'chainflow';
+import { link, originServer } from 'chainflow';
 
 const origin = originServer('127.0.0.1:3001');
 
@@ -36,3 +36,7 @@ export const createSubmission = origin.post('/submission').body({
 });
 
 export const getSubmission = origin.get('/submission/{submissionId}');
+
+getSubmission.set(({ pathParams: { submissionId } }) => {
+  link(submissionId, createSubmission.resp.body.id);
+});
