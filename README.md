@@ -276,7 +276,7 @@ This has important implications - it means that as long as the source (e.g. a re
 
 ### `clone`
 
-You can create chainflow "templates" with the use of `clone` to create a copy of a chainflow and its endpoint callstack. The clone can have endpoint calls added to it without modifying the initial flow.
+You can create chainflow "templates" with the use of `clone` to create a copy of a chainflow and its endpoint callqueue. The clone can have endpoint calls added to it without modifying the initial flow.
 
 ```typescript
 const initialFlow = chainflow().call(endpoint1).call(endpoint2);
