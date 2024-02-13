@@ -755,7 +755,7 @@ describe('#chainflow', () => {
   describe('when a chainflow is extended', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    it('the original flow should append the callstack of the extending flow', async () => {
+    it('the original flow should append the callqueue of the extending flow', async () => {
       const createUser = origin.post(userPath).body({
         name: 'Tom',
       });

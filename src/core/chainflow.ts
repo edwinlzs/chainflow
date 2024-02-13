@@ -13,7 +13,7 @@ export interface CallResult {
 }
 
 /** Stores chain of endpoint calls. */
-type Callstack = CallNode[];
+type Callqueue = CallNode[];
 
 /** Defines an endpoint that a chainflow can call upon. */
 export interface IEndpoint {
@@ -53,7 +53,7 @@ export class Chainflow {
   #sources: SourceValues = {
     [STORE_HASH]: [{}],
   };
-  #callstack: Callstack = [];
+  #callqueue: Callqueue = [];
 
   /** Run the set up chain */
   async run(opts?: RunOpts) {
@@ -63,7 +63,7 @@ export class Chainflow {
       this.#sources[SEED_HASH] = [opts.seed];
     }
 
-    for (const { endpoint, opts } of this.#callstack) {
+    for (const { endpoint, opts } of this.#callqueue) {
       // call endpoint
       const hash = endpoint.hash;
       log(`Calling endpoint with hash "${hash}"`);
@@ -85,7 +85,7 @@ export class Chainflow {
 
   /** Adds an endpoint call to the callchain. */
   call(endpoint: IEndpoint, opts?: CallOpts) {
-    this.#callstack.push({ endpoint, opts });
+    this.#callqueue.push({ endpoint, opts });
     return this;
   }
 
@@ -94,17 +94,17 @@ export class Chainflow {
     this.#sources = {};
   }
 
-  /** Creates a clone of this chainflow and its callstack
+  /** Creates a clone of this chainflow and its callqueue
    *  which can be extended and run independently. */
   clone(): Chainflow {
     const clone = new Chainflow();
-    clone.#callstack = [...this.#callstack];
+    clone.#callqueue = [...this.#callqueue];
     return clone;
   }
 
-  /** Extends this chainflow's callstack with that of another flow. */
+  /** Extends this chainflow's callqueue with that of another flow. */
   extend(cf: Chainflow) {
-    this.#callstack.push(...cf.#callstack);
+    this.#callqueue.push(...cf.#callqueue);
     return this;
   }
 }
