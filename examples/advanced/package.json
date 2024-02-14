@@ -5,7 +5,7 @@
   "main": "index.js",
   "author": "edwinlzs",
   "scripts": {
-    "server": "ts-node src/server.ts",
+    "server": "ts-node src/server/index.ts",
     "flow": "node -r ts-node/register index.ts"
   },
   "devDependencies": {

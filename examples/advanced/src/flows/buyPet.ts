@@ -1,11 +1,12 @@
 import { chainflow, seed, link } from 'chainflow';
-import { findPetByStatus, login, makePayment, placeOrder } from '../endpoints';
-import { Pet } from '../types';
+import { makePayment } from '../endpoints/payments';
+import { Pet } from '../servers/types';
+import { findAvailablePets, login, placeOrder } from '../endpoints/petStore';
 
 const getDog = (pets: Pet[]) => pets.filter((pet: Pet) => pet.category === 'Dogs')[0].id;
 
 placeOrder.set(({ body: { petId } }) => {
-  link(petId, findPetByStatus.resp.body, getDog);
+  link(petId, findAvailablePets.resp.body, getDog);
 });
 
 makePayment.set(({ pathParams: { orderId }, body: { creditCardNumber } }) => {
@@ -15,6 +16,6 @@ makePayment.set(({ pathParams: { orderId }, body: { creditCardNumber } }) => {
 
 export const buyPetFlow = chainflow()
   .call(login)
-  .call(findPetByStatus)
+  .call(findAvailablePets)
   .call(placeOrder)
   .call(makePayment);
