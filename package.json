@@ -18,7 +18,7 @@
     "lint": "eslint ./src/ --ext .ts",
     "lint:fix": "eslint ./src/ --ext .ts --fix",
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
-    "prepare": "husky install",
+    "prepare": "husky",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "demo": "tsc && node ./dist/demo/index.js"
@@ -29,7 +29,7 @@
     "undici": "^6.5.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.8.1",
+    "@commitlint/cli": "^18.6.1",
     "@commitlint/config-conventional": "^18.6.0",
     "@types/debug": "^4.1.12",
     "@types/jest": "^29.5.12",

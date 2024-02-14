@@ -1,4 +1,4 @@
 import { chainflow } from 'chainflow';
-import { addPet, login } from '../endpoints';
+import { addPet } from '../endpoints/petStore';
 
-export const addPetFlow = chainflow().call(login).call(addPet);
+export const addPetFlow = chainflow().call(addPet);

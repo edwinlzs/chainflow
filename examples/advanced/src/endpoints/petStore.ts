@@ -1,15 +1,18 @@
-import { faker } from '@faker-js/faker';
-import { originServer, gen, pool, required, seed } from 'chainflow';
+import { originServer, pool, required, seed } from 'chainflow';
 
 const petStoreAddr = '127.0.0.1:3030';
-const paymentsAddr = '127.0.0.1:5050';
 
 const origin = originServer(petStoreAddr);
 
-// Defining API signatures
+
+export const createUser = origin.post('/user').body({
+  username: seed.username,
+  password: seed.password,
+})
+
 export const login = origin.get('/user/login').query({
   username: seed.username,
-  password: gen(() => faker.string.alphanumeric(8)),
+  password: seed.password,
 });
 
 const loggedInOrigin = originServer(petStoreAddr).headers({
@@ -40,18 +43,10 @@ export const addPet = loggedInOrigin.post('/pet').body(
   ]),
 );
 
-export const findPetByStatus = loggedInOrigin.get('/pet/findByStatus').query({
+export const findAvailablePets = loggedInOrigin.get('/pet/findByStatus').query({
   status: 'available',
 });
 
 export const placeOrder = loggedInOrigin.post('/store/order').body({
   petId: required(),
-});
-
-// export const findOrder = loggedInOrigin.get('/store/order/{orderId}');
-
-const paymentsOrigin = originServer(paymentsAddr);
-
-export const makePayment = paymentsOrigin.post('/payment/{orderId}').body({
-  creditCardNumber: required(),
 });
