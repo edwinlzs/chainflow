@@ -20,8 +20,7 @@
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
     "prepare": "husky",
     "test": "jest",
-    "test:coverage": "jest --coverage",
-    "demo": "tsc && node ./dist/demo/index.js"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@fastify/deepmerge": "^1.3.0",
