@@ -71,7 +71,7 @@ export class InputNode {
   /** Generator function to generate values on demand for this node. */
   #generator: (() => any) | undefined;
 
-  constructor({ val, hash }: { val: any; hash: string }) {
+  constructor(val: any) {
     if (val == null) {
       this.#default = val;
       return;
@@ -111,7 +111,7 @@ export class InputNode {
 
         this.#isKvObject = true;
         Object.entries(val).forEach(([key, val]) => {
-          (this as any)[key] = new InputNode({ val, hash });
+          (this as any)[key] = new InputNode(val);
         });
         break;
       default:
