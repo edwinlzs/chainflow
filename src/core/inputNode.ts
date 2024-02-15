@@ -56,23 +56,22 @@ export type SourceValues = { [hash: string]: SourceValue[] };
 export class InputNode {
   /** Key-values under this node, if this node represents an object. */
   [key: string]: any;
-  /** TODO: may not be useful. currently only identifying base object this input node is on. */
-  [nodeHash]: string;
+  /** Determines if this is a key-value object that needs to be built further. */
+  #isKvObject: boolean = false;
   /** Default value of this node */
   #default: any;
   /** Whether this node requires a value from a source object. */
   #required: boolean = false;
   /** Stores what source node values can be passed into this node. */
   #sources: { [nodeHash: string]: ISource | ISources } = {};
-  /** Stores possible values this node can take. */
+  /** @experimental Stores possible values this node can take. */
   #valuePool: any[] = [];
-  /** Determines what strategy to select from pool of values */
+  /** @experimental Determines what strategy to select from pool of values */
   #valuePoolSelect: VALUE_POOL_SELECT = VALUE_POOL_SELECT.UNIFORM;
   /** Generator function to generate values on demand for this node. */
   #generator: (() => any) | undefined;
 
-  constructor({ val, hash }: { val: any; hash: string }) {
-    this[nodeHash] = hash;
+  constructor(val: any) {
     if (val == null) {
       this.#default = val;
       return;
@@ -110,8 +109,9 @@ export class InputNode {
           break;
         }
 
+        this.#isKvObject = true;
         Object.entries(val).forEach(([key, val]) => {
-          (this as any)[key] = new InputNode({ val, hash });
+          (this as any)[key] = new InputNode(val);
         });
         break;
       default:
@@ -191,13 +191,14 @@ export class InputNode {
       return this.#selectValue();
     }
 
+    if (this.#isKvObject) {
+      return this.buildKvObject(currentPath, missingValues, sourceValues);
+    }
+
     // default will only be undefined for objects that need to be built further
-    if (this.#default === undefined) {
-      if (this.#required) {
-        missingValues.push(currentPath);
-        return;
-      }
-      return this.buildObject(currentPath, missingValues, sourceValues);
+    if (this.#default === undefined && this.#required) {
+      missingValues.push(currentPath);
+      return;
     }
 
     // if other options are exhausted, revert to default
@@ -278,13 +279,12 @@ export class InputNode {
     }
   }
   /**
-   * Builds a JSON object from input node values and
+   * Builds a key-value object from input node values and
    * any available linked sources.
    */
-  buildObject(currentPath: string[], missingValues: string[][], sourceValues: SourceValues) {
+  buildKvObject(currentPath: string[], missingValues: string[][], sourceValues: SourceValues) {
     return Object.entries(this).reduce((acc, [key, val]) => {
-      const nextPath = [...currentPath];
-      nextPath.push(key);
+      const nextPath = [...currentPath, key];
       acc[key] = val[getNodeValue](sourceValues, missingValues, nextPath);
       return acc;
     }, {} as any);

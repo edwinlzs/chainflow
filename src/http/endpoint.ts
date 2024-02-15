@@ -75,7 +75,7 @@ export class Endpoint implements IEndpoint {
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
     this.hash = hashEndpoint({ route: this.#path, method: this.#method });
-    this.#req = new ReqBuilder({ hash: this.hash });
+    this.#req = new ReqBuilder();
     this.#extractPathParams();
     this.#resp = sourceNode(this.hash);
   }
@@ -146,7 +146,7 @@ export class Endpoint implements IEndpoint {
 
     const baseHeaders = this.#req.baseHeaders[getNodeValue](responses, missingValues, ['headers']);
     let headers = this.#req.headers[getNodeValue](responses, missingValues, ['headers']);
-    baseHeaders && (headers = deepmerge(baseHeaders, headers));
+    baseHeaders && (headers = deepmerge(baseHeaders, headers ?? {}));
 
     const finalMissingValues = this.#findMissingValues(missingValues, opts);
     if (finalMissingValues.length > 0)
@@ -194,17 +194,13 @@ export class Endpoint implements IEndpoint {
   /** Extracts Path params from a given path */
   #extractPathParams() {
     const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
-    const hash = this.hash;
     let param;
     const params: Record<string, object> = {};
     while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
       params[paramName] = required();
     }
-    this.#req.pathParams = new InputNode({
-      val: params,
-      hash,
-    });
+    this.#req.pathParams = new InputNode(params);
   }
 
   /** Inserts actual path params into path. */

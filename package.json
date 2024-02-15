@@ -1,12 +1,17 @@
 {
   "name": "chainflow",
   "version": "0.1.0",
-  "description": "build dynamic and flexible API call workflows",
+  "description": "build dynamic and flexible API workflows",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "author": "edwinlzs",
   "license": "MIT",
   "homepage": "https://github.com/edwinlzs/chainflow",
-  "types": "index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "commitlint": "commitlint --edit",

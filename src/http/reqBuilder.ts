@@ -7,15 +7,13 @@ export class ReqBuilder {
   pathParams: InputNode;
   #queryParams: InputNode;
   #body: InputNode;
-  #hash: string;
 
-  constructor({ hash }: { hash: string }) {
-    this.#hash = hash;
-    this.baseHeaders = new InputNode({ val: undefined, hash: this.#hash });
-    this.#headers = new InputNode({ val: undefined, hash: this.#hash });
-    this.pathParams = new InputNode({ val: undefined, hash: this.#hash });
-    this.#queryParams = new InputNode({ val: undefined, hash: this.#hash });
-    this.#body = new InputNode({ val: undefined, hash: this.#hash });
+  constructor() {
+    this.baseHeaders = new InputNode(undefined);
+    this.#headers = new InputNode(undefined);
+    this.pathParams = new InputNode(undefined);
+    this.#queryParams = new InputNode(undefined);
+    this.#body = new InputNode(undefined);
   }
 
   get body(): InputNode {
@@ -23,10 +21,7 @@ export class ReqBuilder {
   }
 
   set body(payload: any) {
-    this.#body = new InputNode({
-      val: payload,
-      hash: this.#hash,
-    });
+    this.#body = new InputNode(payload);
   }
 
   get query(): InputNode {
@@ -34,10 +29,7 @@ export class ReqBuilder {
   }
 
   set query(params: any) {
-    this.#queryParams = new InputNode({
-      val: params,
-      hash: this.#hash,
-    });
+    this.#queryParams = new InputNode(params);
   }
 
   get headers(): InputNode {
@@ -45,9 +37,6 @@ export class ReqBuilder {
   }
 
   set headers(params: any) {
-    this.#headers = new InputNode({
-      val: params,
-      hash: this.#hash,
-    });
+    this.#headers = new InputNode(params);
   }
 }

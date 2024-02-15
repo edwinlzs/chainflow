@@ -21,7 +21,6 @@ export type OriginServer = OriginBase & {
 class OriginBase {
   #addr: string;
   #headers: InputNode;
-  #hash: string;
   #config: EndpointConfig = {};
 
   /** Sets configuration for all endpoints made by this origin. */
@@ -32,10 +31,7 @@ class OriginBase {
 
   /** Sets the base headers for all endpoints made by this origin. */
   headers(params: Record<string, string | INodeWithValue | undefined>) {
-    this.#headers = new InputNode({
-      val: params,
-      hash: this.#hash,
-    });
+    this.#headers = new InputNode(params);
     return this;
   }
 
@@ -49,8 +45,7 @@ class OriginBase {
 
   constructor(addr: string = 'http://127.0.0.1') {
     this.#addr = addr;
-    this.#headers = new InputNode({ val: undefined, hash: addr });
-    this.#hash = addr;
+    this.#headers = new InputNode(undefined);
     SUPPORTED_METHODS.forEach((method) => {
       // define methods to create endpoints from HTTP methods
       Reflect.defineProperty(this, method, {
