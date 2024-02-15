@@ -1,3 +1,21 @@
-# Features not yet shown in advanced example
+# Feature checklist shown in advanced example
 
-1. Allow Undefined
+- [x] headers
+- [x] path params
+- [x] query
+- [x] body
+- [x] Direct Links - at the point of input node definition
+- [x] `required`
+- [x] Seed
+- [x] `gen`
+- [x] `flow.clone`
+- [ ] `flow.extend`
+- [ ] Allow Undefined
+- [x] Store
+- [x] source - link with a callback
+- [ ] sources - many links at once
+- [ ] link
+- [ ] linkMany - combine responses from multiple source nodes to one input
+- [ ] Call Options
+- [ ] Run Options
+- [ ] config

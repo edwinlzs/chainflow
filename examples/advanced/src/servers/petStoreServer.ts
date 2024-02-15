@@ -42,21 +42,47 @@ petStoreApp.get('/user/login', (req: ExpressRequest, res) => {
 });
 
 petStoreApp.post('/pet', (req, res) => {
-  const { name, category, price } = req.body;
+  const { name, category } = req.body;
   const id = faker.string.uuid();
 
   const pet = {
     id,
     name,
     category,
-    storeInfo: {
-      status: 'available',
-      price,
-    },
+    description: '',
   };
   db.pets[id] = pet;
 
   res.send(pet);
+});
+
+petStoreApp.patch('/pet/:petId', (req, res) => {
+  const { description } = req.body;
+  const { petId } = req.query;
+
+  const pet = db.pets[petId as string];
+  if (pet) {
+    pet.description = description;
+    res.status(200).send();
+  } else {
+    res.status(404).send();
+  }
+});
+
+petStoreApp.post('/pet/:petId/sell', (req, res) => {
+  const { price } = req.body;
+  const { petId } = req.query;
+
+  const pet = db.pets[petId as string];
+  if (pet) {
+    pet.storeInfo = {
+      status: 'available',
+      price,
+    };
+    res.status(200).send();
+  } else {
+    res.status(404).send();
+  }
 });
 
 petStoreApp.get('/pet/findByStatus', (req: ExpressRequest, res) => {

@@ -1,27 +1,48 @@
 // run the chainflows
 import { faker } from '@faker-js/faker';
-import { addPetFlow, buyPetFlow } from './src/flows';
+import { sellPetFlow, buyPetFlow } from './src/flows';
 
-const usernames = ['tom1997', 'harry2000', 'jane9000'];
+const pets = [
+  {
+    name: 'woofer',
+    category: 'Dogs',
+    price: 1000,
+  },
+  {
+    name: 'meower',
+    category: 'Cats',
+    price: 900,
+  },
+  {
+    name: 'mooer',
+    category: 'Cows',
+    price: 5000,
+  },
+];
 
-for (const username of usernames) {
-  addPetFlow.run({
+// admin adds multiple pets to the store
+for (const pet of pets) {
+  sellPetFlow.run({
     seed: {
-      username,
+      username: 'admin',
+      password: 'adminpass',
+      pet: {
+        name: pet.name,
+        category: pet.category,
+        price: pet.price,
+      },
     },
   });
 }
 
-const buyerNames = [
-  { name: faker.person.fullName(), creditCardNumber: faker.finance.creditCardNumber() },
-  { name: faker.person.fullName(), creditCardNumber: faker.finance.creditCardNumber() },
-];
-
-for (const { name, creditCardNumber } of buyerNames) {
+// create buyers that purchase pets
+const buyers = ['tom1997', 'harry2000', 'jane9000'];
+for (const username of buyers) {
   buyPetFlow.run({
     seed: {
-      username: name,
-      creditCardNumber,
+      username,
+      password: faker.string.alphanumeric(8),
+      creditCardNumber: faker.finance.creditCardNumber(),
     },
   });
 }
