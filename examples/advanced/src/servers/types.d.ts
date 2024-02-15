@@ -8,7 +8,8 @@ export interface Pet {
   id: string;
   name: string;
   category: string;
-  storeInfo: {
+  description: string;
+  storeInfo?: {
     status: string;
     price: number;
   }
