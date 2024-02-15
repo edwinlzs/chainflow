@@ -146,7 +146,7 @@ export class Endpoint implements IEndpoint {
 
     const baseHeaders = this.#req.baseHeaders[getNodeValue](responses, missingValues, ['headers']);
     let headers = this.#req.headers[getNodeValue](responses, missingValues, ['headers']);
-    baseHeaders && (headers = deepmerge(baseHeaders, headers));
+    baseHeaders && (headers = deepmerge(baseHeaders, headers ?? {}));
 
     const finalMissingValues = this.#findMissingValues(missingValues, opts);
     if (finalMissingValues.length > 0)
