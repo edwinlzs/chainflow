@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
-<h3 align="center">Create dynamic and flexible API call workflows.</h3>
+<h3 align="center">Create dynamic and composable API call workflows.</h3>
 
 ## Not Released Yet
 

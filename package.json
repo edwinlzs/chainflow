@@ -4,9 +4,14 @@
   "description": "build dynamic and flexible API workflows",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "edwinlzs",
+  "author": "edwinlzs (https://github.com/edwinlzs)",
   "license": "MIT",
   "homepage": "https://github.com/edwinlzs/chainflow",
+  "bugs": "https://github.com/edwinlzs/chainflow/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edwinlzs/chainflow.git"
+  },
   "files": [
     "dist",
     "README.md",
@@ -18,7 +23,7 @@
     "lint": "eslint ./src/ --ext .ts",
     "lint:fix": "eslint ./src/ --ext .ts --fix",
     "markdownlint": "markdownlint **/*.md --ignore node_modules",
-    "prepare": "husky",
+    "prepare": "husky && tsc",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
