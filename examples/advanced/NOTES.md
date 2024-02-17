@@ -10,6 +10,7 @@
 - [x] `gen`
 - [x] `flow.clone`
 - [ ] `flow.extend`
+- [ ] `flow.continuesFrom`
 - [ ] Allow Undefined
 - [x] Store
 - [x] source - link with a callback
