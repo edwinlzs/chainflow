@@ -10,6 +10,7 @@ import {
   undefinedAllowed,
 } from './utils/symbols';
 
+/** @experimental How a value pool should choose its values. */
 export enum VALUE_POOL_SELECT {
   UNIFORM,
 }

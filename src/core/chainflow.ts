@@ -27,18 +27,13 @@ interface CallNode {
   opts?: CallOpts;
 }
 
-/** Options for configuring an endpoint call. */
-// TODO: decouple from chainflow in future versions.
+/** Options for configuring an endpoint call.
+ * @todo to decouple from chainflow in future versions. */
 export interface CallOpts {
   headers?: Record<string, string>;
   query?: Record<string, string>;
   pathParams?: Record<string, string>;
   body?: Record<string, any>;
-}
-
-/** Options for running chainflow. */
-export interface RunOpts {
-  seed?: Record<string, any>;
 }
 
 /** Special object used to link an InputNode to a chainflow seed. */
@@ -50,18 +45,17 @@ export const store = sourceNode(STORE_HASH);
 export class Chainflow {
   /** Stores sources such as the seed or values accumulated from
    * endpoint calls in the current flow. */
-  #sources: SourceValues = {
-    [STORE_HASH]: [{}],
-  };
+  #sources: SourceValues = {};
+  /** Stores the sources that this chainflow was initialized with. */
+  #initSources: SourceValues = {};
   #callqueue: Callqueue = [];
 
   /** Run the set up chain */
-  async run(opts?: RunOpts) {
+  async run() {
     log(`Running chainflow...`);
-
-    if (opts?.seed) {
-      this.#sources[SEED_HASH] = [opts.seed];
-    }
+    this.reset();
+    this.#sources = this.#initSources;
+    this.#sources[STORE_HASH] = [{}];
 
     for (const { endpoint, opts } of this.#callqueue) {
       // call endpoint
@@ -77,10 +71,14 @@ export class Chainflow {
         throw e;
       }
     }
-    const sources = this.#sources;
-    this.reset();
     log('Finished running chainflow.');
-    return sources;
+    return this;
+  }
+
+  /** Adds a seed to this chainflow. */
+  seed(seed: Record<string, any>) {
+    this.#initSources[SEED_HASH] = [seed];
+    return this;
   }
 
   /** Adds an endpoint call to the callchain. */
@@ -94,10 +92,11 @@ export class Chainflow {
     this.#sources = {};
   }
 
-  /** Creates a clone of this chainflow and its callqueue
+  /** Creates a clone of this chainflow with its state and callqueue
    *  which can be extended and run independently. */
   clone(): Chainflow {
     const clone = new Chainflow();
+    clone.#sources = structuredClone(this.#sources);
     clone.#callqueue = [...this.#callqueue];
     return clone;
   }
@@ -107,6 +106,15 @@ export class Chainflow {
     this.#callqueue.push(...cf.#callqueue);
     return this;
   }
+
+  /** Causes this chainflow to continue from the state of
+   * sources values of another chainflow. */
+  continuesFrom(cf: Chainflow) {
+    this.#initSources = { ...this.#initSources, ...cf.#sources };
+    return this;
+  }
+
+  /** @todo Returns the accumulated responses of this chainflow. */ responses() {}
 }
 
 export const chainflow = (): Chainflow => {

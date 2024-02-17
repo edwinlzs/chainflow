@@ -234,9 +234,9 @@ chainflow()
   .run();
 ```
 
-### Run Options
+### `seed`
 
-You can specify request nodes to take values from the chainflow 'seed' by importing the `seed` object and linking nodes to it. Provide seed values by passing them as arguments to a `run` call on a `chainflow`, like below.
+You can specify request nodes to take values from the chainflow 'seed' by importing the `seed` object and linking nodes to it. Provide actual seed values by calling the `seed` method on a chainflow before you `run` it, like below.
 
 ```typescript
 import { chainflow, link seed, } from 'chainflow';
@@ -251,11 +251,8 @@ createUser.set(({ body: { name }}) => {
 
 chainflow()
   .call()
-  .run({
-    seed: {
-      username: 'Tom',
-    }
-  });
+  .seed({ username: 'Tom' })
+  .run();
 ```
 
 ### Allow Undefined Sources Values
@@ -344,7 +341,7 @@ const createUser = origin.post('/user').body({
   name: 'Tom',
 }).store((resp) => ({
   // this endpoint will store `id` from a response to `userId` in the store
-  userId: resp.id,
+  userId: resp.body.id,
 }));
 
 const addRole = origin.post('/role').body({
@@ -357,6 +354,38 @@ chainflow().call(createUser).call(addRole).run();
 ```
 
 This is usually useful when you have endpoints that could take a value from any one of many other endpoints for the same input node. Having a store to centralise these many-to-many relationships (like an API Gateway) can improve the developer experience.
+
+### `continuesFrom` - transferring Chainflow states
+
+Say we have 2 endpoints, `login` and `createGroup`. We want to login as a user once, then proceed to proceed 3 groups as that same user without having to login 3 times.
+
+```typescript
+const createGroup = origin.post('/group').headers({
+  Authorization: login.resp.body.authToken,
+}).body({
+  groupName: seed.groupName,
+})
+
+// loggedInFlow will contain a response from the `login` endpoint
+const loggedInFlow = chainflow()
+  .call(login)
+  .run();
+
+// createGroupFlow will take the response that
+// loggedInFlow received and carry on from there
+const createGroupFlow = chainflow()
+  .call(createGroup)
+  .continuesFrom(loggedInFlow);
+
+const groupNames = ['RapGPT', 'Averageexpedition', 'Shaky Osmosis'];
+for (const groupName in groupNames) {
+  createGroupFlow.seed({ groupName }).run();
+}
+```
+
+We run a chainflow that calls `login` first to get a response from the login endpoint.
+
+Using the `continuesFrom` method, `createGroupFlow` will copy the state of source values (i.e. responses) from `loggedInFlow`. This means `createGroupFlow` will now have the logged in user's `authToken` received from calling `login`, and will use it when calling `createGroup` thrice for each group name in the `groupNames` array.
 
 ### `logging`
 
@@ -375,3 +404,7 @@ Below features are currently not yet supported but are planned in future release
 Run specific test files:
 
 `pnpm run test:file ./src/**/chainflow.test.ts`
+
+### Trivia
+
+> You probably noticed that I enjoy using the Builder pattern for its clarity.
