@@ -1,6 +1,10 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
 <h3 align="center">Create dynamic and flexible API call workflows.</h3>
 
+## Not Released Yet
+
+Hi! If you are here, you're a bit early. I'm still setting up some stuff for the first release. Check back in later!
+
 ## Use Cases
 
 1. Insert demo data via your app's APIs
