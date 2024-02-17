@@ -127,7 +127,7 @@ const createUser = origin.post('/user').body({
 });
 ```
 
-### `pool`
+### [_EXPERIMENTAL_] - `pool`
 
 Provide a pool of values to take from when building requests. By default, Chainflow will randomly choose a value from the pool for each call in a non-exhaustive manner.
 

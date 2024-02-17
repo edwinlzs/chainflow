@@ -92,11 +92,11 @@ export class Chainflow {
     this.#sources = {};
   }
 
-  /** Creates a clone of this chainflow with its state and callqueue
+  /** Creates a clone of this chainflow's callqueue and initial sources
    *  which can be extended and run independently. */
   clone(): Chainflow {
     const clone = new Chainflow();
-    clone.#sources = structuredClone(this.#sources);
+    clone.#initSources = structuredClone(this.#initSources);
     clone.#callqueue = [...this.#callqueue];
     return clone;
   }
