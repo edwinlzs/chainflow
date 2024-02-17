@@ -538,11 +538,7 @@ describe('#chainflow', () => {
         })
         .reply(200, {});
 
-      await chainflow()
-        .call(createUser)
-        .run({
-          seed: { username: 'some name' },
-        });
+      await chainflow().call(createUser).seed({ username: 'some name' }).run();
       expect(tracker).toHaveBeenCalledTimes(1);
       const arg = tracker.mock.calls[0][0];
       expect(arg?.body).toStrictEqual({
@@ -1081,6 +1077,54 @@ describe('#chainflow', () => {
         expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
           name: undefined,
           type: 'ENGINEER',
+        });
+      });
+    });
+
+    describe('when chainflow runs with save as true', () => {
+      const loginPath = uniquePath('/login');
+      const userPath = uniquePath('/user');
+      it('should keep the stored value', async () => {
+        const login = origin.post(loginPath).body({
+          name: 'admin',
+        });
+
+        const addUser = origin.post(userPath).body({
+          id: login.resp.body.id,
+          username: seed.username,
+        });
+
+        const tracker = jest.spyOn(http, 'request');
+        tracker.mockClear();
+
+        client
+          .intercept({
+            path: loginPath,
+            method: 'POST',
+          })
+          .reply(200, { id: 'admin-id' });
+        client
+          .intercept({
+            path: userPath,
+            method: 'POST',
+          })
+          .reply(200, {})
+          .times(3);
+
+        const loggedInFlow = await chainflow().call(login).run();
+        const addUserFlow = chainflow().call(addUser).continuesFrom(loggedInFlow);
+
+        const usernames = ['tom', 'dude', 'jane'];
+        for (const username of usernames) {
+          await addUserFlow.seed({ username }).run();
+        }
+
+        expect(tracker).toHaveBeenCalledTimes(4);
+        usernames.forEach((username, i) => {
+          expect(tracker.mock.calls[i + 1][0]?.body).toStrictEqual({
+            id: 'admin-id',
+            username,
+          });
         });
       });
     });
