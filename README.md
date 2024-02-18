@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
-<h3 align="center">Create dynamic and composable API call workflows.</h3>
+<h3 align="center">A library to create dynamic and composable API call workflows.</h3>
 
 ## Not Released Yet
 
@@ -7,9 +7,12 @@ Hi! If you are here, you're a bit early. I'm still setting up some stuff for the
 
 ## Use Cases
 
-1. Insert demo data via your app's APIs
+Using this library to create multiple sets of API call workflows, you can do things such as:
+
+1. Insert demo data via your app's APIs (instead of directly using SQL/db scripts that may neglect some of your app's business logic)
 2. Simulate frontend interactions with backend APIs
-3. Test edge cases on endpoints with input variations
+3. UI-agnostic end-to-end testing of backend APIs
+4. Test edge cases on backend endpoints with input variations
 
 ## Basic Usage
 
