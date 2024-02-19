@@ -7,9 +7,9 @@ Hi! If you are here, you're a bit early. I'm still setting up some stuff for the
 
 ## Use Cases
 
-Using this library to create multiple sets of API call workflows, you can do things such as:
+Create multiple sets of API call workflows with this library that can be used to:
 
-1. Insert demo data via your app's APIs (instead of directly using SQL/db scripts that may neglect some of your app's business logic)
+1. Insert demo data via your app's APIs (instead of SQL/db scripts)
 2. Simulate frontend interactions with backend APIs
 3. UI-agnostic end-to-end testing of backend APIs
 4. Test edge cases on backend endpoints with input variations
