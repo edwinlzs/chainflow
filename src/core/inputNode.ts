@@ -38,13 +38,15 @@ interface ISource {
 /** Multiple source nodes to one input node. */
 interface ISources {
   accessInfo: ISourceAccessInfo[];
-  callback: (val: any) => any;
+  isArray: boolean;
+  callback?: (val: any) => any;
 }
 
 interface ISourceAccessInfo {
   hash: string;
   path: string[];
-  key: string; // the key assigned to this source value when passed into the callback
+  // the name this source value will be assigned to
+  key?: string;
   undefinedAllowed?: boolean;
 }
 
@@ -131,20 +133,41 @@ export class InputNode {
   }
 
   /** Sets multiple source nodes to be combined into a single value for this input node */
-  [setSources](sources: { [key: string]: SourceNode }, callback: (val: any) => any) {
+  [setSources](
+    sources: SourceNode[] | { [key: string]: SourceNode },
+    callback?: (val: any) => any,
+  ) {
     const hashes = new Set<string>();
-    const accessInfo: ISourceAccessInfo[] = Object.entries(sources).map(([key, source]) => {
-      const hash = source[nodeHash];
-      hashes.add(hash);
-      return {
-        path: source[nodePath],
-        undefinedAllowed: source[undefinedAllowed],
-        hash,
-        key,
-      };
-    });
+
+    let accessInfo: ISourceAccessInfo[];
+    let isArray = false;
+    if (Array.isArray(sources)) {
+      isArray = true;
+      accessInfo = sources.map((source) => {
+        const hash = source[nodeHash];
+        hashes.add(hash);
+        return {
+          path: source[nodePath],
+          undefinedAllowed: source[undefinedAllowed],
+          hash,
+        };
+      });
+    } else {
+      accessInfo = Object.entries(sources).map(([key, source]) => {
+        const hash = source[nodeHash];
+        hashes.add(hash);
+        return {
+          path: source[nodePath],
+          undefinedAllowed: source[undefinedAllowed],
+          hash,
+          key,
+        };
+      });
+    }
+
     this.#sources[new Array(...hashes).sort().join('|')] = {
       accessInfo,
+      isArray,
       callback,
     };
   }
@@ -260,13 +283,18 @@ export class InputNode {
 
   /** Attempts to retrieve values for an input node from multiple source nodes. */
   #getMultiSourceNodeValues(sources: ISources, sourceValues: SourceValues) {
-    const sourceVals: { [key: string]: any } = {};
+    let sourceVals: { [key: string]: unknown } | unknown[];
+    sources.isArray ? (sourceVals = []) : (sourceVals = {});
+
     for (const info of sources.accessInfo) {
       const sourceVal = this.#getSingleSourceNodeValue(info.hash, info.path, sourceValues);
       // if one value is unavailable, stop constructing multi-source value
       if (sourceVal === undefined) return undefined;
-      sourceVals[info.key] = sourceVal;
+      sources.isArray
+        ? (sourceVals as unknown[]).push(sourceVal)
+        : ((sourceVals as { [key: string]: unknown })[info.key!] = sourceVal);
     }
+
     return sourceVals;
   }
 

@@ -11,7 +11,7 @@ export interface SourceNode {
   [nodePath]: string[];
   [undefinedAllowed]?: boolean;
   [nodeValueIdentifier]: NodeValue;
-  [key: string]: any;
+  [key: string]: SourceNode;
 }
 
 /** An intermediate object used to contain information on the SourceNode being built. */
@@ -23,7 +23,7 @@ interface RawSourceNode {
 
 /** Generates proxies recursively to handle nested property access of a source signature. */
 export const SourceNodeHandler = {
-  get(obj: RawSourceNode, prop: any): any {
+  get(obj: RawSourceNode, prop: any): unknown {
     switch (prop) {
       case nodePath:
         return obj.path;

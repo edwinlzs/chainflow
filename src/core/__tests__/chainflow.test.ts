@@ -1,6 +1,6 @@
 import { chainflow, seed, store } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { allowUndefined, link, linkMany } from '../utils/link';
+import { allowUndefined, link, linkMerge } from '../utils/link';
 import http from '../../http/utils/client';
 import { originServer } from '../../http/originServer';
 import { required } from '../utils/initializers';
@@ -165,7 +165,7 @@ describe('#chainflow', () => {
     });
   });
 
-  describe('when multiple responses are linked to a request', () => {
+  describe('when multiple possible sources are linked to an input node', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     const createUser = origin.post(userPath);
@@ -359,61 +359,116 @@ describe('#chainflow', () => {
     });
   });
 
-  describe('when multiple responses are linked to a request', () => {
-    const userPath = uniquePath('/user');
-    const favAnimalPath = uniquePath('/favAnimal');
-    const notificationPath = uniquePath('/notification');
-    const getUser = origin.get(userPath);
-    const getFavAnimal = origin.get(favAnimalPath);
-    const createNotification = origin.post(notificationPath).body({
-      msg: 'default msg',
+  describe('when multiple responses are linked to an input node and to be combined', () => {
+    describe('when an object with keys is provided as sources', () => {
+      const userPath = uniquePath('/user');
+      const favAnimalPath = uniquePath('/favAnimal');
+      const notificationPath = uniquePath('/notification');
+
+      const getUser = origin.get(userPath);
+      const getFavAnimal = origin.get(favAnimalPath);
+      const createNotification = origin.post(notificationPath).body({
+        msg: 'default msg',
+      });
+
+      const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+        `${userName} likes ${favAnimal}.`;
+      createNotification.set(({ body: { msg } }) => {
+        linkMerge(
+          msg,
+          {
+            userName: getUser.resp.body.name,
+            favAnimal: getFavAnimal.resp.body.favAnimal,
+          },
+          testCallback,
+        );
+      });
+      const tracker = jest.spyOn(http, 'request');
+
+      it('should pass both linked responses to the request', async () => {
+        tracker.mockClear();
+        client
+          .intercept({
+            path: userPath,
+            method: 'GET',
+          })
+          .reply(200, {
+            name: 'John',
+          });
+        client
+          .intercept({
+            path: favAnimalPath,
+            method: 'GET',
+          })
+          .reply(200, {
+            favAnimal: 'dogs',
+          });
+        client
+          .intercept({
+            path: notificationPath,
+            method: 'POST',
+          })
+          .reply(200, {});
+        await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+        expect(tracker).toHaveBeenCalledTimes(3);
+        const notificationCall = tracker.mock.calls[2];
+        const notificationCallBody = notificationCall[0]?.body;
+        expect(notificationCallBody).toStrictEqual({
+          msg: 'John likes dogs.',
+        });
+      });
     });
 
-    const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
-      `${userName} likes ${favAnimal}.`;
-    createNotification.set(({ body: { msg } }) => {
-      linkMany(
-        msg,
-        {
-          userName: getUser.resp.body.name,
-          favAnimal: getFavAnimal.resp.body.favAnimal,
-        },
-        testCallback,
-      );
-    });
-    const tracker = jest.spyOn(http, 'request');
+    describe('when an array of sources is provided', () => {
+      const userPath = uniquePath('/user');
+      const favAnimalPath = uniquePath('/favAnimal');
+      const notificationPath = uniquePath('/notification');
 
-    it('should pass both linked responses to the request', async () => {
-      tracker.mockClear();
-      client
-        .intercept({
-          path: userPath,
-          method: 'GET',
-        })
-        .reply(200, {
-          name: 'John',
-        });
-      client
-        .intercept({
-          path: favAnimalPath,
-          method: 'GET',
-        })
-        .reply(200, {
-          favAnimal: 'dogs',
-        });
-      client
-        .intercept({
-          path: notificationPath,
-          method: 'POST',
-        })
-        .reply(200, {});
-      await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+      const getUser = origin.get(userPath);
+      const getFavAnimal = origin.get(favAnimalPath);
+      const createNotification = origin.post(notificationPath).body({
+        msg: ['default msg'],
+      });
 
-      expect(tracker).toHaveBeenCalledTimes(3);
-      const notificationCall = tracker.mock.calls[2];
-      const notificationCallBody = notificationCall[0]?.body;
-      expect(notificationCallBody).toStrictEqual({
-        msg: 'John likes dogs.',
+      const testCallback = ([name, favAnimal]: [string, string]) => `${name} likes ${favAnimal}.`;
+      createNotification.set(({ body: { msg } }) => {
+        linkMerge(msg, [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback);
+      });
+      const tracker = jest.spyOn(http, 'request');
+
+      it('should pass both linked responses to the request', async () => {
+        tracker.mockClear();
+        client
+          .intercept({
+            path: userPath,
+            method: 'GET',
+          })
+          .reply(200, {
+            name: 'John',
+          });
+        client
+          .intercept({
+            path: favAnimalPath,
+            method: 'GET',
+          })
+          .reply(200, {
+            favAnimal: 'dogs',
+          });
+        client
+          .intercept({
+            path: notificationPath,
+            method: 'POST',
+          })
+          .reply(200, {});
+        await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+        expect(tracker).toHaveBeenCalledTimes(3);
+        const notificationCall = tracker.mock.calls[2];
+        const notificationCallBody = notificationCall[0]?.body;
+        expect(notificationCallBody).toStrictEqual({
+          msg: 'John likes dogs.',
+        });
       });
     });
   });

@@ -18,10 +18,10 @@ export const link = (dest: InputNode, source: SourceNode, callback?: (val: any) 
  * @param sources an array of source nodes that will be passed into the callback.
  * @param callback a function to merge the sources into a single source for the dest.
  */
-export const linkMany = (
+export const linkMerge = (
   dest: InputNode,
-  sources: { [key: string]: SourceNode },
-  callback: (val: any) => any,
+  sources: SourceNode[] | { [key: string]: SourceNode },
+  callback?: (val: any) => any,
 ) => {
   dest[setSources](sources, callback);
 };
