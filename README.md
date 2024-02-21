@@ -202,28 +202,50 @@ createNotification.set(({ body: { msg } }) => {
 });
 ```
 
-### `linkMany`
+### `linkMerge`
 
-Link multiple response values to a single request node, providing a callback to transform the values into a single output.
+Link multiple response values to a single request node with an optional callback to merge the values into a single input value.
+
+For the second argument, you can either pass an array of SourceNodes:
+
+```typescript
+const mergeValues = ([name, favAnimal]: [string, string]) =>
+  `${name} likes ${favAnimal}.`;
+
+createNotification.set(({ body: { msg } }) => {
+  linkMerge(
+    msg, // the request node
+    // specify which source nodes to take values from
+    [getUser.resp.body.name, favAnimal: getFavAnimal.resp.body.favAnimal],
+    // callback that takes the source values as its argument
+    // and returns a single output value for the request node
+    // callback parameter should look like an array of source values
+    mergeValues,
+  );
+});
+```
+
+or you can pass an object with SourceNodes as the values:
 
 ```typescript
 const mergeValues = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
   `${userName} likes ${favAnimal}.`;
 
 createNotification.set(({ body: { msg } }) => {
-  linkMany(
-    msg, // the request node
-    // specify which response nodes to take values from and assigns them to a key
+  linkMerge(
+    msg,
+    // specify source nodes and assigns them to a key
     {
       userName: getUser.resp.body.name,
       favAnimal: getFavAnimal.resp.body.favAnimal,
     },
-    // callback that takes the response values as its argument
-    // and returns a single output value for the request node
+    // callback parameter should look like { key: sourceValue }
     mergeValues,
   );
 });
 ```
+
+Note that the merging link created by this method will only be used if ALL the source nodes specified are available i.e. if `getUser.resp.body.name` does not have a value, this link will not be used at all.
 
 ### Call Options
 
@@ -344,12 +366,15 @@ Instead of direct links between endpoints, you can use a central store to keep v
 ```typescript
 import { store } from 'chainflow';
 
-const createUser = origin.post('/user').body({
-  name: 'Tom',
-}).store((resp) => ({
-  // this endpoint will store `id` from a response to `userId` in the store
-  userId: resp.body.id,
-}));
+const createUser = origin
+  .post('/user')
+  .body({
+    name: 'Tom',
+  })
+  .store((resp) => ({
+    // this endpoint will store `id` from a response to `userId` in the store
+    userId: resp.body.id,
+  }));
 
 const addRole = origin.post('/role').body({
   // this endpoint will take `userId` from the store, if available
@@ -367,22 +392,21 @@ This is usually useful when you have endpoints that could take a value from any 
 Say we have 2 endpoints, `login` and `createGroup`. We want to login as a user once, then proceed to proceed 3 groups as that same user without having to login 3 times.
 
 ```typescript
-const createGroup = origin.post('/group').headers({
-  Authorization: login.resp.body.authToken,
-}).body({
-  groupName: seed.groupName,
-})
+const createGroup = origin
+  .post('/group')
+  .headers({
+    Authorization: login.resp.body.authToken,
+  })
+  .body({
+    groupName: seed.groupName,
+  });
 
 // loggedInFlow will contain a response from the `login` endpoint
-const loggedInFlow = chainflow()
-  .call(login)
-  .run();
+const loggedInFlow = chainflow().call(login).run();
 
 // createGroupFlow will take the response that
 // loggedInFlow received and carry on from there
-const createGroupFlow = chainflow()
-  .call(createGroup)
-  .continuesFrom(loggedInFlow);
+const createGroupFlow = chainflow().call(createGroup).continuesFrom(loggedInFlow);
 
 const groupNames = ['RapGPT', 'Averageexpedition', 'Shaky Osmosis'];
 for (const groupName in groupNames) {
@@ -414,4 +438,5 @@ Run specific test files:
 
 ### Trivia
 
-> You probably noticed that I enjoy using the Builder pattern for its clarity.
+- You probably noticed that I enjoy using the Builder pattern for its clarity.
+- I'm praying the wave 🌊 emoji remains sufficiently shaped like a "C" to avoid confusion. Please let me know if there is some system where it does not!

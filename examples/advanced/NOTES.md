@@ -16,7 +16,7 @@
 - [x] source - link with a callback
 - [ ] sources - many links at once
 - [ ] link
-- [ ] linkMany - combine responses from multiple source nodes to one input
+- [ ] linkMerge - combine responses from multiple source nodes to one input
 - [ ] Call Options
 - [ ] Run Options
 - [ ] config
