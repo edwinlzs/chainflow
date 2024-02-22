@@ -175,90 +175,109 @@ const createUser = origin.post('/user').body({
 });
 ```
 
-### `source`
+### `link`
 
-Specify a source node with a callback.
+You can use the `link` function to specify a callback to transform the response value before it is passed to the node.
 
 ```typescript
 const addGreeting = (name: string) => `Hello ${name}`;
 
-createNotification.body({
-  msg: source(getUser.resp.body.name, addGreeting);
+const createMessage = origin.post('message').body({
+  msg: link(getUser.resp.body.name, addGreeting);
 });
 ```
 
-### `sources`
+### `set`
 
-Specify multiple source nodes that a value can be taken from, with an optional callback.
+The `link` has another function signature.
 
-```typescript
-createNotification.body({
-  msg: sources([getUser.resp.body.name, createUser.resp.body.name], addGreeting);
-});
-```
-
-### `link`
-
-Link a response values to a single request node.
+You can use the `set` method on an endpoint to expose its input nodes, then use the 2nd function signature of `link` as shown below: pass in the input node first (`msg`), then the source node second and optionally a callback third.
 
 ```typescript
-createNotification.set(({ body: { msg } }) => {
+createMessage.set(({ body: { msg } }) => {
   link(msg, getUser.resp.body.name);
+  link(msg, createUser.resp.body.name);
 });
 ```
 
-Optionally, you can pass a callback to transform the response value before it is passed to the node.
+With a callback:
 
 ```typescript
-createNotification.set(({ body: { msg } }) => {
+createMessage.set(({ body: { msg } }) => {
   link(msg, getUser.resp.body.name, addGreeting);
+  link(msg, createUser.resp.body.name, addGreeting);
 });
 ```
 
 ### `linkMerge`
 
-Link multiple response values to a single request node with an optional callback to merge the values into a single input value.
+Link multiple response values to a single request node with an optional callback to merge the values into a single input value. This has 4 function signatures:
 
-For the second argument, you can either pass an array of SourceNodes:
+For the argument containing the source nodes, you can either pass an _array_ of SourceNodes:
 
 ```typescript
+// note the callback has an array parameter
 const mergeValues = ([name, favAnimal]: [string, string]) =>
   `${name} likes ${favAnimal}.`;
 
-createNotification.set(({ body: { msg } }) => {
-  linkMerge(
-    msg, // the request node
-    // specify which source nodes to take values from
-    [getUser.resp.body.name, favAnimal: getFavAnimal.resp.body.favAnimal],
-    // callback that takes the source values as its argument
-    // and returns a single output value for the request node
-    // callback parameter should look like an array of source values
+const createMessage = origin.post('message').body({
+  msg: linkMerge(
+    // array of source nodes
+    [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal],
     mergeValues,
   );
 });
 ```
 
-or you can pass an object with SourceNodes as the values:
+or you can pass an _object_ with SourceNodes as the values:
 
 ```typescript
+// note the callback has an object parameter
 const mergeValues = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
   `${userName} likes ${favAnimal}.`;
 
-createNotification.set(({ body: { msg } }) => {
-  linkMerge(
-    msg,
-    // specify source nodes and assigns them to a key
+const createMessage = origin.post('message').body({
+  msg: linkMerge(
+    // object of source nodes
     {
       userName: getUser.resp.body.name,
       favAnimal: getFavAnimal.resp.body.favAnimal,
     },
-    // callback parameter should look like { key: sourceValue }
     mergeValues,
   );
 });
 ```
 
-Note that the merging link created by this method will only be used if ALL the source nodes specified are available i.e. if `getUser.resp.body.name` does not have a value, this link will not be used at all.
+alternatively, you can use the `set` method in addition with the other function signature of `linkMerge` (similar to how `link` above has overloads to work with `set`).
+
+with array:
+
+```typescript
+createNotification.set(({ body: { msg } }) => {
+  linkMerge(
+    msg, // the input node
+    [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal],
+    mergeValues,
+  );
+});
+```
+
+with object:
+
+```typescript
+createNotification.set(({ body: { msg } }) => {
+  linkMerge(
+    msg, // the input node
+    {
+      userName: getUser.resp.body.name,
+      favAnimal: getFavAnimal.resp.body.favAnimal,
+    },
+    mergeValues,
+  );
+});
+```
+
+Note that the merging link created by this method will only be used if ALL the source nodes specified are available i.e. if either one of `getUser.resp.body.name` or `getFavAnimal.resp.body.favAnimal` does not have a value, this link will not be used at all.
 
 ### Call Options
 

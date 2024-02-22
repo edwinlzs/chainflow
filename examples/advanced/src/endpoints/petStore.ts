@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { gen, originServer, required, seed, source } from 'chainflow';
+import { gen, originServer, seed, link } from 'chainflow';
 import { Pet } from '../servers/types';
 
 const petStoreAddr = '127.0.0.1:3030';
@@ -43,5 +43,5 @@ export const findAvailablePets = loggedInOrigin.get('/pet/findByStatus').query({
 const getDog = (pets: Pet[]) => pets.filter((pet: Pet) => pet.category === 'Dogs')[0].id;
 
 export const placeOrder = loggedInOrigin.post('/store/order').body({
-  petId: source(findAvailablePets.resp.body, getDog),
+  petId: link(findAvailablePets.resp.body, getDog),
 });

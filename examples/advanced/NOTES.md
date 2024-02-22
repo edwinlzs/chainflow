@@ -13,9 +13,8 @@
 - [ ] `flow.continuesFrom`
 - [ ] Allow Undefined
 - [x] Store
-- [x] source - link with a callback
-- [ ] sources - many links at once
-- [ ] link
+- [x] link
+- [ ] link + set
 - [ ] linkMerge - combine responses from multiple source nodes to one input
 - [ ] Call Options
 - [ ] Run Options

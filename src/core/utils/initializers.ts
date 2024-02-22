@@ -1,7 +1,7 @@
 import { NodeValue } from '../inputNode';
 import { nodeValueIdentifier } from './symbols';
 
-/** Defines a set of values to choose from when constructing an input. */
+/** @experimental Defines a set of values to choose from when constructing an input. */
 export const pool = (valuePool: any[]) => ({
   valuePool,
   [nodeValueIdentifier]: NodeValue.ValuePool,
