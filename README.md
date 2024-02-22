@@ -220,8 +220,14 @@ or you can pass an _object_ with SourceNodes as the values:
 
 ```typescript
 // note the callback has an object parameter
-const mergeValues = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
-  `${userName} likes ${favAnimal}.`;
+const mergeValues = ({
+  userName,
+  favAnimal,
+}: {
+  userName: string;
+  favAnimal: string;
+}) => `${userName} likes ${favAnimal}.`;
+
 
 const createMessage = origin.post('message').body({
   msg: linkMerge(
@@ -240,7 +246,7 @@ alternatively, you can use the `set` method in addition with the other function 
 with array:
 
 ```typescript
-createNotification.set(({ body: { msg } }) => {
+createMessage.set(({ body: { msg } }) => {
   linkMerge(
     msg, // the input node
     [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal],
@@ -252,7 +258,7 @@ createNotification.set(({ body: { msg } }) => {
 with object:
 
 ```typescript
-createNotification.set(({ body: { msg } }) => {
+createMessage.set(({ body: { msg } }) => {
   linkMerge(
     msg, // the input node
     {
