@@ -8,7 +8,7 @@ interface SourceInfo {
   callback: ((val: any) => any) | undefined;
 }
 
-/** Overload signature for `linkMerge` function. */
+/** Overload signatures for `linkMerge` function. */
 interface Link {
   /**
    * Link a Source node to an Input node.
@@ -45,7 +45,7 @@ interface MergeSourcesInfo {
   callback: ((val: any) => any) | undefined;
 }
 
-/** Overload signature for `linkMerge` function. */
+/** Overload signatures for `linkMerge` function. */
 interface LinkMerge {
   /**
    * Links multiple Source nodes to an Input node via a callback.
