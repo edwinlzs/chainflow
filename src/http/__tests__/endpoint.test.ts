@@ -2,7 +2,7 @@ import { RespParser, Endpoint } from '../endpoint';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../core/utils/link';
-import { gen, pool, required } from '../../core/utils/initializers';
+import { gen, required } from '../../core/utils/initializers';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
 // from being picked up by another test's interceptor
@@ -249,41 +249,6 @@ describe('#endpoint', () => {
         name: 'some-name',
         details: {
           age: 10,
-          member: true,
-        },
-      });
-    });
-
-    it('should use values from a provided value pool', async () => {
-      client
-        .intercept({
-          path: userPath,
-          method: 'POST',
-        })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
-      tracker.mockClear();
-      const testValuePool = [10, 20, 30];
-
-      const testReqPayloadWithValPool = {
-        id: 'some-id',
-        name: 'some-name',
-        details: {
-          age: pool(testValuePool),
-          member: true,
-        },
-      };
-      testEndpoint.body(testReqPayloadWithValPool);
-      await testEndpoint.call(responses);
-
-      const call = tracker.mock.calls[0];
-      const callBody = call?.[0]?.body;
-      expect(testValuePool.includes(callBody?.details?.age)).toBeTruthy();
-      expect(callBody).toStrictEqual({
-        id: 'some-id',
-        name: 'some-name',
-        details: {
-          age: callBody?.details?.age,
           member: true,
         },
       });

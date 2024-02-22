@@ -1,5 +1,5 @@
 import { InputNode } from '../inputNode';
-import { getNodeValue, setValuePool } from '../utils/symbols';
+import { getNodeValue } from '../utils/symbols';
 
 describe('#inputNode', () => {
   const testVal = {
@@ -42,12 +42,5 @@ describe('#inputNode', () => {
     it('should reconstruct the object as node value', () => {
       expect(testNode[getNodeValue]({}, [], [])).toStrictEqual(testVal);
     });
-  });
-
-  describe('when a value pool is provided for a node', () => {
-    const testNode = new InputNode(40);
-    const testValuePool = [10, 20, 30];
-    testNode[setValuePool](testValuePool);
-    expect(testValuePool.includes(testNode[getNodeValue]({}, [], []))).toBeTruthy();
   });
 });

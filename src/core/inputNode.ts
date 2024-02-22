@@ -6,23 +6,15 @@ import {
   nodeValueIdentifier,
   setSource,
   setSources,
-  setValuePool,
   undefinedAllowed,
 } from './utils/symbols';
 
-/** @experimental How a value pool should choose its values. */
-export enum VALUE_POOL_SELECT {
-  UNIFORM,
-}
-
 export enum NodeValue {
-  ValuePool,
   Generator,
   Required,
   Source,
   SourceWithCallback,
   MergeSourcesWithCallback,
-  // Sources,
 }
 
 /** Details of a source node. */
@@ -68,10 +60,6 @@ export class InputNode {
   #required: boolean = false;
   /** Stores what source node values can be passed into this node. */
   #sources: { [nodeHash: string]: ISource | ISources } = {};
-  /** @experimental Stores possible values this node can take. */
-  #valuePool: any[] = [];
-  /** @experimental Determines what strategy to select from pool of values */
-  #valuePoolSelect: VALUE_POOL_SELECT = VALUE_POOL_SELECT.UNIFORM;
   /** Generator function to generate values on demand for this node. */
   #generator: (() => any) | undefined;
 
@@ -82,9 +70,6 @@ export class InputNode {
     }
 
     switch (val[nodeValueIdentifier]) {
-      case NodeValue.ValuePool:
-        this.#valuePool = val.valuePool;
-        return;
       case NodeValue.Generator:
         this.#generator = val.generator;
         return;
@@ -100,12 +85,6 @@ export class InputNode {
       case NodeValue.MergeSourcesWithCallback:
         this[setSources](val.sources, val.callback);
         return;
-      // case NodeValue.Sources:
-      //   /** @experimental @TODO: validation here */
-      //   val.sources.forEach((source: SourceNode) => {
-      //     this[setSource](source, val.callback);
-      //   });
-      //   return;
     }
 
     switch (typeof val) {
@@ -176,11 +155,6 @@ export class InputNode {
     };
   }
 
-  /** Sets the pool of values for this input node. */
-  [setValuePool](valuePool: any[]) {
-    this.#valuePool = valuePool;
-  }
-
   /** Retrieve value of a node. */
   [getNodeValue](sourceValues: SourceValues, missingValues: string[][], currentPath: string[]) {
     const usedSources: string[] = []; // stores sourceValues that are already tried
@@ -212,11 +186,6 @@ export class InputNode {
     // attempt to get value from generator function
     if (this.#generator) {
       return this.#generator();
-    }
-
-    // attempt to get value from value pool
-    if (this.#valuePool.length > 0) {
-      return this.#selectValue();
     }
 
     if (this.#isKvObject) {
@@ -302,15 +271,6 @@ export class InputNode {
     return sourceVals;
   }
 
-  /** Selects a value from the value pool based on the value pool select strategy. */
-  #selectValue(): any {
-    if (this.#valuePool.length === 0) return;
-    switch (this.#valuePoolSelect) {
-      case VALUE_POOL_SELECT.UNIFORM:
-      default:
-        return this.#valuePool[Math.floor(Math.random() * this.#valuePool.length)];
-    }
-  }
   /**
    * Builds a key-value object from input node values and
    * any available linked sources.
