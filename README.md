@@ -1,9 +1,22 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
 <h3 align="center">A library to create dynamic and composable API call workflows.</h3>
+<div align="center">
+  
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
+&nbsp;
+[![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=flat-square)](https://www.npmjs.com/package/chainflow)
+&nbsp;
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/on-push.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
+&nbsp;
+</div>
 
 ## Not Released Yet
 
 Hi! If you are here, you're a bit early. I'm still setting up some stuff for the first release. Check back in later!
+
+## Documentation
+
+Read the guides over at <https://edwinlzs.github.io/chainflow-docs/> to get started!
 
 ## Use Cases
 
