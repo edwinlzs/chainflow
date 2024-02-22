@@ -1,12 +1,6 @@
 import { NodeValue } from '../inputNode';
 import { nodeValueIdentifier } from './symbols';
 
-/** @experimental Defines a set of values to choose from when constructing an input. */
-export const pool = (valuePool: any[]) => ({
-  valuePool,
-  [nodeValueIdentifier]: NodeValue.ValuePool,
-});
-
 /** Provides a generator function to produce a value for an input. */
 export const gen = (generator: () => any) => ({
   generator,
