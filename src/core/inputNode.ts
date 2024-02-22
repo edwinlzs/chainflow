@@ -21,7 +21,8 @@ export enum NodeValue {
   Required,
   Source,
   SourceWithCallback,
-  Sources,
+  MergeSourcesWithCallback,
+  // Sources,
 }
 
 /** Details of a source node. */
@@ -93,15 +94,18 @@ export class InputNode {
       case NodeValue.Source:
         this[setSource](val);
         return;
-      case NodeValue.SourceWithCallback: // TODO: explore refactoring here
+      case NodeValue.SourceWithCallback /** @todo explore refactoring here */:
         this[setSource](val.source, val.callback);
         return;
-      case NodeValue.Sources:
-        // TODO: validation here
-        val.sources.forEach((source: SourceNode) => {
-          this[setSource](source, val.callback);
-        });
+      case NodeValue.MergeSourcesWithCallback:
+        this[setSources](val.sources, val.callback);
         return;
+      // case NodeValue.Sources:
+      //   /** @experimental @TODO: validation here */
+      //   val.sources.forEach((source: SourceNode) => {
+      //     this[setSource](source, val.callback);
+      //   });
+      //   return;
     }
 
     switch (typeof val) {

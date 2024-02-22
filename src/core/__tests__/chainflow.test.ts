@@ -4,7 +4,6 @@ import { allowUndefined, link, linkMerge } from '../utils/link';
 import http from '../../http/utils/client';
 import { originServer } from '../../http/originServer';
 import { required } from '../utils/initializers';
-import { source, sources } from '../utils/source';
 import { RequiredValuesNotFoundError } from '../../http/errors';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
@@ -360,114 +359,224 @@ describe('#chainflow', () => {
   });
 
   describe('when multiple responses are linked to an input node and to be combined', () => {
-    describe('when an object with keys is provided as sources', () => {
-      const userPath = uniquePath('/user');
-      const favAnimalPath = uniquePath('/favAnimal');
-      const notificationPath = uniquePath('/notification');
+    describe('when the sources are provided directly at input node creation', () => {
+      describe('when an object with keys is provided as sources', () => {
+        const userPath = uniquePath('/user');
+        const favAnimalPath = uniquePath('/favAnimal');
+        const notificationPath = uniquePath('/notification');
 
-      const getUser = origin.get(userPath);
-      const getFavAnimal = origin.get(favAnimalPath);
-      const createNotification = origin.post(notificationPath).body({
-        msg: 'default msg',
+        const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+          `${userName} likes ${favAnimal}.`;
+        const getUser = origin.get(userPath);
+        const getFavAnimal = origin.get(favAnimalPath);
+        const createNotification = origin.post(notificationPath).body({
+          msg: linkMerge(
+            {
+              userName: getUser.resp.body.name,
+              favAnimal: getFavAnimal.resp.body.favAnimal,
+            },
+            testCallback,
+          ),
+        });
+
+        const tracker = jest.spyOn(http, 'request');
+
+        it('should pass both linked responses to the request', async () => {
+          tracker.mockClear();
+          client
+            .intercept({
+              path: userPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              name: 'John',
+            });
+          client
+            .intercept({
+              path: favAnimalPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              favAnimal: 'dogs',
+            });
+          client
+            .intercept({
+              path: notificationPath,
+              method: 'POST',
+            })
+            .reply(200, {});
+          await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+          expect(tracker).toHaveBeenCalledTimes(3);
+          const notificationCall = tracker.mock.calls[2];
+          const notificationCallBody = notificationCall[0]?.body;
+          expect(notificationCallBody).toStrictEqual({
+            msg: 'John likes dogs.',
+          });
+        });
       });
 
-      const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
-        `${userName} likes ${favAnimal}.`;
-      createNotification.set(({ body: { msg } }) => {
-        linkMerge(
-          msg,
-          {
-            userName: getUser.resp.body.name,
-            favAnimal: getFavAnimal.resp.body.favAnimal,
-          },
-          testCallback,
-        );
-      });
-      const tracker = jest.spyOn(http, 'request');
+      describe('when an array of sources is provided', () => {
+        const userPath = uniquePath('/user');
+        const favAnimalPath = uniquePath('/favAnimal');
+        const notificationPath = uniquePath('/notification');
 
-      it('should pass both linked responses to the request', async () => {
-        tracker.mockClear();
-        client
-          .intercept({
-            path: userPath,
-            method: 'GET',
-          })
-          .reply(200, {
-            name: 'John',
-          });
-        client
-          .intercept({
-            path: favAnimalPath,
-            method: 'GET',
-          })
-          .reply(200, {
-            favAnimal: 'dogs',
-          });
-        client
-          .intercept({
-            path: notificationPath,
-            method: 'POST',
-          })
-          .reply(200, {});
-        await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+        const testCallback = ([name, favAnimal]: [string, string]) => `${name} likes ${favAnimal}.`;
 
-        expect(tracker).toHaveBeenCalledTimes(3);
-        const notificationCall = tracker.mock.calls[2];
-        const notificationCallBody = notificationCall[0]?.body;
-        expect(notificationCallBody).toStrictEqual({
-          msg: 'John likes dogs.',
+        const getUser = origin.get(userPath);
+        const getFavAnimal = origin.get(favAnimalPath);
+        const createNotification = origin.post(notificationPath).body({
+          msg: linkMerge([getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback),
+        });
+
+        const tracker = jest.spyOn(http, 'request');
+
+        it('should pass both linked responses to the request', async () => {
+          tracker.mockClear();
+          client
+            .intercept({
+              path: userPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              name: 'John',
+            });
+          client
+            .intercept({
+              path: favAnimalPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              favAnimal: 'dogs',
+            });
+          client
+            .intercept({
+              path: notificationPath,
+              method: 'POST',
+            })
+            .reply(200, {});
+          await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+          expect(tracker).toHaveBeenCalledTimes(3);
+          const notificationCall = tracker.mock.calls[2];
+          const notificationCallBody = notificationCall[0]?.body;
+          expect(notificationCallBody).toStrictEqual({
+            msg: 'John likes dogs.',
+          });
         });
       });
     });
 
-    describe('when an array of sources is provided', () => {
-      const userPath = uniquePath('/user');
-      const favAnimalPath = uniquePath('/favAnimal');
-      const notificationPath = uniquePath('/notification');
+    describe('when using the set method', () => {
+      describe('when an object with keys is provided as sources', () => {
+        const userPath = uniquePath('/user');
+        const favAnimalPath = uniquePath('/favAnimal');
+        const notificationPath = uniquePath('/notification');
 
-      const getUser = origin.get(userPath);
-      const getFavAnimal = origin.get(favAnimalPath);
-      const createNotification = origin.post(notificationPath).body({
-        msg: ['default msg'],
+        const getUser = origin.get(userPath);
+        const getFavAnimal = origin.get(favAnimalPath);
+        const createNotification = origin.post(notificationPath).body({
+          msg: 'default msg',
+        });
+
+        const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
+          `${userName} likes ${favAnimal}.`;
+        createNotification.set(({ body: { msg } }) => {
+          linkMerge(
+            msg,
+            {
+              userName: getUser.resp.body.name,
+              favAnimal: getFavAnimal.resp.body.favAnimal,
+            },
+            testCallback,
+          );
+        });
+        const tracker = jest.spyOn(http, 'request');
+
+        it('should pass both linked responses to the request', async () => {
+          tracker.mockClear();
+          client
+            .intercept({
+              path: userPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              name: 'John',
+            });
+          client
+            .intercept({
+              path: favAnimalPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              favAnimal: 'dogs',
+            });
+          client
+            .intercept({
+              path: notificationPath,
+              method: 'POST',
+            })
+            .reply(200, {});
+          await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+          expect(tracker).toHaveBeenCalledTimes(3);
+          const notificationCall = tracker.mock.calls[2];
+          const notificationCallBody = notificationCall[0]?.body;
+          expect(notificationCallBody).toStrictEqual({
+            msg: 'John likes dogs.',
+          });
+        });
       });
 
-      const testCallback = ([name, favAnimal]: [string, string]) => `${name} likes ${favAnimal}.`;
-      createNotification.set(({ body: { msg } }) => {
-        linkMerge(msg, [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback);
-      });
-      const tracker = jest.spyOn(http, 'request');
+      describe('when an array of sources is provided', () => {
+        const userPath = uniquePath('/user');
+        const favAnimalPath = uniquePath('/favAnimal');
+        const notificationPath = uniquePath('/notification');
 
-      it('should pass both linked responses to the request', async () => {
-        tracker.mockClear();
-        client
-          .intercept({
-            path: userPath,
-            method: 'GET',
-          })
-          .reply(200, {
-            name: 'John',
-          });
-        client
-          .intercept({
-            path: favAnimalPath,
-            method: 'GET',
-          })
-          .reply(200, {
-            favAnimal: 'dogs',
-          });
-        client
-          .intercept({
-            path: notificationPath,
-            method: 'POST',
-          })
-          .reply(200, {});
-        await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+        const getUser = origin.get(userPath);
+        const getFavAnimal = origin.get(favAnimalPath);
+        const createNotification = origin.post(notificationPath).body({
+          msg: ['default msg'],
+        });
 
-        expect(tracker).toHaveBeenCalledTimes(3);
-        const notificationCall = tracker.mock.calls[2];
-        const notificationCallBody = notificationCall[0]?.body;
-        expect(notificationCallBody).toStrictEqual({
-          msg: 'John likes dogs.',
+        const testCallback = ([name, favAnimal]: [string, string]) => `${name} likes ${favAnimal}.`;
+        createNotification.set(({ body: { msg } }) => {
+          linkMerge(msg, [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback);
+        });
+        const tracker = jest.spyOn(http, 'request');
+
+        it('should pass both linked responses to the request', async () => {
+          tracker.mockClear();
+          client
+            .intercept({
+              path: userPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              name: 'John',
+            });
+          client
+            .intercept({
+              path: favAnimalPath,
+              method: 'GET',
+            })
+            .reply(200, {
+              favAnimal: 'dogs',
+            });
+          client
+            .intercept({
+              path: notificationPath,
+              method: 'POST',
+            })
+            .reply(200, {});
+          await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
+
+          expect(tracker).toHaveBeenCalledTimes(3);
+          const notificationCall = tracker.mock.calls[2];
+          const notificationCallBody = notificationCall[0]?.body;
+          expect(notificationCallBody).toStrictEqual({
+            msg: 'John likes dogs.',
+          });
         });
       });
     });
@@ -653,7 +762,7 @@ describe('#chainflow', () => {
       });
 
       const createRole = origin.post(rolePath).body({
-        name: source(createUser.resp.body.name, (name: string) => name.toUpperCase()),
+        name: link(createUser.resp.body.name, (name: string) => name.toUpperCase()),
         type: 'ENGINEER',
       });
 
@@ -686,79 +795,79 @@ describe('#chainflow', () => {
     });
   });
 
-  describe('when multiple source nodes are provided directly to input nodes with callback', () => {
-    const userPath = uniquePath('/user');
-    const rolePath = uniquePath('/role');
-    it('should take the value from the specified source', async () => {
-      const createUser = origin.post(userPath).body({
-        name: 'Tom',
-      });
+  // describe('when multiple source nodes are provided directly to input nodes with callback', () => {
+  //   const userPath = uniquePath('/user');
+  //   const rolePath = uniquePath('/role');
+  //   it('should take the value from the specified source', async () => {
+  //     const createUser = origin.post(userPath).body({
+  //       name: 'Tom',
+  //     });
 
-      const getUser = origin.get(userPath);
+  //     const getUser = origin.get(userPath);
 
-      const createRole = origin.post(rolePath).body({
-        name: sources([createUser.resp.body.name, getUser.resp.body.name], (name: string) =>
-          name.toUpperCase(),
-        ),
-        type: 'ENGINEER',
-      });
+  //     const createRole = origin.post(rolePath).body({
+  //       name: sources([createUser.resp.body.name, getUser.resp.body.name], (name: string) =>
+  //         name.toUpperCase(),
+  //       ),
+  //       type: 'ENGINEER',
+  //     });
 
-      const tracker = jest.spyOn(http, 'request');
-      tracker.mockClear();
+  //     const tracker = jest.spyOn(http, 'request');
+  //     tracker.mockClear();
 
-      client
-        .intercept({
-          path: userPath,
-          method: 'POST',
-        })
-        .reply(200, {
-          name: 'Tom',
-        })
-        .times(2);
-      client
-        .intercept({
-          path: userPath,
-          method: 'GET',
-        })
-        .reply(200, {
-          name: 'Harry',
-        })
-        .times(2);
-      client
-        .intercept({
-          path: rolePath,
-          method: 'POST',
-        })
-        .reply(200, {})
-        .times(3);
+  //     client
+  //       .intercept({
+  //         path: userPath,
+  //         method: 'POST',
+  //       })
+  //       .reply(200, {
+  //         name: 'Tom',
+  //       })
+  //       .times(2);
+  //     client
+  //       .intercept({
+  //         path: userPath,
+  //         method: 'GET',
+  //       })
+  //       .reply(200, {
+  //         name: 'Harry',
+  //       })
+  //       .times(2);
+  //     client
+  //       .intercept({
+  //         path: rolePath,
+  //         method: 'POST',
+  //       })
+  //       .reply(200, {})
+  //       .times(3);
 
-      await chainflow().call(createUser).call(createRole).run();
+  //     await chainflow().call(createUser).call(createRole).run();
 
-      expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
-        name: 'TOM',
-        type: 'ENGINEER',
-      });
+  //     expect(tracker).toHaveBeenCalledTimes(2);
+  //     expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+  //       name: 'TOM',
+  //       type: 'ENGINEER',
+  //     });
 
-      tracker.mockClear();
-      await chainflow().call(getUser).call(createRole).run();
+  //     tracker.mockClear();
+  //     await chainflow().call(getUser).call(createRole).run();
 
-      expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
-        name: 'HARRY',
-        type: 'ENGINEER',
-      });
+  //     expect(tracker).toHaveBeenCalledTimes(2);
+  //     expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
+  //       name: 'HARRY',
+  //       type: 'ENGINEER',
+  //     });
 
-      tracker.mockClear();
-      await chainflow().call(createUser).call(getUser).call(createRole).run();
+  //     tracker.mockClear();
+  //     await chainflow().call(createUser).call(getUser).call(createRole).run();
 
-      expect(tracker).toHaveBeenCalledTimes(3);
-      expect(tracker.mock.calls[2][0]?.body).toStrictEqual({
-        name: 'TOM',
-        type: 'ENGINEER',
-      });
-    });
-  });
+  //     expect(tracker).toHaveBeenCalledTimes(3);
+  //     expect(tracker.mock.calls[2][0]?.body).toStrictEqual({
+  //       name: 'TOM',
+  //       type: 'ENGINEER',
+  //     });
+  //   });
+  // });
 
   describe('when a chainflow is cloned', () => {
     const userPath = uniquePath('/user');
