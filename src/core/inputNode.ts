@@ -6,7 +6,7 @@ import {
   nodeValueIdentifier,
   setSource,
   setSources,
-  undefinedAllowed,
+  allowUndefined,
 } from './utils/symbols';
 
 export enum NodeValue {
@@ -25,7 +25,7 @@ interface ISource {
   path: string[];
   /** A callback that will be used on the source value. */
   callback?: (val: any) => any;
-  undefinedAllowed?: boolean;
+  allowUndefined?: boolean;
 }
 
 /** Multiple source nodes to one input node. */
@@ -40,7 +40,7 @@ interface ISourceAccessInfo {
   path: string[];
   // the name this source value will be assigned to
   key?: string;
-  undefinedAllowed?: boolean;
+  allowUndefined?: boolean;
 }
 
 type SourceValue = any;
@@ -110,7 +110,7 @@ export class InputNode {
   [setSource](source: SourceNode, callback?: (val: any) => any) {
     this.#sources[source[nodeHash]] = {
       path: source[nodePath],
-      undefinedAllowed: source[undefinedAllowed],
+      allowUndefined: source[allowUndefined],
       callback,
     };
   }
@@ -131,7 +131,7 @@ export class InputNode {
         hashes.add(hash);
         return {
           path: source[nodePath],
-          undefinedAllowed: source[undefinedAllowed],
+          allowUndefined: source[allowUndefined],
           hash,
         };
       });
@@ -141,7 +141,7 @@ export class InputNode {
         hashes.add(hash);
         return {
           path: source[nodePath],
-          undefinedAllowed: source[undefinedAllowed],
+          allowUndefined: source[allowUndefined],
           hash,
           key,
         };
@@ -171,11 +171,11 @@ export class InputNode {
           sourceHash,
           source.path,
           sourceValues,
-          source.undefinedAllowed,
+          source.allowUndefined,
         );
       }
 
-      if (sourceVal !== undefined || ('undefinedAllowed' in source && source.undefinedAllowed)) {
+      if (sourceVal !== undefined || ('allowUndefined' in source && source.allowUndefined)) {
         return source.callback ? source.callback(sourceVal) : sourceVal;
       }
 
@@ -223,14 +223,14 @@ export class InputNode {
   }
 
   /** Access the source node value in a source object */
-  #accessSource(payload: any, path: string[], undefinedAllowed?: boolean): any {
+  #accessSource(payload: any, path: string[], allowUndefined?: boolean): any {
     let sourceVal = payload;
 
     let i = 0;
     while (i < path.length) {
       // recall that `typeof null` returns 'object'
       if (sourceVal == null || typeof sourceVal !== 'object') {
-        if (undefinedAllowed) return undefined;
+        if (allowUndefined) return undefined;
         return;
       }
       const accessor = path[i]!;
@@ -246,12 +246,12 @@ export class InputNode {
     hash: string,
     path: string[],
     sourceValues: SourceValues,
-    undefinedAllowed?: boolean,
+    allowUndefined?: boolean,
   ) {
     const sourceObject = sourceValues[hash]![0];
 
     // get value from a linked source
-    return this.#accessSource(sourceObject, path, undefinedAllowed);
+    return this.#accessSource(sourceObject, path, allowUndefined);
   }
 
   /** Attempts to retrieve values for an input node from multiple source nodes. */

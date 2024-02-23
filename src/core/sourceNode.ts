@@ -1,5 +1,5 @@
 import { NodeValue } from './inputNode';
-import { nodeHash, nodePath, nodeValueIdentifier, undefinedAllowed } from './utils/symbols';
+import { nodeHash, nodePath, nodeValueIdentifier, allowUndefined } from './utils/symbols';
 
 /** Creates a new Source Node with the given hash. */
 export const sourceNode = (hash: string) =>
@@ -9,7 +9,7 @@ export const sourceNode = (hash: string) =>
 export interface SourceNode {
   [nodeHash]: string;
   [nodePath]: string[];
-  [undefinedAllowed]?: boolean;
+  [allowUndefined]?: boolean;
   [nodeValueIdentifier]: NodeValue;
   [key: string]: SourceNode;
 }
@@ -18,7 +18,7 @@ export interface SourceNode {
 interface RawSourceNode {
   path: string[];
   hash: string;
-  undefinedAllowed?: boolean;
+  allowUndefined?: boolean;
 }
 
 /** Generates proxies recursively to handle nested property access of a source signature. */
@@ -29,8 +29,8 @@ export const SourceNodeHandler = {
         return obj.path;
       case nodeHash:
         return obj.hash;
-      case undefinedAllowed:
-        return obj.undefinedAllowed;
+      case allowUndefined:
+        return obj.allowUndefined;
       case nodeValueIdentifier:
         return NodeValue.Source;
       default: {
@@ -40,7 +40,7 @@ export const SourceNodeHandler = {
           {
             path: newPath,
             hash: obj.hash,
-            undefinedAllowed: obj.undefinedAllowed,
+            allowUndefined: obj.allowUndefined,
           },
           SourceNodeHandler,
         ) as unknown as SourceNode;
@@ -48,6 +48,6 @@ export const SourceNodeHandler = {
     }
   },
   set(obj: RawSourceNode, prop: any, val: any) {
-    if (prop === undefinedAllowed) return (obj.undefinedAllowed = val);
+    if (prop === allowUndefined) return (obj.allowUndefined = val);
   },
 };

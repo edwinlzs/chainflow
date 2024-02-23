@@ -1,6 +1,6 @@
 import { CallResult } from './chainflow';
 import { SourceNode } from './sourceNode';
-import { nodePath, undefinedAllowed } from './utils/symbols';
+import { nodePath, allowUndefined } from './utils/symbols';
 
 export type StoreValue<T> = IStore<T> | T;
 export interface IStore<T> {
@@ -59,7 +59,7 @@ export class Store {
     while (i < sourcePath.length) {
       // recall that `typeof null` returns 'object'
       if (sourceVal == null || typeof sourceVal !== 'object') {
-        if (source[undefinedAllowed]) return { found: true, value: sourceVal, storePath };
+        if (source[allowUndefined]) return { found: true, value: sourceVal, storePath };
         return { found: false };
       }
       const accessor = sourcePath[i]!;
