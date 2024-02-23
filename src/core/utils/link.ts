@@ -1,5 +1,5 @@
 import { InputNode, NodeValue } from '../inputNode';
-import { nodeValueIdentifier, setSource, setSources, undefinedAllowed } from './symbols';
+import { nodeValueIdentifier, setSource, setSources } from './symbols';
 import { SourceNode } from '../sourceNode';
 
 interface SourceInfo {
@@ -95,13 +95,3 @@ export const linkMerge: LinkMerge = ((...args: Parameters<LinkMerge>) => {
     dest[setSources](source, callback);
   }
 }) as LinkMerge;
-
-/**
- * Modifier function that allows a SourceNode to return `undefined` values to an input node.
- * Note that doing so will make it such that this SourceNode will ALWAYS be used to retrieve
- * a value for any linked input node, unless there is another SourceNode with higher priority.
- */
-export const allowUndefined = (source: SourceNode) => {
-  source[undefinedAllowed] = true;
-  return source;
-};

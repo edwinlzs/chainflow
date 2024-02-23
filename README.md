@@ -311,13 +311,13 @@ chainflow()
 
 ### Allow Undefined Sources Values
 
-By default, an input node will reject and skip a source node's value if it is unavailable or `undefined`. However, you can change this by passing a source node into the `allowUndefined` function, which modifies its properties to inform an input node to use its value regardless of whether the value is `undefined` or not.
+By default, an input node will reject and skip a source node's value if it is unavailable or `undefined`. However, you can change this by passing a source node into the `config` utility function and passing an options object as the second parameter like below. This informs an input node to use the source node's value regardless of whether the value is `undefined` or not.
 
 ```typescript
-import { allowUndefined } from 'chainflow';
+import { config } from 'chainflow';
 
 createUser.set(({ body: { name } }) => {
-  link(name, allowUndefined(seed.username));
+  link(name, config(seed.username, { allowUndefined: true }));
 });
 ```
 

@@ -1,6 +1,7 @@
 import { chainflow, seed, store } from '../chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { allowUndefined, link, linkMerge } from '../utils/link';
+import { link, linkMerge } from '../utils/link';
+import { config } from '../utils/config';
 import http from '../../http/utils/client';
 import { originServer } from '../../http/originServer';
 import { required } from '../utils/initializers';
@@ -267,7 +268,7 @@ describe('#chainflow', () => {
           roleName: 'someRole',
         });
         createRole.set(({ body: { name } }) => {
-          link(name, allowUndefined(createUser.resp.body.details.name));
+          link(name, config(createUser.resp.body.details.name, { allowUndefined: true }));
           link(name, getUser.resp.body.details.name);
         });
         const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
@@ -1143,7 +1144,7 @@ describe('#chainflow', () => {
         });
 
         createRole.set(({ body: { name } }) => {
-          link(name, allowUndefined(store.username.firstName));
+          link(name, config(store.username.firstName, { allowUndefined: true }));
         });
 
         const tracker = jest.spyOn(http, 'request');
