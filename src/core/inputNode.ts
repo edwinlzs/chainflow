@@ -9,12 +9,12 @@ import {
   allowUndefined,
 } from './utils/symbols';
 
-export enum NodeValue {
-  Generator,
-  Required,
-  Source,
-  SourceWithCallback,
-  MergeSourcesWithCallback,
+export enum NODE_VALUE {
+  GENERATOR,
+  REQUIRED,
+  SOURCE,
+  SOURCE_WITH_CALLBACK,
+  MERGE_SOURCES_WITH_CALLBACK,
 }
 
 /** Details of a source node. */
@@ -70,19 +70,19 @@ export class InputNode {
     }
 
     switch (val[nodeValueIdentifier]) {
-      case NodeValue.Generator:
+      case NODE_VALUE.GENERATOR:
         this.#generator = val.generator;
         return;
-      case NodeValue.Required:
+      case NODE_VALUE.REQUIRED:
         this.#required = true;
         return;
-      case NodeValue.Source:
+      case NODE_VALUE.SOURCE:
         this[setSource](val);
         return;
-      case NodeValue.SourceWithCallback /** @todo explore refactoring here */:
+      case NODE_VALUE.SOURCE_WITH_CALLBACK /** @todo explore refactoring here */:
         this[setSource](val.source, val.callback);
         return;
-      case NodeValue.MergeSourcesWithCallback:
+      case NODE_VALUE.MERGE_SOURCES_WITH_CALLBACK:
         this[setSources](val.sources, val.callback);
         return;
     }

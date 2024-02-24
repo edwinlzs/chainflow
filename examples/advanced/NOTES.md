@@ -11,11 +11,12 @@
 - [x] `flow.clone`
 - [ ] `flow.extend`
 - [ ] `flow.continuesFrom`
-- [ ] Allow Undefined
+- [ ] config
+  - [ ] allowUndefined
 - [x] Store
 - [x] link
 - [ ] link + set
 - [ ] linkMerge - combine responses from multiple source nodes to one input
 - [ ] Call Options
 - [ ] Run Options
-- [ ] config
+- [ ] endpoint.config

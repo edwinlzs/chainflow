@@ -355,10 +355,10 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
 
 ```typescript
-import { RespParser } from 'chainflow';
+import { RESP_PARSER } from 'chainflow';
 
 const getUser = origin.get('/user').config({
-  respParser: RespParser.Text,
+  respParser: RESP_PARSER.TEXT,
 });
 ```
 
@@ -373,15 +373,27 @@ const getUser = origin.get('/user').config({
 There are 4 supported ways to parse response bodies (as provided by the underlying HTTP client, `undici`): `arrayBuffer`, `blob`, `json` and `text`.
 
 `respValidator`  
-Another configuration option is how to validate the response to an endpoint. By default, Chainflow only accepts responses that have HTTP status codes in the 200-299 range, and rejects responses otherwise (meaning their values will not be stored). You can pass in a custom `respValidator` to change this behaviour.
+Another configuration option is how to validate the response to an endpoint. By default, Chainflow rejects responses that have HTTP status code 400 and above and throws an error. You can pass in a custom `respValidator` to change when a response is rejected.
 
 ```typescript
-const testEndpoint = origin.get('/user').config({
+const getUser = origin.get("/user").config({
   respValidator: (resp) => {
-    if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to retrieve users.' };
+    if (resp.statusCode !== 201)
+      return { valid: false, msg: "Failed to retrieve users." };
+    if (!Object.keys(resp.body as Record<string, unknown>).includes("id"))
+      return { valid: false, msg: "Response did not provide user ID." };
     return { valid: true };
   },
 });
+```
+
+Your custom validator callback should have a return type:
+
+```typescript
+{
+  valid: boolean; // false if response should be rejected
+  msg?: string; // error message
+}
 ```
 
 ### `store`
