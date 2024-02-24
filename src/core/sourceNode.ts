@@ -1,4 +1,4 @@
-import { NodeValue } from './inputNode';
+import { NODE_VALUE } from './inputNode';
 import { nodeHash, nodePath, nodeValueIdentifier, allowUndefined } from './utils/symbols';
 
 /** Creates a new Source Node with the given hash. */
@@ -10,7 +10,7 @@ export interface SourceNode {
   [nodeHash]: string;
   [nodePath]: string[];
   [allowUndefined]?: boolean;
-  [nodeValueIdentifier]: NodeValue;
+  [nodeValueIdentifier]: NODE_VALUE;
   [key: string]: SourceNode;
 }
 
@@ -32,7 +32,7 @@ export const SourceNodeHandler = {
       case allowUndefined:
         return obj.allowUndefined;
       case nodeValueIdentifier:
-        return NodeValue.Source;
+        return NODE_VALUE.SOURCE;
       default: {
         const newPath = [...obj.path];
         newPath.push(prop);

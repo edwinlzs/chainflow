@@ -1,4 +1,4 @@
-import { RespParser, Endpoint } from '../endpoint';
+import { RESP_PARSER, Endpoint } from '../endpoint';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link } from '../../core/utils/link';
@@ -43,7 +43,7 @@ describe('#endpoint', () => {
           addr,
           method: 'POST',
           path: '/text-parser-test',
-        }).config({ respParser: RespParser.Text });
+        }).config({ respParser: RESP_PARSER.TEXT });
         client
           .intercept({
             path: '/text-parser-test',
@@ -83,7 +83,7 @@ describe('#endpoint', () => {
           addr,
           method: 'POST',
           path: '/blob-parser-test',
-        }).config({ respParser: RespParser.Blob });
+        }).config({ respParser: RESP_PARSER.BLOB });
         client
           .intercept({
             path: '/blob-parser-test',
@@ -108,7 +108,7 @@ describe('#endpoint', () => {
           addr,
           method: 'POST',
           path: '/arrayBuffer-parser-test',
-        }).config({ respParser: RespParser.ArrayBuffer });
+        }).config({ respParser: RESP_PARSER.ARRAY_BUFFER });
         client
           .intercept({
             path: '/arrayBuffer-parser-test',
@@ -155,7 +155,9 @@ describe('#endpoint', () => {
           path: '/error-config-test',
         }).config({
           respValidator: (resp) => {
-            if (resp.statusCode === 404) return { valid: false, msg: 'Received a Not Found error' };
+            if (resp.statusCode === 404) return { valid: false, msg: 'Failed to retrieve users.' };
+            if (!Object.keys(resp.body as Record<string, unknown>).includes('id'))
+              return { valid: false, msg: 'Response did not provide user ID.' };
             return { valid: true };
           },
         });
@@ -169,7 +171,20 @@ describe('#endpoint', () => {
           });
         await expect(testEndpoint.call({})).rejects.toThrow({
           name: 'InvalidResponseError',
-          message: 'Response is invalid: Received a Not Found error',
+          message: 'Response is invalid: Failed to retrieve users.',
+        });
+
+        client
+          .intercept({
+            path: '/error-config-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            name: 'Dude',
+          });
+        await expect(testEndpoint.call({})).rejects.toThrow({
+          name: 'InvalidResponseError',
+          message: 'Response is invalid: Response did not provide user ID.',
         });
       });
     });

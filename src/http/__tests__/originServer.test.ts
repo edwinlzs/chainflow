@@ -1,7 +1,7 @@
 import { originServer } from '../originServer';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { RespParser } from '../endpoint';
+import { RESP_PARSER } from '../endpoint';
 
 describe('#originServer', () => {
   const agent = new MockAgent();
@@ -50,7 +50,7 @@ describe('#originServer', () => {
 
   describe('when a config is defined on the origin', () => {
     const testOrigin = originServer('127.0.0.1:5000').config({
-      respParser: RespParser.Text,
+      respParser: RESP_PARSER.TEXT,
     });
     const testEndpoint = testOrigin.get('/test');
 

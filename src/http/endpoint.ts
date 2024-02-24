@@ -1,5 +1,5 @@
 import { hashEndpoint } from './utils/hash';
-import { InputNode, SourceValues, NodeValue } from '../core/inputNode';
+import { InputNode, SourceValues, NODE_VALUE } from '../core/inputNode';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from './utils/client';
 import { Dispatcher } from 'undici';
@@ -23,7 +23,7 @@ const deepmerge = deepmergeSetup();
 const PATH_PARAM_REGEX = /\/(\{[^{}]+\})/g;
 
 export interface INodeWithValue {
-  [nodeValueIdentifier]: NodeValue;
+  [nodeValueIdentifier]: NODE_VALUE;
 }
 
 /** Describes all the possible input nodes of a HTTP request. */
@@ -36,19 +36,21 @@ export interface HttpInputNodes {
 
 /** Configurations for the endpoint. */
 export interface EndpointConfig {
-  respParser?: `${RespParser}`;
-  respValidator?: (resp: Dispatcher.ResponseData) => {
+  respParser?: `${RESP_PARSER}`;
+  respValidator?: (resp: ParsedResponse) => {
     valid: boolean;
     msg?: string;
   };
 }
 
+type ParsedResponse = Omit<Dispatcher.ResponseData, 'body'> & { body: unknown };
+
 /** Formats to parse the response body. */
-export enum RespParser {
-  ArrayBuffer = 'arrayBuffer',
-  Blob = 'blob',
-  Json = 'json',
-  Text = 'text',
+export enum RESP_PARSER {
+  ARRAY_BUFFER = 'arrayBuffer',
+  BLOB = 'blob',
+  JSON = 'json',
+  TEXT = 'text',
 }
 
 /**
@@ -169,13 +171,12 @@ export class Endpoint implements IEndpoint {
     });
 
     if (resp == null) throw new InvalidResponseError('No response received.');
-    const results = this.#config.respValidator?.(resp) ?? this.#validateResp(resp);
-    if (!results.valid) throw new InvalidResponseError(results.msg);
-
     const parsedResp = {
       ...resp,
       body: await this.#parseResponse(resp.body),
     };
+    const results = this.#config.respValidator?.(parsedResp) ?? this.#validateResp(parsedResp);
+    if (!results.valid) throw new InvalidResponseError(results.msg);
 
     return this.#store.storeValues(parsedResp);
   }
@@ -221,9 +222,9 @@ export class Endpoint implements IEndpoint {
   }
 
   /** Checks that endpoint call succeeded -
-   * request did not throw error,
-   * and status code is not 4xx or 5xx. */
-  #validateResp(resp: Dispatcher.ResponseData): { valid: boolean; msg?: string } {
+   * i.e. request did not throw error,
+   * and status code is not >= 400. */
+  #validateResp(resp: ParsedResponse): { valid: boolean; msg?: string } {
     if (resp.statusCode >= 400) {
       warn(`Request failed with status code: ${resp.statusCode}`);
       return { valid: false, msg: `Received HTTP status code ${resp.statusCode}` };
@@ -254,13 +255,13 @@ export class Endpoint implements IEndpoint {
   /** Parses a response body according to the endpoint config. */
   async #parseResponse(body: BodyReadable) {
     switch (this.#config.respParser) {
-      case RespParser.ArrayBuffer:
+      case RESP_PARSER.ARRAY_BUFFER:
         return await body.arrayBuffer();
-      case RespParser.Blob:
+      case RESP_PARSER.BLOB:
         return await body.blob();
-      case RespParser.Text:
+      case RESP_PARSER.TEXT:
         return await body.text();
-      case RespParser.Json:
+      case RESP_PARSER.JSON:
       default:
         return await body.json();
     }
