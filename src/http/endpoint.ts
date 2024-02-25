@@ -17,6 +17,7 @@ import BodyReadable from 'undici/types/readable';
 import { IStore, Store } from '../core/store';
 import { warn } from './logger';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './utils/constants';
+import { MergeSourcesInfo, SourceInfo } from '../core/utils/link';
 
 const deepmerge = deepmergeSetup();
 
@@ -114,6 +115,17 @@ export class Endpoint implements IEndpoint {
     return this;
   }
 
+  /** Sets the path params (if they exist in the URL). */
+  pathParams(params: Record<string, string | SourceNode | SourceInfo | MergeSourcesInfo>) {
+    const pathParamKeys = Object.keys(this.#req.pathParams);
+    Object.entries(params).forEach(([key, val]) => {
+      if (pathParamKeys.includes(key)) {
+        this.#req.pathParams[key] = new InputNode(val);
+      }
+    });
+    return this;
+  }
+
   /** Sets headers provided by the originServer object. */
   baseHeaders(node: InputNode) {
     this.#req.baseHeaders = node;
@@ -173,7 +185,7 @@ export class Endpoint implements IEndpoint {
     if (resp == null) throw new InvalidResponseError('No response received.');
     const parsedResp = {
       ...resp,
-      body: await this.#parseResponse(resp.body),
+      body: resp.body.body && (await this.#parseResponse(resp.body)),
     };
     const results = this.#config.respValidator?.(parsedResp) ?? this.#validateResp(parsedResp);
     if (!results.valid) throw new InvalidResponseError(results.msg);

@@ -228,8 +228,11 @@ export class InputNode {
 
     let i = 0;
     while (i < path.length) {
-      // recall that `typeof null` returns 'object'
-      if (sourceVal == null || typeof sourceVal !== 'object') {
+      // still in the process of walking the path to the actual
+      // source value, hence current sourceVal should be an object
+      // However, `typeof null` returns 'object'
+      // hence the 2nd condition checks against `null`
+      if (typeof sourceVal !== 'object' || sourceVal == null) {
         if (allowUndefined) return undefined;
         return;
       }

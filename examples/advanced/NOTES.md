@@ -1,7 +1,7 @@
 # Feature checklist shown in advanced example
 
 - [x] headers
-- [x] path params
+- [ ] path params
 - [x] query
 - [x] body
 - [x] Direct Links - at the point of input node definition

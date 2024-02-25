@@ -58,20 +58,20 @@ petStoreApp.post('/pet', (req, res) => {
 
 petStoreApp.patch('/pet/:petId', (req, res) => {
   const { description } = req.body;
-  const { petId } = req.query;
+  const { petId } = req.params;
 
   const pet = db.pets[petId as string];
   if (pet) {
     pet.description = description;
-    res.status(200).send();
+    res.status(200).send({});
   } else {
-    res.status(404).send();
+    res.status(404).send({});
   }
 });
 
 petStoreApp.post('/pet/:petId/sell', (req, res) => {
   const { price } = req.body;
-  const { petId } = req.query;
+  const { petId } = req.params;
 
   const pet = db.pets[petId as string];
   if (pet) {
@@ -79,13 +79,13 @@ petStoreApp.post('/pet/:petId/sell', (req, res) => {
       status: 'available',
       price,
     };
-    res.status(200).send();
+    res.status(200).send({});
   } else {
-    res.status(404).send();
+    res.status(404).send({});
   }
 });
 
-petStoreApp.get('/pet/findByStatus', (req: ExpressRequest, res) => {
+petStoreApp.get('/pet', (req: ExpressRequest, res) => {
   const { status } = req.query;
 
   const result = Object.values(db.pets).filter((pet) => pet.storeInfo.status === status);
