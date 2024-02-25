@@ -3,6 +3,7 @@ import { log, warn } from '../logger';
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
+/** @todo evaluate if defaults should change */
 export const defaultHeaders = {
   connection: 'keep-alive',
   accept: '*/*',
@@ -32,7 +33,7 @@ const request = async ({
   log(
     `[${method}] [${addr}${path}] with headers %O${body ? ' and payload %O' : ''}`,
     finalHeaders,
-    body,
+    body ?? '',
   );
 
   try {

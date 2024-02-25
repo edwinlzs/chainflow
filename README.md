@@ -101,6 +101,14 @@ The above setup will result in the following API calls:
 
 ## More Features
 
+### Query params
+
+Define query params with the `query` method on an endpoint.
+
+```typescript
+const getUsersInGroup = origin.get('/user').query({ groupId: 'some-id' });
+```
+
 ### Path params
 
 Define path params by wrapping a param name with `{}` in the endpoint path.
@@ -109,12 +117,12 @@ Define path params by wrapping a param name with `{}` in the endpoint path.
 const getGroupsWithUser = origin.get('/groups/{userId}');
 ```
 
-### Query params
-
-Define query params with the `query` method on an endpoint.
+You can specify values for your path params by calling `pathParams`. Note that path params which do not actually exist in the path will be discarded.
 
 ```typescript
-const getUsersInGroup = origin.get('/user').query({ groupId: 'some-id' });
+const getGroupsWithUser = origin.get('/groups/{userId}').pathParams({
+  userId: 'user123',
+});
 ```
 
 ### Headers
@@ -164,7 +172,7 @@ const createUser = origin.post('/user').body({
 
 ### `link`
 
-You can use the `link` function to specify a callback to transform the response value before it is passed to the node.
+You can use the `link` function to specify a callback to transform the response value before it is passed to the input node.
 
 ```typescript
 const addGreeting = (name: string) => `Hello ${name}`;

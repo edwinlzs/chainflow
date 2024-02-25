@@ -1220,4 +1220,39 @@ describe('#chainflow', () => {
       });
     });
   });
+
+  describe('when origin base headers are defined with links', () => {
+    const loginPath = uniquePath('/login');
+    const userPath = uniquePath('/user');
+    const origin = originServer('127.0.0.1:5000');
+    const testLogin = origin.post(loginPath);
+    origin.headers({
+      Authorization: testLogin.resp.body.token,
+    });
+    const testEndpoint = origin.get(userPath);
+
+    it('should merge headers with endpoint headers overriding conflicting origin headers', async () => {
+      client
+        .intercept({
+          path: loginPath,
+          method: 'post',
+        })
+        .reply(200, {
+          token: 'some-token',
+        });
+      client
+        .intercept({
+          path: userPath,
+          method: 'get',
+        })
+        .reply(200, {});
+
+      const tracker = jest.spyOn(http, 'request');
+      tracker.mockClear();
+      await chainflow().call(testLogin).call(testEndpoint).run();
+
+      expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[1][0].headers?.Authorization).toBe('some-token');
+    });
+  });
 });

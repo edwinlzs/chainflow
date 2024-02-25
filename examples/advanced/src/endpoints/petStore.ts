@@ -16,32 +16,32 @@ export const login = origin.get('/user/login').query({
   password: seed.password,
 });
 
-const loggedInOrigin = originServer(petStoreAddr).headers({
+originServer(petStoreAddr).headers({
   Authorization: login.resp.body.id,
 });
 
-export const addPet = loggedInOrigin
+export const addPet = origin
   .post('/pet')
   .body({
     name: seed.pet.name,
     category: seed.pet.category,
   })
-  .store((resp) => ({ petId: resp.petId }));
+  .store((resp) => ({ petId: resp.body.id }));
 
-export const updatePetInfo = loggedInOrigin.patch('/pet/{petId}').body({
+export const updatePetInfo = origin.patch('/pet/{petId}').body({
   description: gen(() => faker.lorem.sentence()),
 });
 
-export const listPetForSale = loggedInOrigin.post('/pet/{petId}/sell').body({
+export const listPetForSale = origin.post('/pet/{petId}/sell').body({
   price: seed.pet.price,
 });
 
-export const findAvailablePets = loggedInOrigin.get('/pet/findByStatus').query({
+export const findAvailablePets = origin.get('/pet').query({
   status: 'available',
 });
 
 const getDog = (pets: Pet[]) => pets.filter((pet: Pet) => pet.category === 'Dogs')[0].id;
 
-export const placeOrder = loggedInOrigin.post('/store/order').body({
+export const placeOrder = origin.post('/store/order').body({
   petId: link(findAvailablePets.resp.body, getDog),
 });

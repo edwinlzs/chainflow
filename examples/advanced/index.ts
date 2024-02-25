@@ -20,29 +20,33 @@ const pets = [
   },
 ];
 
-// admin adds multiple pets to the store
-for (const pet of pets) {
-  sellPetFlow.run({
-    seed: {
-      username: 'admin',
-      password: 'adminpass',
-      pet: {
-        name: pet.name,
-        category: pet.category,
-        price: pet.price,
-      },
-    },
-  });
-}
+const runFlows = async () => {
+  // admin adds multiple pets to the store
+  for (const pet of pets) {
+    await sellPetFlow
+      .seed({
+        username: 'admin',
+        password: 'adminpass',
+        pet: {
+          name: pet.name,
+          category: pet.category,
+          price: pet.price,
+        },
+      })
+      .run();
+  }
 
-// create buyers that purchase pets
-const buyers = ['tom1997', 'harry2000', 'jane9000'];
-for (const username of buyers) {
-  buyPetFlow.run({
-    seed: {
-      username,
-      password: faker.string.alphanumeric(8),
-      creditCardNumber: faker.finance.creditCardNumber(),
-    },
-  });
-}
+  // create buyers that purchase pets
+  const buyers = ['tom1997', 'harry2000', 'jane9000'];
+  for (const username of buyers) {
+    await buyPetFlow
+      .seed({
+        username,
+        password: faker.string.alphanumeric(8),
+        creditCardNumber: faker.finance.creditCardNumber(),
+      })
+      .run();
+  }
+};
+
+runFlows();

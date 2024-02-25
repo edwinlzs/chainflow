@@ -2,7 +2,7 @@ import { InputNode, NODE_VALUE } from '../inputNode';
 import { nodeValueIdentifier, setSource, setSources } from './symbols';
 import { SourceNode } from '../sourceNode';
 
-interface SourceInfo {
+export interface SourceInfo {
   [nodeValueIdentifier]: NODE_VALUE;
   source: SourceNode;
   callback: ((val: any) => any) | undefined;
@@ -39,7 +39,7 @@ export const link: Link = ((...args: Parameters<Link>) => {
   }
 }) as Link;
 
-interface MergeSourcesInfo {
+export interface MergeSourcesInfo {
   [nodeValueIdentifier]: NODE_VALUE;
   sources: SourceNode[];
   callback: ((val: any) => any) | undefined;

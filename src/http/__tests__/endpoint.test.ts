@@ -1,8 +1,9 @@
 import { RESP_PARSER, Endpoint } from '../endpoint';
 import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { link } from '../../core/utils/link';
+import { link, linkMerge } from '../../core/utils/link';
 import { gen, required } from '../../core/utils/initializers';
+import { RequiredValuesNotFoundError } from '../errors';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
 // from being picked up by another test's interceptor
@@ -324,7 +325,7 @@ describe('#endpoint', () => {
         const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
-        await expect(testEndpoint.call({})).rejects.toThrow();
+        await expect(testEndpoint.call({})).rejects.toThrow(RequiredValuesNotFoundError);
         expect(tracker).toHaveBeenCalledTimes(0);
       });
     });
@@ -332,7 +333,7 @@ describe('#endpoint', () => {
     describe('when the path has multiple params', () => {
       const testEndpoint = new Endpoint({
         addr,
-        path: '/user/{userId}/pet/{petId}',
+        path: '/user/{userId}/pet/{petId}/1',
         method: 'get',
       });
 
@@ -345,15 +346,89 @@ describe('#endpoint', () => {
       it('should throw an error when called without values for path params', async () => {
         client
           .intercept({
-            path: '/pet',
+            path: '/user',
             method: 'GET',
           })
           .reply(200, {});
         const tracker = jest.spyOn(http, 'request');
         tracker.mockClear();
 
-        await expect(testEndpoint.call({})).rejects.toThrow();
+        await expect(testEndpoint.call({})).rejects.toThrow(RequiredValuesNotFoundError);
         expect(tracker).toHaveBeenCalledTimes(0);
+      });
+    });
+
+    describe('when the endpoint calls the pathParams method with default values', () => {
+      const testEndpoint = new Endpoint({
+        addr,
+        path: '/user/{userId}/pet/{petId}/2',
+        method: 'get',
+      });
+
+      testEndpoint.pathParams({
+        userId: 'user123',
+        petId: 'pet123',
+        irrelevantKey: 'irrelevant-value',
+      });
+
+      it('should place only the relevant values in the path params', async () => {
+        client
+          .intercept({
+            path: '/user/user123/pet/pet123/2',
+            method: 'GET',
+          })
+          .reply(200, {});
+        const tracker = jest.spyOn(http, 'request');
+        tracker.mockClear();
+
+        await testEndpoint.call({});
+        expect(tracker.mock.calls[0][0].path).toBe('/user/user123/pet/pet123/2');
+      });
+    });
+
+    describe('when the endpoint calls the pathParams method with links', () => {
+      const loginPath = uniquePath('/login');
+      const petPath = uniquePath('/pet');
+      const login = new Endpoint({
+        addr,
+        path: loginPath,
+        method: 'post',
+      });
+      const getPet = new Endpoint({
+        addr,
+        path: petPath,
+        method: 'post',
+      });
+      const testEndpoint = new Endpoint({
+        addr,
+        path: '/user/{userId}/pet/{petId}/3',
+        method: 'get',
+      });
+
+      testEndpoint.pathParams({
+        userId: link(login.resp.body.id, (id: string) => `user-${id}`),
+        petId: linkMerge(
+          [login.resp.body.id, getPet.resp.body.id],
+          ([userId, petId]: [string, string]) => `user-${userId}-pet-${petId}`,
+        ),
+        irrelevantKey: 'irrelevant-value',
+      });
+
+      it('should throw an error when called without values for path params', async () => {
+        client
+          .intercept({
+            path: '/user/user-100/pet/user-100-pet-222/3',
+            method: 'GET',
+          })
+          .reply(200, {});
+        const tracker = jest.spyOn(http, 'request');
+        tracker.mockClear();
+
+        await testEndpoint.call({
+          [login.hash]: [{ body: { id: '100' } }],
+          [getPet.hash]: [{ body: { id: '222' } }],
+        });
+        expect(tracker.mock.calls[0][0].path).toBe('/user/user-100/pet/user-100-pet-222/3');
       });
     });
   });
@@ -480,7 +555,7 @@ describe('#endpoint', () => {
             },
           },
         ),
-      ).rejects.toThrow();
+      ).rejects.toThrow(RequiredValuesNotFoundError);
     });
   });
 });
