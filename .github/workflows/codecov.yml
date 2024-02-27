@@ -1,0 +1,8 @@
+name: Upload coverage reports to Codecov
+on:
+  - push
+uses: codecov/codecov-action@v4.0.1
+if: github.ref === 'refs/heads/main'
+with:
+  token: ${{ secrets.CODECOV_TOKEN }}
+  slug: edwinlzs/chainflow
