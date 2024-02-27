@@ -6,7 +6,7 @@
 &nbsp;
 [![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=flat-square)](https://www.npmjs.com/package/chainflow)
 &nbsp;
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/on-push.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
 &nbsp;
 </div>
 
