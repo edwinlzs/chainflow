@@ -1,8 +1,13 @@
-name: Upload coverage reports to Codecov
+name: Upload Codecov
 on:
   - push
-uses: codecov/codecov-action@v4.0.1
-if: github.ref === 'refs/heads/main'
-with:
-  token: ${{ secrets.CODECOV_TOKEN }}
-  slug: edwinlzs/chainflow
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        if: github.ref === 'refs/heads/main'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: edwinlzs/chainflow
