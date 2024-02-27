@@ -1,9 +1,10 @@
 name: Upload Codecov
 on:
-  - push
+  push:
+    branches:
+      - 'main'
 jobs:
   run:
-    if: github.ref === 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Upload coverage reports to Codecov
