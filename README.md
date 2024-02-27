@@ -8,6 +8,7 @@
 &nbsp;
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
 &nbsp;
+[![codecov](https://codecov.io/gh/edwinlzs/chainflow/graph/badge.svg?token=O55JNRTCM5)](https://codecov.io/gh/edwinlzs/chainflow)
 </div>
 
 ## Not Released Yet
