@@ -11,6 +11,7 @@ module.exports = {
   coverageReporters: [
     "text",
     "text-summary",
+    "cobertura",
     "html"
   ]
 };
