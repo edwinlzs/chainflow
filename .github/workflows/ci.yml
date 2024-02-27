@@ -1,12 +1,19 @@
-name: Lint
-run-name: ${{ github.actor }} has made a Pull Request
+name: CI
+
 on:
+  push:
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
 jobs:
-  Lint:
+  test:
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -20,7 +27,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '18.19'
+          node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -32,3 +39,13 @@ jobs:
 
       - name: Run linter
         run: pnpm run lint:fix
+      
+      - name: Run unit tests
+        run: pnpm run test:coverage
+
+      - name: Upload coverage
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: edwinlzs/chainflow
