@@ -1,24 +1,21 @@
-name: On Push
+name: Unit Tests
 run-name: ${{ github.actor }} has pushed commits
 on:
   - push
 jobs:
-  Unit-Tests:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Job triggered by ${{ github.event_name }}"
-      - run: echo "Job running on ${{ runner.os }}"
-      - run: echo "Current branch is ${{ github.ref }}"
-
-      - name: Check out repo code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Installing pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
+          run_install: false
 
-      - name: Setup Node
+      - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: '18.19'
@@ -27,9 +24,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - run: echo "Running unit tests..."
-      - run: echo "This job's status is ${{ job.status }}"
       
       - name: Run unit tests
         run: pnpm run test:coverage
+
+      - name: Upload coverage
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: edwinlzs/chainflow
