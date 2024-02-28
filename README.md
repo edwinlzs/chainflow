@@ -17,7 +17,7 @@ Hi! If you are here, you're a bit early. I'm still setting up some stuff for the
 
 ## Documentation
 
-Read the guides over at <https://edwinlzs.github.io/chainflow-docs/> to get started!
+Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-docs/) to get started!
 
 ## Use Cases
 

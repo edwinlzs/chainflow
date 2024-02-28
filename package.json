@@ -1,7 +1,7 @@
 {
   "name": "chainflow",
-  "version": "0.1.5",
-  "description": "build dynamic and flexible API workflows",
+  "version": "0.1.6",
+  "description": "Build dynamic and composable API workflows",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "edwinlzs (https://github.com/edwinlzs)",
@@ -54,7 +54,9 @@
     "workflow",
     "api",
     "http",
+    "client",
     "typescript",
-    "javascript"
+    "javascript",
+    "nodejs"
   ]
 }

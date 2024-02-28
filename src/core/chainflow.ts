@@ -9,32 +9,23 @@ const deepmerge = deepmergeSetup();
 
 export interface CallResult {
   resp: any;
-  store: IStore<unknown>;
+  store?: IStore<unknown>;
 }
 
-/** Stores chain of endpoint calls. */
-type Callqueue = CallNode[];
-
 /** Defines an endpoint that a chainflow can call upon. */
-export interface IEndpoint {
+export interface IEndpoint<T> {
   hash: string;
-  call: (sources: SourceValues, opts?: CallOpts) => Promise<CallResult>;
+  call: (sources: SourceValues, opts?: T) => Promise<CallResult>;
 }
 
 /** Details on an endpoint call to be made. */
-interface CallNode {
-  endpoint: IEndpoint;
-  opts?: CallOpts;
+interface CallNode<T> {
+  endpoint: IEndpoint<T>;
+  opts?: T;
 }
 
-/** Options for configuring an endpoint call.
- * @todo to decouple from chainflow in future versions. */
-export interface CallOpts {
-  headers?: Record<string, string>;
-  query?: Record<string, string>;
-  pathParams?: Record<string, string>;
-  body?: Record<string, any>;
-}
+/** Stores chain of endpoint calls. */
+type Callqueue = CallNode<any>[];
 
 /** Special object used to link an InputNode to a chainflow seed. */
 export const seed = sourceNode(SEED_HASH);
@@ -63,7 +54,7 @@ export class Chainflow {
       log(`Calling endpoint with hash "${hash}"`);
       try {
         const { resp, store } = await endpoint.call(this.#sources, opts);
-        if (Object.keys(store).length > 0)
+        if (store && Object.keys(store).length > 0)
           this.#sources[STORE_HASH][0] = deepmerge(this.#sources[STORE_HASH][0], store);
         this.#sources[hash] = [resp];
       } catch (e) {
@@ -82,7 +73,7 @@ export class Chainflow {
   }
 
   /** Adds an endpoint call to the callchain. */
-  call(endpoint: IEndpoint, opts?: CallOpts) {
+  call<T>(endpoint: IEndpoint<T>, opts?: T) {
     this.#callqueue.push({ endpoint, opts });
     return this;
   }
@@ -114,7 +105,8 @@ export class Chainflow {
     return this;
   }
 
-  /** @todo Returns the accumulated responses of this chainflow. */ responses() {}
+  /** @todo Returns the accumulated responses of this chainflow. */
+  responses() {}
 }
 
 export const chainflow = (): Chainflow => {
