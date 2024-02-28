@@ -28,7 +28,7 @@ interface ISource {
   allowUndefined?: boolean;
 }
 
-/** Multiple source nodes to one input node. */
+/** Merge multiple source nodes to one input node. */
 interface ISources {
   accessInfo: ISourceAccessInfo[];
   isArray: boolean;
@@ -115,7 +115,7 @@ export class InputNode {
     };
   }
 
-  /** Sets multiple source nodes to be combined into a single value for this input node */
+  /** Sets multiple source nodes to be merged into a single value for this input node */
   [setSources](
     sources: SourceNode[] | { [key: string]: SourceNode },
     callback?: (val: any) => any,
@@ -165,14 +165,9 @@ export class InputNode {
 
       let sourceVal;
       if ('accessInfo' in source) {
-        sourceVal = this.#getMultiSourceNodeValues(source, sourceValues);
+        sourceVal = this.#getMergeSourceNodeValues(source, sourceValues);
       } else {
-        sourceVal = this.#getSingleSourceNodeValue(
-          sourceHash,
-          source.path,
-          sourceValues,
-          source.allowUndefined,
-        );
+        sourceVal = this.#getSingleSourceNodeValue(sourceHash, source.path, sourceValues);
       }
 
       if (sourceVal !== undefined || ('allowUndefined' in source && source.allowUndefined)) {
@@ -223,7 +218,7 @@ export class InputNode {
   }
 
   /** Access the source node value in a source object */
-  #accessSource(payload: any, path: string[], allowUndefined?: boolean): any {
+  #accessSource(payload: any, path: string[]): any {
     let sourceVal = payload;
 
     let i = 0;
@@ -232,10 +227,7 @@ export class InputNode {
       // source value, hence current sourceVal should be an object
       // However, `typeof null` returns 'object'
       // hence the 2nd condition checks against `null`
-      if (typeof sourceVal !== 'object' || sourceVal == null) {
-        if (allowUndefined) return undefined;
-        return;
-      }
+      if (typeof sourceVal !== 'object' || sourceVal == null) return;
       const accessor = path[i]!;
       sourceVal = sourceVal[accessor];
       i += 1;
@@ -245,20 +237,16 @@ export class InputNode {
   }
 
   /** Attempts to retrieve values for an input node from a single source node. */
-  #getSingleSourceNodeValue(
-    hash: string,
-    path: string[],
-    sourceValues: SourceValues,
-    allowUndefined?: boolean,
-  ) {
+  #getSingleSourceNodeValue(hash: string, path: string[], sourceValues: SourceValues) {
     const sourceObject = sourceValues[hash]![0];
 
     // get value from a linked source
-    return this.#accessSource(sourceObject, path, allowUndefined);
+    return this.#accessSource(sourceObject, path);
   }
 
-  /** Attempts to retrieve values for an input node from multiple source nodes. */
-  #getMultiSourceNodeValues(sources: ISources, sourceValues: SourceValues) {
+  /**
+   * Attempts to retrieve values for an input node from multiple source nodes to be merged. */
+  #getMergeSourceNodeValues(sources: ISources, sourceValues: SourceValues) {
     let sourceVals: { [key: string]: unknown } | unknown[];
     sources.isArray ? (sourceVals = []) : (sourceVals = {});
 

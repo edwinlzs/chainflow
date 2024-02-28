@@ -8,7 +8,7 @@ import {
   RequiredValuesNotFoundError,
   UnsupportedMethodError,
 } from './errors';
-import { CallOpts, CallResult, IEndpoint } from '../core/chainflow';
+import { CallResult, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
@@ -54,11 +54,19 @@ export enum RESP_PARSER {
   TEXT = 'text',
 }
 
+/** Options for configuring an endpoint call. */
+export interface HTTPCallOpts {
+  headers?: Record<string, string>;
+  query?: Record<string, string>;
+  pathParams?: Record<string, string>;
+  body?: Record<string, any>;
+}
+
 /**
  * Manages request and response nodes,
  * as well as calls to that endpoint
  */
-export class Endpoint implements IEndpoint {
+export class Endpoint implements IEndpoint<HTTPCallOpts> {
   #addr: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
@@ -139,7 +147,7 @@ export class Endpoint implements IEndpoint {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: SourceValues, opts?: CallOpts): Promise<CallResult> {
+  async call(responses: SourceValues, opts?: HTTPCallOpts): Promise<CallResult> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body;
