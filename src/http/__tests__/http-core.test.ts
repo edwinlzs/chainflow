@@ -1,3 +1,4 @@
+/** Integration Tests for chainflow core and http */
 import { chainflow, seed, store } from '../../core/chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMerge } from '../../core/utils/link';
@@ -14,6 +15,8 @@ const uniquePath = (path: string) => {
   ++deconflictor;
   return `${path}-${deconflictor}`;
 };
+
+/** @todo Slim down these unit tests based on what is already tested in core */
 
 describe('#chainflow', () => {
   const agent = new MockAgent();

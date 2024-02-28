@@ -1,8 +1,5 @@
 import { IEndpoint, chainflow } from '../../core/chainflow';
 import { SEED_HASH, STORE_HASH } from '../utils/constants';
-// import { link, linkMerge } from '../../core/utils/link';
-// import { config } from '../../core/utils/config';
-// import { required } from '../../core/utils/initializers';
 
 const mockEndpoint = (path: string): IEndpoint<unknown> => ({
   call: jest.fn(async () => ({ resp: {} })),
@@ -79,255 +76,68 @@ describe('#chainflow', () => {
     });
   });
 
-  // describe('when call options are provided', () => {
-  //   const addUser = origin
-  //     .post('/{groupId}/user')
-  //     .body({
-  //       name: 'default',
-  //     })
-  //     .query({
-  //       role: 'default',
-  //     })
-  //     .headers({
-  //       token: 'default',
-  //     });
+  describe('when call options are provided', () => {
+    const addUser = mockEndpoint('user');
 
-  //   const tracker = jest.spyOn(http, 'request');
+    it('should call the endpoint with the given call options', async () => {
+      const testOpts = {
+        name: 'some name',
+        headers: {
+          token: 'some token',
+        },
+      };
+      await chainflow().call(addUser, testOpts).run();
+      expect(addUser.call).toHaveBeenCalledTimes(1);
+      expect((addUser.call as jest.Mock).mock.calls[0][1]).toStrictEqual(testOpts);
+    });
+  });
 
-  //   it('should call the endpoint with the given call options', async () => {
-  //     tracker.mockClear();
-  //     client
-  //       .intercept({
-  //         path: '/someGroup/user',
-  //         method: 'POST',
-  //         query: {
-  //           role: 'someRole',
-  //         },
-  //       })
-  //       .reply(200, {});
+  describe('when seed is provided', () => {
+    const createUser = mockEndpoint('user');
 
-  //     await chainflow()
-  //       .call(addUser, {
-  //         body: {
-  //           name: 'some name',
-  //         },
-  //         pathParams: {
-  //           groupId: 'someGroup',
-  //         },
-  //         query: {
-  //           role: 'someRole',
-  //         },
-  //         headers: {
-  //           token: 'some token',
-  //         },
-  //       })
-  //       .run();
-  //     expect(tracker).toHaveBeenCalledTimes(1);
-  //     const arg = tracker.mock.calls[0][0];
-  //     expect(arg?.body).toStrictEqual({
-  //       name: 'some name',
-  //     });
-  //     expect(arg?.path).toBe('/someGroup/user?role=someRole');
-  //     expect(arg?.headers).toStrictEqual({
-  //       token: 'some token',
-  //     });
-  //   });
-  // });
+    it('should call the endpoint with the given seed', async () => {
+      await chainflow().call(createUser).seed({ username: 'some name' }).run();
+      expect(createUser.call).toHaveBeenCalledTimes(1);
+      expect((createUser.call as jest.Mock).mock.calls[0][0][SEED_HASH][0]).toStrictEqual({
+        username: 'some name',
+      });
+    });
+  });
 
-  // describe('when run options are provided', () => {
-  //   const userPath = uniquePath('/user');
-  //   const createUser = origin.post(userPath).body({
-  //     name: 'default',
-  //   });
+  describe('when a chainflow is cloned', () => {
+    const createUser = mockEndpoint('user');
+    const createRole = mockEndpoint('role');
+    it('the cloned flow can be extended without changing the original', async () => {
+      const flow1 = chainflow().call(createUser);
+      await flow1.run();
+      expect(createUser.call).toHaveBeenCalledTimes(1);
+      (createUser.call as jest.Mock).mockClear();
 
-  //   createUser.set(({ body: { name } }) => {
-  //     link(name, seed.username);
-  //   });
+      const flow2 = flow1.clone().call(createRole);
+      await flow2.run();
+      expect(createUser.call).toHaveBeenCalledTimes(1);
+      expect(createRole.call).toHaveBeenCalledTimes(1);
+      (createUser.call as jest.Mock).mockClear();
+      (createRole.call as jest.Mock).mockClear();
 
-  //   const tracker = jest.spyOn(http, 'request');
+      await flow1.run();
+      expect(createUser.call).toHaveBeenCalledTimes(1);
+      expect(createRole.call).toHaveBeenCalledTimes(0);
+    });
+  });
 
-  //   it('should call the endpoint with the given seed', async () => {
-  //     tracker.mockClear();
-  //     client
-  //       .intercept({
-  //         path: userPath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {});
+  describe('when a chainflow is extended', () => {
+    const createUser = mockEndpoint('user');
+    const createRole = mockEndpoint('role');
+    it('the original flow should append the callqueue of the extending flow', async () => {
+      const flow1 = chainflow().call(createUser);
+      const flow2 = chainflow().call(createRole);
 
-  //     await chainflow().call(createUser).seed({ username: 'some name' }).run();
-  //     expect(tracker).toHaveBeenCalledTimes(1);
-  //     const arg = tracker.mock.calls[0][0];
-  //     expect(arg?.body).toStrictEqual({
-  //       name: 'some name',
-  //     });
-  //   });
-  // });
-
-  // describe('when a source node is provided directly to input nodes', () => {
-  //   const userPath = uniquePath('/user');
-  //   const rolePath = uniquePath('/role');
-  //   it('should take the value from the specified source', async () => {
-  //     const createUser = origin.post(userPath).body({
-  //       name: 'Tom',
-  //     });
-
-  //     const createRole = origin.post(rolePath).body({
-  //       userId: createUser.resp.body.id,
-  //       type: 'ENGINEER',
-  //     });
-
-  //     const tracker = jest.spyOn(http, 'request');
-  //     tracker.mockClear();
-
-  //     client
-  //       .intercept({
-  //         path: userPath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {
-  //         id: 'some-id',
-  //       });
-
-  //     client
-  //       .intercept({
-  //         path: rolePath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {});
-
-  //     await chainflow().call(createUser).call(createRole).run();
-
-  //     expect(tracker).toHaveBeenCalledTimes(2);
-  //     expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
-  //       userId: 'some-id',
-  //       type: 'ENGINEER',
-  //     });
-  //   });
-  // });
-
-  // describe('when a source node is provided directly to input nodes with callback', () => {
-  //   const userPath = uniquePath('/user');
-  //   const rolePath = uniquePath('/role');
-  //   it('should take the value from the specified source', async () => {
-  //     const createUser = origin.post(userPath).body({
-  //       name: 'Tom',
-  //     });
-
-  //     const createRole = origin.post(rolePath).body({
-  //       name: link(createUser.resp.body.name, (name: string) => name.toUpperCase()),
-  //       type: 'ENGINEER',
-  //     });
-
-  //     const tracker = jest.spyOn(http, 'request');
-  //     tracker.mockClear();
-
-  //     client
-  //       .intercept({
-  //         path: userPath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {
-  //         name: 'Tom',
-  //       });
-
-  //     client
-  //       .intercept({
-  //         path: rolePath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {});
-
-  //     await chainflow().call(createUser).call(createRole).run();
-
-  //     expect(tracker).toHaveBeenCalledTimes(2);
-  //     expect(tracker.mock.calls[1][0]?.body).toStrictEqual({
-  //       name: 'TOM',
-  //       type: 'ENGINEER',
-  //     });
-  //   });
-  // });
-
-  // describe('when a chainflow is cloned', () => {
-  //   const userPath = uniquePath('/user');
-  //   const rolePath = uniquePath('/role');
-  //   it('the cloned flow can be extended without changing the original', async () => {
-  //     const createUser = origin.post(userPath).body({
-  //       name: 'Tom',
-  //     });
-
-  //     const createRole = origin.post(rolePath).body({
-  //       name: createUser.resp.body.name,
-  //       type: 'ENGINEER',
-  //     });
-
-  //     const tracker = jest.spyOn(http, 'request');
-  //     tracker.mockClear();
-
-  //     client
-  //       .intercept({
-  //         path: userPath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {
-  //         name: 'Tom',
-  //       })
-  //       .times(2);
-  //     client
-  //       .intercept({
-  //         path: rolePath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {});
-
-  //     const flow1 = chainflow().call(createUser);
-  //     await flow1.run();
-  //     expect(tracker).toHaveBeenCalledTimes(1);
-
-  //     tracker.mockClear();
-  //     const flow2 = flow1.clone().call(createRole);
-  //     await flow2.run();
-  //     expect(tracker).toHaveBeenCalledTimes(2);
-  //   });
-  // });
-
-  // describe('when a chainflow is extended', () => {
-  //   const userPath = uniquePath('/user');
-  //   const rolePath = uniquePath('/role');
-  //   it('the original flow should append the callqueue of the extending flow', async () => {
-  //     const createUser = origin.post(userPath).body({
-  //       name: 'Tom',
-  //     });
-
-  //     const createRole = origin.post(rolePath).body({
-  //       name: createUser.resp.body.name,
-  //       type: 'ENGINEER',
-  //     });
-
-  //     const tracker = jest.spyOn(http, 'request');
-  //     tracker.mockClear();
-  //     const flow1 = chainflow().call(createUser);
-  //     const flow2 = chainflow().call(createRole);
-
-  //     client
-  //       .intercept({
-  //         path: userPath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {
-  //         name: 'Tom',
-  //       });
-  //     client
-  //       .intercept({
-  //         path: rolePath,
-  //         method: 'POST',
-  //       })
-  //       .reply(200, {});
-
-  //     await flow1.extend(flow2).run();
-  //     expect(tracker).toHaveBeenCalledTimes(2);
-  //   });
-  // });
+      await flow1.extend(flow2).run();
+      expect(createUser.call).toHaveBeenCalledTimes(1);
+      expect(createRole.call).toHaveBeenCalledTimes(1);
+    });
+  });
 
   describe('when a chainflow calls endpoints that use its store', () => {
     describe('when an endpoint defines a store value', () => {
