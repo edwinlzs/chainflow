@@ -4,7 +4,7 @@ import { SEED_HASH, STORE_HASH } from '../utils/constants';
 // import { config } from '../../core/utils/config';
 // import { required } from '../../core/utils/initializers';
 
-const mockEndpoint =(path: string): IEndpoint<unknown> => ({
+const mockEndpoint = (path: string): IEndpoint<unknown> => ({
   call: jest.fn(async () => ({ resp: {} })),
   hash: path,
 });
@@ -32,7 +32,9 @@ describe('#chainflow', () => {
     const createRole = mockEndpoint('role');
 
     it('should break the chainflow', async () => {
-      (createRole.call as jest.Mock).mockImplementationOnce(() => { throw new Error() });
+      (createRole.call as jest.Mock).mockImplementationOnce(() => {
+        throw new Error();
+      });
 
       await expect(
         chainflow().call(getUser).call(createRole).call(getUser).run(),
@@ -61,9 +63,7 @@ describe('#chainflow', () => {
 
       expect(createRole.call).toHaveBeenCalledTimes(1);
       expect(sources[createUser.hash].length).toBe(1);
-      expect(
-        sources[createUser.hash][0],
-      ).toStrictEqual({ userId: 'userId A' });
+      expect(sources[createUser.hash][0]).toStrictEqual({ userId: 'userId A' });
       (createRole.call as jest.Mock).mockClear();
 
       (createUser.call as jest.Mock).mockImplementationOnce(() => ({
@@ -75,9 +75,7 @@ describe('#chainflow', () => {
 
       expect(createRole.call).toHaveBeenCalledTimes(1);
       expect(sources[createUser.hash].length).toBe(1);
-      expect(
-        sources[createUser.hash][0],
-      ).toStrictEqual({ userId: 'userId B' });
+      expect(sources[createUser.hash][0]).toStrictEqual({ userId: 'userId B' });
     });
   });
 
@@ -344,7 +342,9 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(createRole.call).toHaveBeenCalledTimes(1);
-        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({ username: 'Tom' });
+        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+          username: 'Tom',
+        });
       });
     });
 
@@ -375,31 +375,31 @@ describe('#chainflow', () => {
       });
     });
 
-      describe('when multiple endpoints put values into the same store key', () => {
-        const createUser = mockEndpoint('createUser');
-        const getUser = mockEndpoint('getUser');
-        const createRole = mockEndpoint('role');
-        it('should have the later endpoint call override the store value put by the previous call', async () => {
-          (createUser.call as jest.Mock).mockImplementationOnce(() => ({
-            resp: {},
-            store: {
-              username: 'Tom',
-            },
-          }));
-          (getUser.call as jest.Mock).mockImplementationOnce(() => ({
-            resp: {},
-            store: {
-              username: 'Jane',
-            },
-          }));
-
-          await chainflow().call(createUser).call(getUser).call(createRole).run();
-          expect(createRole.call).toHaveBeenCalledTimes(1);
-          expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+    describe('when multiple endpoints put values into the same store key', () => {
+      const createUser = mockEndpoint('createUser');
+      const getUser = mockEndpoint('getUser');
+      const createRole = mockEndpoint('role');
+      it('should have the later endpoint call override the store value put by the previous call', async () => {
+        (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+          resp: {},
+          store: {
+            username: 'Tom',
+          },
+        }));
+        (getUser.call as jest.Mock).mockImplementationOnce(() => ({
+          resp: {},
+          store: {
             username: 'Jane',
-          });
+          },
+        }));
+
+        await chainflow().call(createUser).call(getUser).call(createRole).run();
+        expect(createRole.call).toHaveBeenCalledTimes(1);
+        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+          username: 'Jane',
         });
       });
+    });
   });
 
   describe('when a chainflow continuesFrom another chainflow run', () => {
