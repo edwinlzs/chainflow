@@ -79,38 +79,38 @@ describe('#inputNode', () => {
   describe('linked values', () => {
     describe('single source', () => {
       describe('when given source has value available', () => {
-        const testNode = new InputNode(sourceNode('some-hash').value);
+        const testNode = new InputNode(sourceNode('some-id').value);
         it('should retrieve value from given source when available', () => {
-          const val = testNode[getNodeValue]({ 'some-hash': [{ value: 42 }] }, [], []);
+          const val = testNode[getNodeValue]({ 'some-id': [{ value: 42 }] }, [], []);
           expect(val).toBe(42);
         });
       });
 
       describe('when given source has a callback', () => {
         const testNode = new InputNode(
-          link(sourceNode('some-hash').value, (val: number) => val + 58),
+          link(sourceNode('some-id').value, (val: number) => val + 58),
         );
         it('should retrieve value from given source when available', () => {
-          const val = testNode[getNodeValue]({ 'some-hash': [{ value: 42 }] }, [], []);
+          const val = testNode[getNodeValue]({ 'some-id': [{ value: 42 }] }, [], []);
           expect(val).toBe(42 + 58);
         });
       });
 
       describe('when source value is null', () => {
-        const testNode = new InputNode(sourceNode('some-hash').root.value);
+        const testNode = new InputNode(sourceNode('some-id').root.value);
         it('should retrieve value from given source', () => {
-          const val = testNode[getNodeValue]({ 'some-hash': [{ root: undefined }] }, [], []);
+          const val = testNode[getNodeValue]({ 'some-id': [{ root: undefined }] }, [], []);
           expect(val).toBe(undefined);
         });
       });
 
       describe('when source value is unavailable and undefined is allowed', () => {
         const testNode = new InputNode(
-          config(sourceNode('some-hash').value, { allowUndefined: true }),
+          config(sourceNode('some-id').value, { allowUndefined: true }),
         );
         it('should retrieve value from given source', () => {
           const missingValues: string[][] = [];
-          const val = testNode[getNodeValue]({ 'some-hash': [{}] }, missingValues, []);
+          const val = testNode[getNodeValue]({ 'some-id': [{}] }, missingValues, []);
           expect(val).toBe(undefined);
           expect(missingValues).toEqual([]);
         });
@@ -119,11 +119,11 @@ describe('#inputNode', () => {
 
     describe('multiple sources', () => {
       describe('when one of the sources does not have a value available', () => {
-        const testNode = new InputNode(sourceNode('hash-1').value);
-        link(testNode, sourceNode('hash-2').value);
+        const testNode = new InputNode(sourceNode('id-1').value);
+        link(testNode, sourceNode('id-2').value);
 
         it('should retrieve value from second source', () => {
-          const val = testNode[getNodeValue]({ 'hash-1': [{}], 'hash-2': [{ value: 20 }] }, [], []);
+          const val = testNode[getNodeValue]({ 'id-1': [{}], 'id-2': [{ value: 20 }] }, [], []);
           expect(val).toBe(20);
         });
       });
@@ -133,13 +133,13 @@ describe('#inputNode', () => {
       describe('when given an array of sources', () => {
         const testNode = new InputNode(
           linkMerge(
-            [sourceNode('hash-1').value, sourceNode('hash-2').other.value],
+            [sourceNode('id-1').value, sourceNode('id-2').other.value],
             ([val1, val2]) => val1 + val2,
           ),
         );
         it('should retrieve value from given source when available', () => {
           const val = testNode[getNodeValue](
-            { 'hash-1': [{ value: 42 }], 'hash-2': [{ other: { value: 58 } }] },
+            { 'id-1': [{ value: 42 }], 'id-2': [{ other: { value: 58 } }] },
             [],
             [],
           );
@@ -150,13 +150,13 @@ describe('#inputNode', () => {
       describe('when given an object of sources', () => {
         const testNode = new InputNode(
           linkMerge(
-            { value1: sourceNode('hash-1').value, value2: sourceNode('hash-2').other.value },
+            { value1: sourceNode('id-1').value, value2: sourceNode('id-2').other.value },
             ({ value1, value2 }) => value1 + value2,
           ),
         );
         it('should retrieve value from given source when available', () => {
           const val = testNode[getNodeValue](
-            { 'hash-1': [{ value: 42 }], 'hash-2': [{ other: { value: 58 } }] },
+            { 'id-1': [{ value: 42 }], 'id-2': [{ other: { value: 58 } }] },
             [],
             [],
           );
@@ -168,12 +168,12 @@ describe('#inputNode', () => {
         const testNode = new InputNode(1);
         linkMerge(
           testNode,
-          { value1: sourceNode('hash-1').value, value2: sourceNode('hash-2').other.value },
+          { value1: sourceNode('id-1').value, value2: sourceNode('id-2').other.value },
           ({ value1, value2 }) => value1 + value2,
         );
         it('should retrieve value from given source when available', () => {
           const val = testNode[getNodeValue](
-            { 'hash-1': [{ value: 42 }], 'hash-2': [{ other: { value: 58 } }] },
+            { 'id-1': [{ value: 42 }], 'id-2': [{ other: { value: 58 } }] },
             [],
             [],
           );
@@ -184,13 +184,13 @@ describe('#inputNode', () => {
       describe('when one source is unavailable', () => {
         const testNode = new InputNode(
           linkMerge(
-            [sourceNode('hash-1').value, sourceNode('hash-2').other.value],
+            [sourceNode('id-1').value, sourceNode('id-2').other.value],
             ([val1, val2]) => val1 + val2,
           ),
         );
         it('should not construct merge sources value', () => {
           const val = testNode[getNodeValue](
-            { 'hash-1': [{}], 'hash-2': [{ other: { value: 58 } }] },
+            { 'id-1': [{}], 'id-2': [{ other: { value: 58 } }] },
             [],
             [],
           );

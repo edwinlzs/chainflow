@@ -1,9 +1,9 @@
 import { IEndpoint, chainflow } from '../../core/chainflow';
-import { SEED_HASH, STORE_HASH } from '../utils/constants';
+import { SEED_ID, STORE_ID } from '../utils/constants';
 
 const mockEndpoint = (path: string): IEndpoint<unknown> => ({
   call: jest.fn(async () => ({ resp: {} })),
-  hash: path,
+  id: path,
 });
 
 describe('#chainflow', () => {
@@ -59,8 +59,8 @@ describe('#chainflow', () => {
       let sources = (createRole.call as jest.Mock).mock.calls[0][0];
 
       expect(createRole.call).toHaveBeenCalledTimes(1);
-      expect(sources[createUser.hash].length).toBe(1);
-      expect(sources[createUser.hash][0]).toStrictEqual({ userId: 'userId A' });
+      expect(sources[createUser.id].length).toBe(1);
+      expect(sources[createUser.id][0]).toStrictEqual({ userId: 'userId A' });
       (createRole.call as jest.Mock).mockClear();
 
       (createUser.call as jest.Mock).mockImplementationOnce(() => ({
@@ -71,8 +71,8 @@ describe('#chainflow', () => {
       sources = (createRole.call as jest.Mock).mock.calls[0][0];
 
       expect(createRole.call).toHaveBeenCalledTimes(1);
-      expect(sources[createUser.hash].length).toBe(1);
-      expect(sources[createUser.hash][0]).toStrictEqual({ userId: 'userId B' });
+      expect(sources[createUser.id].length).toBe(1);
+      expect(sources[createUser.id][0]).toStrictEqual({ userId: 'userId B' });
     });
   });
 
@@ -98,7 +98,7 @@ describe('#chainflow', () => {
     it('should call the endpoint with the given seed', async () => {
       await chainflow().call(createUser).seed({ username: 'some name' }).run();
       expect(createUser.call).toHaveBeenCalledTimes(1);
-      expect((createUser.call as jest.Mock).mock.calls[0][0][SEED_HASH][0]).toStrictEqual({
+      expect((createUser.call as jest.Mock).mock.calls[0][0][SEED_ID][0]).toStrictEqual({
         username: 'some name',
       });
     });
@@ -152,7 +152,7 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(createRole.call).toHaveBeenCalledTimes(1);
-        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_ID][0]).toStrictEqual({
           username: 'Tom',
         });
       });
@@ -175,7 +175,7 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(createRole).run();
         expect(createRole.call).toHaveBeenCalledTimes(1);
-        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_ID][0]).toStrictEqual({
           user: {
             profile: {
               firstName: 'Tom',
@@ -205,7 +205,7 @@ describe('#chainflow', () => {
 
         await chainflow().call(createUser).call(getUser).call(createRole).run();
         expect(createRole.call).toHaveBeenCalledTimes(1);
-        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_HASH][0]).toStrictEqual({
+        expect((createRole.call as jest.Mock).mock.calls[0][0][STORE_ID][0]).toStrictEqual({
           username: 'Jane',
         });
       });
@@ -231,8 +231,8 @@ describe('#chainflow', () => {
         expect(addUser.call).toHaveBeenCalledTimes(1);
         expect((addUser.call as jest.Mock).mock.calls[0][0]).toEqual(
           expect.objectContaining({
-            [SEED_HASH]: [{ username }],
-            [login.hash]: [{ id: 'admin-id' }],
+            [SEED_ID]: [{ username }],
+            [login.id]: [{ id: 'admin-id' }],
           }),
         );
       }

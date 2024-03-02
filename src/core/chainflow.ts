@@ -3,7 +3,7 @@ import { sourceNode } from './sourceNode';
 import deepmergeSetup from '@fastify/deepmerge';
 import { IStore } from './store';
 import { log, warn } from './logger';
-import { SEED_HASH, STORE_HASH } from './utils/constants';
+import { SEED_ID, STORE_ID } from './utils/constants';
 
 const deepmerge = deepmergeSetup();
 
@@ -14,7 +14,8 @@ export interface CallResult {
 
 /** Defines an endpoint that a chainflow can call upon. */
 export interface IEndpoint<T> {
-  hash: string;
+  /** A value that uniquely identifies this endpoint. */
+  id: string;
   call: (sources: SourceValues, opts?: T) => Promise<CallResult>;
 }
 
@@ -28,10 +29,10 @@ interface CallNode<T> {
 type Callqueue = CallNode<any>[];
 
 /** Special object used to link an InputNode to a chainflow seed. */
-export const seed = sourceNode(SEED_HASH);
+export const seed = sourceNode(SEED_ID);
 
 /** Special object that acts as a central "gateway" between input and source values. */
-export const store = sourceNode(STORE_HASH);
+export const store = sourceNode(STORE_ID);
 
 export class Chainflow {
   /** Stores sources such as the seed or values accumulated from
@@ -46,19 +47,19 @@ export class Chainflow {
     log(`Running chainflow...`);
     this.reset();
     this.#sources = this.#initSources;
-    this.#sources[STORE_HASH] = [{}];
+    this.#sources[STORE_ID] = [{}];
 
     for (const { endpoint, opts } of this.#callqueue) {
       // call endpoint
-      const hash = endpoint.hash;
-      log(`Calling endpoint with hash "${hash}"`);
+      const id = endpoint.id;
+      log(`Calling endpoint with id "${id}"`);
       try {
         const { resp, store } = await endpoint.call(this.#sources, opts);
         if (store && Object.keys(store).length > 0)
-          this.#sources[STORE_HASH][0] = deepmerge(this.#sources[STORE_HASH][0], store);
-        this.#sources[hash] = [resp];
+          this.#sources[STORE_ID][0] = deepmerge(this.#sources[STORE_ID][0], store);
+        this.#sources[id] = [resp];
       } catch (e) {
-        warn(`Chainflow stopped at endpoint with hash "${hash}" and error: ${e}`);
+        warn(`Chainflow stopped at endpoint with id "${id}" and error: ${e}`);
         throw e;
       }
     }
@@ -68,7 +69,7 @@ export class Chainflow {
 
   /** Adds a seed to this chainflow. */
   seed(seed: Record<string, any>) {
-    this.#initSources[SEED_HASH] = [seed];
+    this.#initSources[SEED_ID] = [seed];
     return this;
   }
 
@@ -106,7 +107,9 @@ export class Chainflow {
   }
 
   /** @todo Returns the accumulated responses of this chainflow. */
-  responses() {}
+  responses() {
+
+  }
 }
 
 export const chainflow = (): Chainflow => {

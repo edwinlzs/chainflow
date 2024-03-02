@@ -1,7 +1,7 @@
 import { SourceNode } from './sourceNode';
 import {
   getNodeValue,
-  nodeHash,
+  sourceId,
   nodePath,
   nodeValueIdentifier,
   setSource,
@@ -36,7 +36,7 @@ interface ISources {
 }
 
 interface ISourceAccessInfo {
-  hash: string;
+  id: string;
   path: string[];
   // the name this source value will be assigned to
   key?: string;
@@ -46,7 +46,7 @@ interface ISourceAccessInfo {
 type SourceValue = any;
 
 // stores actual values of source objects
-export type SourceValues = { [hash: string]: SourceValue[] };
+export type SourceValues = { [id: string]: SourceValue[] };
 
 /** A data node for constructing an input object. */
 export class InputNode {
@@ -59,7 +59,7 @@ export class InputNode {
   /** Whether this node requires a value from a source object. */
   #required: boolean = false;
   /** Stores what source node values can be passed into this node. */
-  #sources: { [nodeHash: string]: ISource | ISources } = {};
+  #sources: { [sourceId: string]: ISource | ISources } = {};
   /** Generator function to generate values on demand for this node. */
   #generator: (() => any) | undefined;
 
@@ -108,7 +108,7 @@ export class InputNode {
 
   /** Sets a source node for this input node. */
   [setSource](source: SourceNode, callback?: (val: any) => any) {
-    this.#sources[source[nodeHash]] = {
+    this.#sources[source[sourceId]] = {
       path: source[nodePath],
       allowUndefined: source[allowUndefined],
       callback,
@@ -120,35 +120,36 @@ export class InputNode {
     sources: SourceNode[] | { [key: string]: SourceNode },
     callback?: (val: any) => any,
   ) {
-    const hashes = new Set<string>();
+    const ids = new Set<string>();
 
     let accessInfo: ISourceAccessInfo[];
     let isArray = false;
     if (Array.isArray(sources)) {
       isArray = true;
       accessInfo = sources.map((source) => {
-        const hash = source[nodeHash];
-        hashes.add(hash);
+        const id = source[sourceId];
+        ids.add(id);
         return {
           path: source[nodePath],
           allowUndefined: source[allowUndefined],
-          hash,
+          id,
         };
       });
     } else {
       accessInfo = Object.entries(sources).map(([key, source]) => {
-        const hash = source[nodeHash];
-        hashes.add(hash);
+        const id = source[sourceId];
+        ids.add(id);
         return {
           path: source[nodePath],
           allowUndefined: source[allowUndefined],
-          hash,
+          id,
           key,
         };
       });
     }
 
-    this.#sources[new Array(...hashes).sort().join('|')] = {
+    /** @todo improve this */
+    this.#sources[new Array(...ids).sort().join('|')] = {
       accessInfo,
       isArray,
       callback,
@@ -159,23 +160,23 @@ export class InputNode {
   [getNodeValue](sourceValues: SourceValues, missingValues: string[][], currentPath: string[]) {
     const usedSources: string[] = []; // stores sourceValues that are already tried
     // attempt to get value from any source nodes available
-    let sourceHash = this.#matchSourceHash(sourceValues, usedSources);
-    while (sourceHash) {
-      const source = this.#sources[sourceHash]!;
+    let sourceEndpointId = this.#matchSourceId(sourceValues, usedSources);
+    while (sourceEndpointId) {
+      const source = this.#sources[sourceEndpointId]!;
 
       let sourceVal;
       if ('accessInfo' in source) {
         sourceVal = this.#getMergeSourceNodeValues(source, sourceValues);
       } else {
-        sourceVal = this.#getSingleSourceNodeValue(sourceHash, source.path, sourceValues);
+        sourceVal = this.#getSingleSourceNodeValue(sourceEndpointId, source.path, sourceValues);
       }
 
       if (sourceVal !== undefined || ('allowUndefined' in source && source.allowUndefined)) {
         return source.callback ? source.callback(sourceVal) : sourceVal;
       }
 
-      usedSources.push(...sourceHash.split('|'));
-      sourceHash = this.#matchSourceHash(sourceValues, usedSources);
+      usedSources.push(...sourceEndpointId.split('|'));
+      sourceEndpointId = this.#matchSourceId(sourceValues, usedSources);
     }
 
     // attempt to get value from generator function
@@ -197,23 +198,23 @@ export class InputNode {
     return this.#default;
   }
 
-  /** Retrieves a matching source hash from this node's sources, if any,
+  /** Retrieves a matching source id from this node's sources, if any,
    *  excluding sources that are already used for the current input. */
-  #matchSourceHash(sourceValues: SourceValues, usedSources: string[]) {
-    const sourceHashes = Object.keys(this.#sources);
-    const availSourceHashes = Object.keys(sourceValues);
-    return sourceHashes.find((hash) => {
-      if (hash.includes('|')) {
-        // handle combined hash for multi-node source
-        const hashes = hash.split('|');
+  #matchSourceId(sourceValues: SourceValues, usedSources: string[]) {
+    const sourceEndpointIds = Object.keys(this.#sources);
+    const availSourceIds = Object.keys(sourceValues);
+    return sourceEndpointIds.find((id) => {
+      if (id.includes('|')) {
+        // handle combined id for multi-node source
+        const ids = id.split('|');
         if (
           // if every source is available
-          hashes.every((hash) => availSourceHashes.includes(hash) && !usedSources.includes(hash))
+          ids.every((id) => availSourceIds.includes(id) && !usedSources.includes(id))
         ) {
-          return hash;
+          return id;
         }
       }
-      return availSourceHashes.includes(hash) && !usedSources.includes(hash);
+      return availSourceIds.includes(id) && !usedSources.includes(id);
     });
   }
 
@@ -237,8 +238,8 @@ export class InputNode {
   }
 
   /** Attempts to retrieve values for an input node from a single source node. */
-  #getSingleSourceNodeValue(hash: string, path: string[], sourceValues: SourceValues) {
-    const sourceObject = sourceValues[hash]![0];
+  #getSingleSourceNodeValue(id: string, path: string[], sourceValues: SourceValues) {
+    const sourceObject = sourceValues[id]![0];
 
     // get value from a linked source
     return this.#accessSource(sourceObject, path);
@@ -251,7 +252,7 @@ export class InputNode {
     sources.isArray ? (sourceVals = []) : (sourceVals = {});
 
     for (const info of sources.accessInfo) {
-      const sourceVal = this.#getSingleSourceNodeValue(info.hash, info.path, sourceValues);
+      const sourceVal = this.#getSingleSourceNodeValue(info.id, info.path, sourceValues);
       // if one value is unavailable, stop constructing multi-source value
       if (sourceVal === undefined) return undefined;
       sources.isArray

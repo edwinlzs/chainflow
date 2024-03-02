@@ -218,7 +218,7 @@ describe('#endpoint', () => {
       age: 10,
     };
     const responses = {
-      [respEndpoint.hash]: [respPayload],
+      [respEndpoint.id]: [respPayload],
     };
 
     it('should expose its input nodes for setting up links', () => {
@@ -425,8 +425,8 @@ describe('#endpoint', () => {
         tracker.mockClear();
 
         await testEndpoint.call({
-          [login.hash]: [{ body: { id: '100' } }],
-          [getPet.hash]: [{ body: { id: '222' } }],
+          [login.id]: [{ body: { id: '100' } }],
+          [getPet.id]: [{ body: { id: '222' } }],
         });
         expect(tracker.mock.calls[0][0].path).toBe('/user/user-100/pet/user-100-pet-222/3');
       });

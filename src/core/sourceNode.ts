@@ -1,13 +1,13 @@
 import { NODE_VALUE } from './inputNode';
-import { nodeHash, nodePath, nodeValueIdentifier, allowUndefined } from './utils/symbols';
+import { sourceId, nodePath, nodeValueIdentifier, allowUndefined } from './utils/symbols';
 
-/** Creates a new Source Node with the given hash. */
-export const sourceNode = (hash: string) =>
-  new Proxy({ path: [], hash }, SourceNodeHandler) as unknown as SourceNode;
+/** Creates a new Source Node with the given id. */
+export const sourceNode = (id: string) =>
+  new Proxy({ path: [], id }, SourceNodeHandler) as unknown as SourceNode;
 
 /** Describes a value in a source node e.g. the output of an endpoint call. */
 export interface SourceNode {
-  [nodeHash]: string;
+  [sourceId]: string;
   [nodePath]: string[];
   [allowUndefined]?: boolean;
   [nodeValueIdentifier]: NODE_VALUE;
@@ -17,7 +17,7 @@ export interface SourceNode {
 /** An intermediate object used to contain information on the SourceNode being built. */
 interface RawSourceNode {
   path: string[];
-  hash: string;
+  id: string;
   allowUndefined?: boolean;
 }
 
@@ -27,8 +27,8 @@ export const SourceNodeHandler = {
     switch (prop) {
       case nodePath:
         return obj.path;
-      case nodeHash:
-        return obj.hash;
+      case sourceId:
+        return obj.id;
       case allowUndefined:
         return obj.allowUndefined;
       case nodeValueIdentifier:
@@ -39,7 +39,7 @@ export const SourceNodeHandler = {
         return new Proxy(
           {
             path: newPath,
-            hash: obj.hash,
+            id: obj.id,
             allowUndefined: obj.allowUndefined,
           },
           SourceNodeHandler,

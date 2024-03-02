@@ -138,7 +138,7 @@ describe('#chainflow', () => {
       await testFlow.run();
 
       expect(tracker).toHaveBeenCalledTimes(1);
-      expect(tracker.mock.calls[0][0][createUser.hash][0].body).toStrictEqual({
+      expect(tracker.mock.calls[0][0][createUser.id][0].body).toStrictEqual({
         userId: 'userId A',
       });
       tracker.mockClear();
@@ -162,7 +162,7 @@ describe('#chainflow', () => {
       await testFlow.run();
 
       expect(tracker).toHaveBeenCalledTimes(1);
-      expect(tracker.mock.calls[0][0][createUser.hash][0].body).toStrictEqual({
+      expect(tracker.mock.calls[0][0][createUser.id][0].body).toStrictEqual({
         userId: 'userId B',
       });
     });
