@@ -84,7 +84,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
     this.#addr = addr;
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
-    this.id = getEndpointId({ route: this.#path, method: this.#method });
+    this.id = getEndpointId({ method: this.#method, route: this.#path });
     this.#req = new ReqBuilder();
     this.#extractPathParams();
     this.#resp = sourceNode(this.id);
@@ -92,6 +92,11 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
 
   get method() {
     return this.#method;
+  }
+
+  /** @todo Update this when there is a better implementation of id. */
+  get details() {
+    return this.id;
   }
 
   /** Configures this endpoint. */

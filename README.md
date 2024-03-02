@@ -495,7 +495,7 @@ Below features are currently not yet supported but are planned in future release
 
 Encoding endpoint IDs
 
-- Currently assumes that URLs of endpoints do not contain unencoded `|` and `{}` characters. `{}` used to wrap around HTTP method in the encoded ID. Linkmerge uses `|` to separate different encoded IDs.
+- Currently assumes that URLs of endpoints do not contain unencoded `|` and `[]` characters. `[]` used to wrap around HTTP method in the encoded ID. Linkmerge uses `|` to separate different encoded IDs.
 - Current implementation also leads to ID collision if multiple endpoints with the same method and path are created (but perhaps with different configuration) and are called on the same chainflow.
 - Idea: Have a centralized service to issue unique IDs to deconflict endpoints - but still somehow encode the method/path info of an endpoint into it.
 

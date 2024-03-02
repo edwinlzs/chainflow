@@ -3,6 +3,7 @@ import { SEED_ID, STORE_ID } from '../utils/constants';
 
 const mockEndpoint = (path: string): IEndpoint<unknown> => ({
   call: jest.fn(async () => ({ resp: {} })),
+  details: path,
   id: path,
 });
 
@@ -49,6 +50,9 @@ describe('#chainflow', () => {
     const testFlow = chainflow().call(createUser).call(createRole);
 
     /** @todo add utest for logging state of previous run */
+    it('should return the responses accumulated from the run', async () => {
+      (createUser.call as jest.Mock).mockImplementationOnce(() => ({}));
+    });
 
     it('should reset its state and use a clean slate for the next run', async () => {
       (createUser.call as jest.Mock).mockImplementationOnce(() => ({

@@ -16,6 +16,8 @@ export interface CallResult {
 export interface IEndpoint<T> {
   /** A value that uniquely identifies this endpoint. */
   id: string;
+  /** A string with info describing the endpoint. */
+  details: string;
   call: (sources: SourceValues, opts?: T) => Promise<CallResult>;
 }
 
@@ -23,6 +25,12 @@ export interface IEndpoint<T> {
 interface CallNode<T> {
   endpoint: IEndpoint<T>;
   opts?: T;
+}
+
+type Responses = IResponse[];
+interface IResponse {
+  details: string;
+  val: unknown;
 }
 
 /** Stores chain of endpoint calls. */
@@ -41,6 +49,8 @@ export class Chainflow {
   /** Stores the sources that this chainflow was initialized with. */
   #initSources: SourceValues = {};
   #callqueue: Callqueue = [];
+  /** Tracks and stores accumulated responses. */
+  #responses: Responses = [];
 
   /** Run the set up chain */
   async run() {
@@ -58,6 +68,7 @@ export class Chainflow {
         if (store && Object.keys(store).length > 0)
           this.#sources[STORE_ID][0] = deepmerge(this.#sources[STORE_ID][0], store);
         this.#sources[id] = [resp];
+        this.#responses.push({ details: endpoint.details, val: resp });
       } catch (e) {
         warn(`Chainflow stopped at endpoint with id "${id}" and error: ${e}`);
         throw e;
@@ -106,8 +117,12 @@ export class Chainflow {
     return this;
   }
 
-  /** @todo Returns the accumulated responses of this chainflow. */
-  responses() {}
+  /** Returns the accumulated responses of this chainflow.
+   * @todo add tests and docs.
+   */
+  responses(): Responses {
+    return this.#responses;
+  }
 }
 
 export const chainflow = (): Chainflow => {
