@@ -239,7 +239,8 @@ export class InputNode {
 
   /** Attempts to retrieve values for an input node from a single source node. */
   #getSingleSourceNodeValue(id: string, path: string[], sourceValues: SourceValues) {
-    const sourceObject = sourceValues[id]![0];
+    const sourceValuesForId = sourceValues[id];
+    const sourceObject = sourceValuesForId[sourceValuesForId.length - 1];
 
     // get value from a linked source
     return this.#accessSource(sourceObject, path);

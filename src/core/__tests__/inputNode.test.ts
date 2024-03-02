@@ -115,6 +115,20 @@ describe('#inputNode', () => {
           expect(missingValues).toEqual([]);
         });
       });
+
+      describe('when there are multiple source values available', () => {
+        const testNode = new InputNode(sourceNode('some-id').value);
+        it('should use the latest source value (last pushed into the array)', () => {
+          const val = testNode[getNodeValue](
+            {
+              'some-id': [{ value: 'value-1' }, { value: 'value-2' }],
+            },
+            [],
+            [],
+          );
+          expect(val).toBe('value-2');
+        });
+      });
     });
 
     describe('multiple sources', () => {

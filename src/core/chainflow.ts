@@ -107,9 +107,7 @@ export class Chainflow {
   }
 
   /** @todo Returns the accumulated responses of this chainflow. */
-  responses() {
-
-  }
+  responses() {}
 }
 
 export const chainflow = (): Chainflow => {
