@@ -468,6 +468,18 @@ Using the `continuesFrom` method, `createGroupFlow` will copy the state of sourc
 
 Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables.
 
+### Misc Behaviors
+
+- If you have multiple endpoint calls to the same endpoint on one chainflow and they are linked to other endpoints' input nodes further down the flow, the latest endpoint call's values will be used.
+
+For example:
+
+```typescript
+chainflow().call(getUser).call(addRole).call(getUser).call(createGroup);
+```
+
+If an input node on `createGroup` requires a value from a response to `getUser`, then `createGroup` will take that value from the last call to `getUser` (i.e. from the response to the 2nd call to `getUser` that happens _after_ the call to `addRole`).
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.
