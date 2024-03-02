@@ -468,19 +468,36 @@ Using the `continuesFrom` method, `createGroupFlow` will copy the state of sourc
 
 Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables.
 
+### Misc Behaviors
+
+- If you have multiple endpoint calls to the same endpoint on one chainflow and they are linked to other endpoints' input nodes further down the flow, the latest endpoint call's values will be used.
+
+For example:
+
+```typescript
+chainflow().call(getUser).call(addRole).call(getUser).call(createGroup);
+```
+
+If an input node on `createGroup` requires a value from a response to `getUser`, then `createGroup` will take that value from the last call to `getUser` (i.e. from the response to the 2nd call to `getUser` that happens _after_ the call to `addRole`).
+
 ## Future Updates
 
 Below features are currently not yet supported but are planned in future releases.
 
 1. More flexibility to log and return responses
-2. API performance testing
-3. (Exploratory) Possibly some sort of UI/diagram generation
+2. Conditional calls - execute an endpoint call only if some condition is met.
+3. (Exploratory) API performance measurement
+4. (Exploratory) Possibly some sort of UI/diagram generation
 
 ## Development
 
-Run specific test files:
+### Areas that could be better
 
-`pnpm run test:file ./src/**/chainflow.test.ts`
+Encoding endpoint IDs
+
+- Currently assumes that URLs of endpoints do not contain unencoded `|` and `{}` characters. `{}` used to wrap around HTTP method in the encoded ID. Linkmerge uses `|` to separate different encoded IDs.
+- Current implementation also leads to ID collision if multiple endpoints with the same method and path are created (but perhaps with different configuration) and are called on the same chainflow.
+- Idea: Have a centralized service to issue unique IDs to deconflict endpoints - but still somehow encode the method/path info of an endpoint into it.
 
 ### Trivia
 

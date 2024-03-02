@@ -1,4 +1,4 @@
-import { hashEndpoint } from './utils/hash';
+import { getEndpointId } from './utils/id';
 import { InputNode, SourceValues, NODE_VALUE } from '../core/inputNode';
 import { ReqBuilder } from './reqBuilder';
 import http, { SUPPORTED_METHOD_UPPERCASE } from './utils/client';
@@ -67,6 +67,7 @@ export interface HTTPCallOpts {
  * as well as calls to that endpoint
  */
 export class Endpoint implements IEndpoint<HTTPCallOpts> {
+  id: string;
   #addr: string = '127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
@@ -74,8 +75,6 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
   #resp: SourceNode;
   #config: EndpointConfig = {};
   #store: Store = new Store();
-  /** A hash that uniquely identifies this endpoint. */
-  hash: string;
 
   constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
     method = method.toLowerCase();
@@ -85,10 +84,10 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
     this.#addr = addr;
     this.#path = path;
     this.#method = method as SUPPORTED_METHOD;
-    this.hash = hashEndpoint({ route: this.#path, method: this.#method });
+    this.id = getEndpointId({ route: this.#path, method: this.#method });
     this.#req = new ReqBuilder();
     this.#extractPathParams();
-    this.#resp = sourceNode(this.hash);
+    this.#resp = sourceNode(this.id);
   }
 
   get method() {
@@ -172,7 +171,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
 
     const finalMissingValues = this.#findMissingValues(missingValues, opts);
     if (finalMissingValues.length > 0)
-      throw new RequiredValuesNotFoundError(this.hash, finalMissingValues);
+      throw new RequiredValuesNotFoundError(this.id, finalMissingValues);
 
     if (opts?.body) body = deepmerge(body, opts.body);
     if (opts?.pathParams) pathParams = deepmerge(pathParams, opts.pathParams);

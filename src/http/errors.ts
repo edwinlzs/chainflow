@@ -8,9 +8,9 @@ export class UnsupportedMethodError extends Error {
 
 /** When there is no value available for a required input node. */
 export class RequiredValuesNotFoundError extends Error {
-  constructor(hash: string, missingValues: string[]) {
+  constructor(id: string, missingValues: string[]) {
     super(
-      `Endpoint with hash "${hash}" is missing required values with these paths: ${missingValues.join(
+      `Endpoint with id "${id}" is missing required values with these paths: ${missingValues.join(
         ', ',
       )}`,
     );
