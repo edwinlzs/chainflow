@@ -498,7 +498,7 @@ The responses in the array follow the order in which the respective endpoints ar
 
 ### `logging`
 
-Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables, or by simply importing and calling the `enable_logs` function.
+Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables, or by simply importing and calling the `enableLogs` function.
 
 ### Misc Behaviors
 
