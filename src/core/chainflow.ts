@@ -16,6 +16,8 @@ export interface CallResult {
 export interface IEndpoint<T> {
   /** A value that uniquely identifies this endpoint. */
   id: string;
+  /** A string with info describing the endpoint. */
+  details: string;
   call: (sources: SourceValues, opts?: T) => Promise<CallResult>;
 }
 
@@ -25,7 +27,13 @@ interface CallNode<T> {
   opts?: T;
 }
 
-/** Stores chain of endpoint calls. */
+type Responses = IResponse[];
+interface IResponse {
+  details: string;
+  val: unknown;
+}
+
+/** Stores a set of endpoint calls to be made. */
 type Callqueue = CallNode<any>[];
 
 /** Special object used to link an InputNode to a chainflow seed. */
@@ -41,6 +49,8 @@ export class Chainflow {
   /** Stores the sources that this chainflow was initialized with. */
   #initSources: SourceValues = {};
   #callqueue: Callqueue = [];
+  /** Stores accumulated responses. */
+  responses: Responses = [];
 
   /** Run the set up chain */
   async run() {
@@ -58,6 +68,7 @@ export class Chainflow {
         if (store && Object.keys(store).length > 0)
           this.#sources[STORE_ID][0] = deepmerge(this.#sources[STORE_ID][0], store);
         this.#sources[id] = [resp];
+        this.responses.push({ details: endpoint.details, val: resp });
       } catch (e) {
         warn(`Chainflow stopped at endpoint with id "${id}" and error: ${e}`);
         throw e;
@@ -82,6 +93,7 @@ export class Chainflow {
   /** Resets the chainflow's state by clearing its accumulated sources. */
   reset() {
     this.#sources = {};
+    this.responses = [];
   }
 
   /** Creates a clone of this chainflow's callqueue and initial sources
@@ -105,9 +117,6 @@ export class Chainflow {
     this.#initSources = { ...this.#initSources, ...cf.#sources };
     return this;
   }
-
-  /** @todo Returns the accumulated responses of this chainflow. */
-  responses() {}
 }
 
 export const chainflow = (): Chainflow => {

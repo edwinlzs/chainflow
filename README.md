@@ -464,9 +464,41 @@ We run a chainflow that calls `login` first to get a response from the login end
 
 Using the `continuesFrom` method, `createGroupFlow` will copy the state of source values (i.e. responses) from `loggedInFlow`. This means `createGroupFlow` will now have the logged in user's `authToken` received from calling `login`, and will use it when calling `createGroup` thrice for each group name in the `groupNames` array.
 
+### `responses`
+
+After running a chainflow, you can retrieve the responses received from endpoint calls via the `responses` property on that chainflow.
+
+```typescript
+const flow = chainflow().run(createUser).run(getRoles);
+
+const responses = flow.responses;
+```
+
+The responses will look something like:
+
+```typescript
+[
+  {
+    details: '[POST] /user' // identifies the endpoint called
+    val: { // the response to createUser
+      statusCode: 200,
+      body: ...,
+      headers: ...,
+      ...
+    }
+  },
+  {
+    details: '[GET] /roles'
+    val: ... // the response to getRoles
+  }
+]
+```
+
+The responses in the array follow the order in which the respective endpoints are called.
+
 ### `logging`
 
-Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables.
+Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables, or by simply importing and calling the `enable_logs` function.
 
 ### Misc Behaviors
 
@@ -491,13 +523,18 @@ Below features are currently not yet supported but are planned in future release
 
 ## Development
 
-### Areas that could be better
+### Areas that could be better (non-exhaustive)
 
-Encoding endpoint IDs
+#### _Encoding endpoint IDs_
 
-- Currently assumes that URLs of endpoints do not contain unencoded `|` and `{}` characters. `{}` used to wrap around HTTP method in the encoded ID. Linkmerge uses `|` to separate different encoded IDs.
+- Currently assumes that URLs of endpoints do not contain unencoded `|` and `[]` characters. `[]` used to wrap around HTTP method in the encoded ID. Linkmerge uses `|` to separate different encoded IDs.
 - Current implementation also leads to ID collision if multiple endpoints with the same method and path are created (but perhaps with different configuration) and are called on the same chainflow.
 - Idea: Have a centralized service to issue unique IDs to deconflict endpoints - but still somehow encode the method/path info of an endpoint into it.
+
+#### _Logging_
+
+- Should further explore appropriate degree of detail for logging
+- Truncation of requests/responses with extremely large payloads
 
 ### Trivia
 

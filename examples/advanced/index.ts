@@ -1,6 +1,9 @@
 // run the chainflows
 import { faker } from '@faker-js/faker';
 import { sellPetFlow, buyPetFlow } from './src/flows';
+import { enable_logs } from 'chainflow';
+
+enable_logs();
 
 const pets = [
   {

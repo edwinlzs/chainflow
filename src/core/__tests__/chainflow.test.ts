@@ -3,6 +3,7 @@ import { SEED_ID, STORE_ID } from '../utils/constants';
 
 const mockEndpoint = (path: string): IEndpoint<unknown> => ({
   call: jest.fn(async () => ({ resp: {} })),
+  details: path,
   id: path,
 });
 
@@ -48,9 +49,34 @@ describe('#chainflow', () => {
 
     const testFlow = chainflow().call(createUser).call(createRole);
 
-    /** @todo add utest for logging state of previous run */
+    it('should return the responses accumulated from the run', async () => {
+      const createUserResp = { userId: 'some-userId' };
+      const createRoleResp = { status: 'ok' };
+      (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+        resp: createUserResp,
+      }));
+      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
+        resp: createRoleResp,
+      }));
+      await testFlow.run();
+
+      expect(testFlow.responses).toStrictEqual([
+        {
+          details: 'user',
+          val: createUserResp,
+        },
+        {
+          details: 'role',
+          val: createRoleResp,
+        },
+      ]);
+    });
 
     it('should reset its state and use a clean slate for the next run', async () => {
+      (createRole.call as jest.Mock).mockClear();
+      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
+        resp: { value: 'value A' },
+      }));
       (createUser.call as jest.Mock).mockImplementationOnce(() => ({
         resp: { userId: 'userId A' },
       }));
@@ -66,6 +92,9 @@ describe('#chainflow', () => {
       (createUser.call as jest.Mock).mockImplementationOnce(() => ({
         resp: { userId: 'userId B' },
       }));
+      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
+        resp: { value: 'value B' },
+      }));
       await testFlow.run();
 
       sources = (createRole.call as jest.Mock).mock.calls[0][0];
@@ -73,6 +102,16 @@ describe('#chainflow', () => {
       expect(createRole.call).toHaveBeenCalledTimes(1);
       expect(sources[createUser.id].length).toBe(1);
       expect(sources[createUser.id][0]).toStrictEqual({ userId: 'userId B' });
+      expect(testFlow.responses).toStrictEqual([
+        {
+          details: 'user',
+          val: { userId: 'userId B' },
+        },
+        {
+          details: 'role',
+          val: { value: 'value B' },
+        },
+      ]);
     });
   });
 
