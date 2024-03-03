@@ -464,6 +464,38 @@ We run a chainflow that calls `login` first to get a response from the login end
 
 Using the `continuesFrom` method, `createGroupFlow` will copy the state of source values (i.e. responses) from `loggedInFlow`. This means `createGroupFlow` will now have the logged in user's `authToken` received from calling `login`, and will use it when calling `createGroup` thrice for each group name in the `groupNames` array.
 
+### `responses`
+
+After running a chainflow, you can retrieve the responses received from endpoint calls via the `responses` property on that chainflow.
+
+```typescript
+const flow = chainflow().run(createUser).run(getRoles);
+
+const responses = flow.responses;
+```
+
+The responses will look something like:
+
+```typescript
+[
+  {
+    details: '[POST] /user' // identifies the endpoint called
+    val: { // the response to createUser
+      statusCode: 200,
+      body: ...,
+      headers: ...,
+      ...
+    }
+  },
+  {
+    details: '[GET] /roles'
+    val: ... // the response to getRoles
+  }
+]
+```
+
+The responses in the array follow the order in which the respective endpoints are called.
+
 ### `logging`
 
 Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables.
