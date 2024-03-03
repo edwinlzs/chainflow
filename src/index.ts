@@ -6,3 +6,4 @@ export * from './core/utils/config';
 export * from './http/endpoint';
 export * from './http/reqBuilder';
 export * from './http/originServer';
+export { enable_logs } from './http/logger';
