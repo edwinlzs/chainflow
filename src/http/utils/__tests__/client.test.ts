@@ -82,10 +82,7 @@ describe('#client', () => {
 
     it('should have no headers when defaults are replaced with empty headers', async () => {
       undici.request = jest.fn();
-      defaultHeaders(
-        {},
-        true,
-      );
+      defaultHeaders({}, true);
       const tracker = jest.spyOn(undici, 'request');
       await httpClient.request({
         addr: 'http://127.0.0.1',

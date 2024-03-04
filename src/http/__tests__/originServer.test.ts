@@ -61,9 +61,13 @@ describe('#originServer', () => {
           path: '/test',
           method: 'GET',
         })
-        .reply(200, {
-          hello: 'world',
-        }, testResponseOptions);
+        .reply(
+          200,
+          {
+            hello: 'world',
+          },
+          testResponseOptions,
+        );
       const { resp } = await testEndpoint.call({});
 
       expect(resp.body).toStrictEqual(
