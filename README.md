@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
-<h3 align="center">A library to create dynamic and composable API call workflows.</h3>
+<h3 align="center">An Open Source library to create dynamic and composable API call workflows.</h3>
 <div align="center">
   
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
@@ -11,22 +11,23 @@
 [![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=flat-square&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
 </div>
 
-## Not Released Yet
-
-Hi! If you are here, you're a bit early. I'm still setting up some stuff for the first release. Check back in later!
-
 ## Documentation
 
 Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-docs/) to get started!
 
-## Use Cases
+## When might Chainflow be useful?
 
-Create multiple sets of API call workflows with this library that can be used to:
+1. **_Setting up demo data_**
 
-1. Insert demo data via your app's APIs (instead of SQL/db scripts)
-2. Simulate frontend interactions with backend APIs
-3. UI-agnostic end-to-end testing of backend APIs
-4. Test edge cases on backend endpoints with input variations
+   Say you have an application that you're developing new features for and you'd like to demonstrate those features. You may need your app to be in a certain context and hence your database in a specific state - perhaps a user has to be logged in with certain permissions, and to have already created a "group" in the app and added other users to that group. You may use raw SQL or other DB scripts to put your DB into that state by inserting users, roles, etc.. However, those scripts could miss out on important side effects relevant to the business context of your app that tend to be built into the services exposed by your backend server. Hence, you can use Chainflow to help compose API call workflows to setup the data in your app by calling the revelant service endpoints you have built e.g. `POST /user`, `POST /role`. You can then minimize your use of database scripts to mainly data that is not configurable with existing endpoints.
+
+2. **_Speeding up development_**
+
+   Similar to setting up demo data, often while coding new features you may want to test out how they behave in your app, and again you may want your app to be in a specific state locally for that. You can write API call workflow scripts built with Chainflow to help move your app into those states quickly.
+
+3. **_Testing your endpoints_**
+
+   An API call workflow could behave as if it were a frontend client calling the backend. In that way, you can create UI-agnostic end-to-end testing of backend endpoints by using API call workflows to simulate how a frontend would interact with the backend.
 
 ## Basic Usage
 
@@ -385,12 +386,11 @@ There are 4 supported ways to parse response bodies (as provided by the underlyi
 Another configuration option is how to validate the response to an endpoint. By default, Chainflow rejects responses that have HTTP status code 400 and above and throws an error. You can pass in a custom `respValidator` to change when a response is rejected.
 
 ```typescript
-const getUser = origin.get("/user").config({
+const getUser = origin.get('/user').config({
   respValidator: (resp) => {
-    if (resp.statusCode !== 201)
-      return { valid: false, msg: "Failed to retrieve users." };
-    if (!Object.keys(resp.body as Record<string, unknown>).includes("id"))
-      return { valid: false, msg: "Response did not provide user ID." };
+    if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to retrieve users.' };
+    if (!Object.keys(resp.body as Record<string, unknown>).includes('id'))
+      return { valid: false, msg: 'Response did not provide user ID.' };
     return { valid: true };
   },
 });
