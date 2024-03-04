@@ -152,12 +152,12 @@ Chainflow attaches default headers to all requests made by any endpoint with the
 'User-Agent': 'Chainflow/[major.minor version number]',
 ```
 
-If you'd like to change this, pass your default headers to `setDefaultHeaders`.
+If you'd like to change this, pass your default headers to the `defaultHeaders` util.
 
 ```typescript
-import { setDefaultHeaders } from 'chainflow';
+import { defaultHeaders } from 'chainflow';
 
-setDefaultHeaders({ 'content-type': 'application/xml' });
+defaultHeaders({ 'content-type': 'application/xml' });
 ```
 
 Pass in `true` as the second argument if you want to replace the entire set of default headers. Otherwise, the example above only overwrites the `content-type` default header and keeps `User-Agent`.
