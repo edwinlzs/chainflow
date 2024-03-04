@@ -1,9 +1,10 @@
 import { RESP_PARSER, Endpoint } from '../endpoint';
-import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMerge } from '../../core/utils/link';
 import { gen, required } from '../../core/utils/initializers';
 import { RequiredValuesNotFoundError } from '../errors';
+import { httpClient } from '../utils/client';
+import { testResponseOptions } from './_testUtils';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
 // from being picked up by another test's interceptor
@@ -50,9 +51,13 @@ describe('#endpoint', () => {
             path: '/text-parser-test',
             method: 'POST',
           })
-          .reply(200, {
-            hello: 'world',
-          });
+          .reply(
+            200,
+            {
+              hello: 'world',
+            },
+            testResponseOptions,
+          );
 
         const { resp } = await testEndpoint.call({});
         expect(resp.body).toBe(
@@ -69,9 +74,13 @@ describe('#endpoint', () => {
             path: '/json-parser-test',
             method: 'POST',
           })
-          .reply(200, {
-            hello: 'world',
-          });
+          .reply(
+            200,
+            {
+              hello: 'world',
+            },
+            testResponseOptions,
+          );
 
         const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({
@@ -115,9 +124,13 @@ describe('#endpoint', () => {
             path: '/arrayBuffer-parser-test',
             method: 'POST',
           })
-          .reply(200, {
-            hello: 'world',
-          });
+          .reply(
+            200,
+            {
+              hello: 'world',
+            },
+            testResponseOptions,
+          );
 
         const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual(
@@ -127,6 +140,27 @@ describe('#endpoint', () => {
             }),
           ]).arrayBuffer(),
         );
+      });
+
+      it('should parse a response body as JSON when parser is set to json, regardless of headers', async () => {
+        const testEndpoint = new Endpoint({
+          addr,
+          method: 'POST',
+          path: '/arrayBuffer-parser-test',
+        }).config({ respParser: RESP_PARSER.JSON });
+        client
+          .intercept({
+            path: '/arrayBuffer-parser-test',
+            method: 'POST',
+          })
+          .reply(200, {
+            hello: 'world',
+          });
+
+        const { resp } = await testEndpoint.call({});
+        expect(resp.body).toStrictEqual({
+          hello: 'world',
+        });
       });
     });
 
@@ -142,9 +176,13 @@ describe('#endpoint', () => {
             path: '/validator-config-test',
             method: 'POST',
           })
-          .reply(404, {
-            error: 'some-error',
-          });
+          .reply(
+            404,
+            {
+              error: 'some-error',
+            },
+            testResponseOptions,
+          );
         const { resp } = await testEndpoint.call({});
         expect(resp.body).toStrictEqual({ error: 'some-error' });
         expect(resp.statusCode).toBe(404);
@@ -167,9 +205,13 @@ describe('#endpoint', () => {
             path: '/error-config-test',
             method: 'POST',
           })
-          .reply(404, {
-            error: 'some-error',
-          });
+          .reply(
+            404,
+            {
+              error: 'some-error',
+            },
+            testResponseOptions,
+          );
         await expect(testEndpoint.call({})).rejects.toThrow({
           name: 'InvalidResponseError',
           message: 'Response is invalid: Failed to retrieve users.',
@@ -180,9 +222,13 @@ describe('#endpoint', () => {
             path: '/error-config-test',
             method: 'POST',
           })
-          .reply(200, {
-            name: 'Dude',
-          });
+          .reply(
+            200,
+            {
+              name: 'Dude',
+            },
+            testResponseOptions,
+          );
         await expect(testEndpoint.call({})).rejects.toThrow({
           name: 'InvalidResponseError',
           message: 'Response is invalid: Response did not provide user ID.',
@@ -199,7 +245,7 @@ describe('#endpoint', () => {
           path: '/response-test',
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       const { resp } = await testEndpoint.call({});
       expect(
@@ -233,8 +279,8 @@ describe('#endpoint', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
+        .reply(200);
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
       await testEndpoint.call(responses);
 
@@ -250,8 +296,8 @@ describe('#endpoint', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
+        .reply(200);
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       testEndpoint.set((nodes) => {
@@ -276,8 +322,8 @@ describe('#endpoint', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
+        .reply(200);
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
       const testValGen = () => 'michael-scott';
 
@@ -321,8 +367,8 @@ describe('#endpoint', () => {
             path: '/pet',
             method: 'GET',
           })
-          .reply(200, {});
-        const tracker = jest.spyOn(http, 'request');
+          .reply(200);
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         await expect(testEndpoint.call({})).rejects.toThrow(RequiredValuesNotFoundError);
@@ -349,8 +395,8 @@ describe('#endpoint', () => {
             path: '/user',
             method: 'GET',
           })
-          .reply(200, {});
-        const tracker = jest.spyOn(http, 'request');
+          .reply(200);
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         await expect(testEndpoint.call({})).rejects.toThrow(RequiredValuesNotFoundError);
@@ -377,8 +423,8 @@ describe('#endpoint', () => {
             path: '/user/user123/pet/pet123/2',
             method: 'GET',
           })
-          .reply(200, {});
-        const tracker = jest.spyOn(http, 'request');
+          .reply(200);
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         await testEndpoint.call({});
@@ -420,8 +466,8 @@ describe('#endpoint', () => {
             path: '/user/user-100/pet/user-100-pet-222/3',
             method: 'GET',
           })
-          .reply(200, {});
-        const tracker = jest.spyOn(http, 'request');
+          .reply(200);
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         await testEndpoint.call({
@@ -452,8 +498,8 @@ describe('#endpoint', () => {
           path: '/pet?cute=true',
           method: 'GET',
         })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
+        .reply(200);
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -481,8 +527,8 @@ describe('#endpoint', () => {
           path: '/pet?cute=true&iq=200',
           method: 'GET',
         })
-        .reply(200, {});
-      const tracker = jest.spyOn(http, 'request');
+        .reply(200);
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -511,9 +557,9 @@ describe('#endpoint', () => {
           path: '/auth',
           method: 'GET',
         })
-        .reply(200, {});
+        .reply(200);
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       await testEndpoint.call({});
@@ -539,9 +585,9 @@ describe('#endpoint', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       await expect(

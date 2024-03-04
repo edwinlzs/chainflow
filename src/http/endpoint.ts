@@ -1,7 +1,7 @@
 import { getEndpointId } from './utils/id';
 import { InputNode, SourceValues, NODE_VALUE } from '../core/inputNode';
 import { ReqBuilder } from './reqBuilder';
-import http, { SUPPORTED_METHOD_UPPERCASE } from './utils/client';
+import { httpClient, SUPPORTED_METHOD_UPPERCASE, checkJsonSafe } from './utils/client';
 import { Dispatcher } from 'undici';
 import {
   InvalidResponseError,
@@ -13,7 +13,6 @@ import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
 import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
-import BodyReadable from 'undici/types/readable';
 import { IStore, Store } from '../core/store';
 import { warn } from './logger';
 import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './utils/constants';
@@ -186,7 +185,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
     callPath = this.#insertPathParams(callPath, pathParams);
     callPath = this.#insertQueryParams(callPath, queryParams);
 
-    const resp = await http.request({
+    const resp = await httpClient.request({
       addr: this.#addr,
       path: callPath,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
@@ -197,7 +196,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
     if (resp == null) throw new InvalidResponseError('No response received.');
     const parsedResp = {
       ...resp,
-      body: resp.body.body && (await this.#parseResponse(resp.body)),
+      body: await this.#parseResponseBody(resp),
     };
     const results = this.#config.respValidator?.(parsedResp) ?? this.#validateResp(parsedResp);
     if (!results.valid) throw new InvalidResponseError(results.msg);
@@ -277,17 +276,19 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
   }
 
   /** Parses a response body according to the endpoint config. */
-  async #parseResponse(body: BodyReadable) {
+  async #parseResponseBody(resp: Dispatcher.ResponseData) {
     switch (this.#config.respParser) {
       case RESP_PARSER.ARRAY_BUFFER:
-        return await body.arrayBuffer();
+        return await resp.body.arrayBuffer();
       case RESP_PARSER.BLOB:
-        return await body.blob();
+        return await resp.body.blob();
       case RESP_PARSER.TEXT:
-        return await body.text();
+        return await resp.body.text();
       case RESP_PARSER.JSON:
+        return await resp.body.json();
       default:
-        return await body.json();
+        if (checkJsonSafe(resp)) return await resp.body.json();
+        return await resp.body.text();
     }
   }
 }

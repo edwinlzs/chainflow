@@ -1,14 +1,21 @@
-import { request as undiciRequest } from 'undici';
+import { Dispatcher, request as undiciRequest } from 'undici';
 import { log, warn } from '../logger';
 
 export type SUPPORTED_METHOD_UPPERCASE = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
 /** @todo evaluate if defaults should change */
-export const defaultHeaders = {
-  connection: 'keep-alive',
-  accept: '*/*',
+export let _defaultHeaders: Record<string, string> | undefined = {
   'content-type': 'application/json',
-  // 'User-Agent': 'Chainflow/0.1',
+  'User-Agent': 'Chainflow/0.1',
+};
+
+export const defaultHeaders = (headers?: Record<string, string>, replace?: boolean) => {
+  replace
+    ? (_defaultHeaders = headers)
+    : (_defaultHeaders = {
+        ..._defaultHeaders,
+        ...headers,
+      });
 };
 
 /** Sends a HTTP request. */
@@ -26,7 +33,7 @@ const request = async ({
   headers?: Record<string, string>;
 }) => {
   const finalHeaders = {
-    ...defaultHeaders,
+    ..._defaultHeaders,
     ...headers,
   };
 
@@ -39,8 +46,8 @@ const request = async ({
   try {
     const resp = await undiciRequest(`${addr}${path}`, {
       method,
-      body: JSON.stringify(body),
-      headers: finalHeaders,
+      body: body ? JSON.stringify(body) : null,
+      headers: Object.keys(finalHeaders).length > 0 ? finalHeaders : null,
     });
 
     return resp;
@@ -50,4 +57,15 @@ const request = async ({
   }
 };
 
-export default { request };
+export const httpClient = { request };
+
+/**
+ * Check required to avoid errors when attempting `json()` on an empty body.
+ * Refer to issue under `ResponseData` at
+ * https://github.com/nodejs/undici/blob/main/docs/docs/api/Dispatcher.md
+ */
+export const checkJsonSafe = (resp: Dispatcher.ResponseData): boolean => {
+  return Boolean(
+    resp.statusCode !== 204 && resp.headers['content-type']?.includes('application/json'),
+  );
+};

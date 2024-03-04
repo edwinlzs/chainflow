@@ -143,6 +143,27 @@ const origin = originServer('127.0.0.1:3001').headers({ token: 'some-token' });
 const getInfo = origin.get('/info'); // getInfo endpoint will have the headers defined above
 ```
 
+### Default headers
+
+Chainflow attaches default headers to all requests made by any endpoint with the value:
+
+```typescript
+'content-type': 'application/json',
+'User-Agent': 'Chainflow/[major.minor version number]',
+```
+
+If you'd like to change this, pass your default headers to `setDefaultHeaders`.
+
+```typescript
+import { setDefaultHeaders } from 'chainflow';
+
+setDefaultHeaders({ 'content-type': 'application/xml' });
+```
+
+Pass in `true` as the second argument if you want to replace the entire set of default headers. Otherwise, the example above only overwrites the `content-type` default header and keeps `User-Agent`.
+
+### Initializing Values
+
 The request payloads under `Basic Usage` are defined with only _default_ values - i.e. the values which a Chainflow use if there are no response values from other endpoint calls linked to it.
 
 However, you can also use the following features to more flexibly define the values used in a request.
@@ -362,7 +383,9 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 ### `config`
 
 `respParser`  
-By default, Chainflows will parse response bodies as JSON objects. To change this, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
+By default, Chainflows will parse response bodies as JSON objects UNLESS the status code is `204` or `application/json` is not found in the `content-type` header (to avoid errors when parsing an empty body), upon which they will instead parse it as text.
+
+To set a specific parsing format, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
 
 ```typescript
 import { RESP_PARSER } from 'chainflow';
