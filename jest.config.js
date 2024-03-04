@@ -6,6 +6,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
+  testPathIgnorePatterns: ['_testUtils.ts'],
   verbose: true,
   collectCoverage: true,
   coverageReporters: [

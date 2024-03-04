@@ -7,3 +7,4 @@ export * from './http/endpoint';
 export * from './http/reqBuilder';
 export * from './http/originServer';
 export { enableLogs } from './http/logger';
+export { defaultHeaders } from './http/utils/client';

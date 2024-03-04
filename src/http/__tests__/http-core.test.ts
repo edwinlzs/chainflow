@@ -3,10 +3,11 @@ import { chainflow, seed, store } from '../../core/chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMerge } from '../../core/utils/link';
 import { config } from '../../core/utils/config';
-import http from '../utils/client';
 import { originServer } from '../originServer';
 import { required } from '../../core/utils/initializers';
 import { RequiredValuesNotFoundError } from '../errors';
+import { httpClient } from '../utils/client';
+import { testResponseOptions } from './_testUtils';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
 // from being picked up by another test's interceptor
@@ -18,7 +19,7 @@ const uniquePath = (path: string) => {
 
 /** @todo Slim down these unit tests based on what is already tested in core */
 
-describe('#chainflow', () => {
+describe('#http-core', () => {
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
@@ -35,7 +36,7 @@ describe('#chainflow', () => {
         path: userPath,
         method: 'GET',
       })
-      .reply(200, {});
+      .reply(200);
 
     await chainflow().call(endpoint).run();
     expect(tracker).toHaveBeenCalledTimes(1);
@@ -52,14 +53,14 @@ describe('#chainflow', () => {
         path: userPath,
         method: 'GET',
       })
-      .reply(200, {})
+      .reply(200)
       .times(2);
     client
       .intercept({
         path: rolePath,
         method: 'POST',
       })
-      .reply(200, {});
+      .reply(200);
 
     const userTracker = jest.spyOn(getUser, 'call');
     const roleTracker = jest.spyOn(createRole, 'call');
@@ -89,14 +90,14 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'GET',
         })
-        .reply(200, {})
+        .reply(200)
         .times(2);
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(400, {});
+        .reply(400);
       await expect(
         chainflow().call(getUser).call(createRole).call(getUser).run(),
       ).rejects.toThrow();
@@ -126,15 +127,19 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          userId: 'userId A',
-        });
+        .reply(
+          200,
+          {
+            userId: 'userId A',
+          },
+          testResponseOptions,
+        );
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
       await testFlow.run();
 
       expect(tracker).toHaveBeenCalledTimes(1);
@@ -148,16 +153,20 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          userId: 'userId B',
-        });
+        .reply(
+          200,
+          {
+            userId: 'userId B',
+          },
+          testResponseOptions,
+        );
 
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await testFlow.run();
 
@@ -183,7 +192,7 @@ describe('#chainflow', () => {
       link(name, getUser.resp.body.details.name);
     });
     const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
 
     describe('when both linked responses have the source value', () => {
       it('should use the value of the response with higher priority', async () => {
@@ -193,27 +202,35 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            details: {
-              name: 'A',
+          .reply(
+            200,
+            {
+              details: {
+                name: 'A',
+              },
             },
-          });
+            testResponseOptions,
+          );
         client
           .intercept({
             path: userPath,
             method: 'GET',
           })
-          .reply(200, {
-            details: {
-              name: 'B',
+          .reply(
+            200,
+            {
+              details: {
+                name: 'B',
+              },
             },
-          });
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await testFlow.run();
         expect(tracker).toHaveBeenCalledTimes(3);
@@ -234,26 +251,34 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            details: null,
-          });
+          .reply(
+            200,
+            {
+              details: null,
+            },
+            testResponseOptions,
+          );
 
         client
           .intercept({
             path: userPath,
             method: 'GET',
           })
-          .reply(200, {
-            details: {
-              name: 'B',
+          .reply(
+            200,
+            {
+              details: {
+                name: 'B',
+              },
             },
-          });
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await testFlow.run();
         expect(tracker).toHaveBeenCalledTimes(3);
@@ -275,7 +300,7 @@ describe('#chainflow', () => {
           link(name, getUser.resp.body.details.name);
         });
         const testFlow = chainflow().call(createUser).call(getUser).call(createRole);
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
 
         it('should use undefined instead of accessing the next linked response ', async () => {
           tracker.mockClear();
@@ -284,26 +309,34 @@ describe('#chainflow', () => {
               path: userPath,
               method: 'POST',
             })
-            .reply(200, {
-              details: null,
-            });
+            .reply(
+              200,
+              {
+                details: null,
+              },
+              testResponseOptions,
+            );
 
           client
             .intercept({
               path: userPath,
               method: 'GET',
             })
-            .reply(200, {
-              details: {
-                name: 'B',
+            .reply(
+              200,
+              {
+                details: {
+                  name: 'B',
+                },
               },
-            });
+              testResponseOptions,
+            );
           client
             .intercept({
               path: rolePath,
               method: 'POST',
             })
-            .reply(200, {});
+            .reply(200);
 
           await testFlow.run();
           expect(tracker).toHaveBeenCalledTimes(3);
@@ -332,7 +365,7 @@ describe('#chainflow', () => {
     createRole.set(({ body: { userId } }) => {
       link(userId, createUser.resp.body.userId, testCallback);
     });
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
 
     it('should call the endpoint with the given query params', async () => {
       tracker.mockClear();
@@ -341,15 +374,19 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          userId: 'newUserId',
-        });
+        .reply(
+          200,
+          {
+            userId: 'newUserId',
+          },
+          testResponseOptions,
+        );
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await chainflow().call(createUser).call(createRole).run();
 
@@ -383,7 +420,7 @@ describe('#chainflow', () => {
           ),
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
 
         it('should pass both linked responses to the request', async () => {
           tracker.mockClear();
@@ -392,23 +429,31 @@ describe('#chainflow', () => {
               path: userPath,
               method: 'GET',
             })
-            .reply(200, {
-              name: 'John',
-            });
+            .reply(
+              200,
+              {
+                name: 'John',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: favAnimalPath,
               method: 'GET',
             })
-            .reply(200, {
-              favAnimal: 'dogs',
-            });
+            .reply(
+              200,
+              {
+                favAnimal: 'dogs',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: notificationPath,
               method: 'POST',
             })
-            .reply(200, {});
+            .reply(200);
           await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
 
           expect(tracker).toHaveBeenCalledTimes(3);
@@ -433,7 +478,7 @@ describe('#chainflow', () => {
           msg: linkMerge([getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback),
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
 
         it('should pass both linked responses to the request', async () => {
           tracker.mockClear();
@@ -442,23 +487,31 @@ describe('#chainflow', () => {
               path: userPath,
               method: 'GET',
             })
-            .reply(200, {
-              name: 'John',
-            });
+            .reply(
+              200,
+              {
+                name: 'John',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: favAnimalPath,
               method: 'GET',
             })
-            .reply(200, {
-              favAnimal: 'dogs',
-            });
+            .reply(
+              200,
+              {
+                favAnimal: 'dogs',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: notificationPath,
               method: 'POST',
             })
-            .reply(200, {});
+            .reply(200);
           await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
 
           expect(tracker).toHaveBeenCalledTimes(3);
@@ -495,7 +548,7 @@ describe('#chainflow', () => {
             testCallback,
           );
         });
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
 
         it('should pass both linked responses to the request', async () => {
           tracker.mockClear();
@@ -504,23 +557,31 @@ describe('#chainflow', () => {
               path: userPath,
               method: 'GET',
             })
-            .reply(200, {
-              name: 'John',
-            });
+            .reply(
+              200,
+              {
+                name: 'John',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: favAnimalPath,
               method: 'GET',
             })
-            .reply(200, {
-              favAnimal: 'dogs',
-            });
+            .reply(
+              200,
+              {
+                favAnimal: 'dogs',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: notificationPath,
               method: 'POST',
             })
-            .reply(200, {});
+            .reply(200);
           await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
 
           expect(tracker).toHaveBeenCalledTimes(3);
@@ -547,7 +608,7 @@ describe('#chainflow', () => {
         createNotification.set(({ body: { msg } }) => {
           linkMerge(msg, [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback);
         });
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
 
         it('should pass both linked responses to the request', async () => {
           tracker.mockClear();
@@ -556,23 +617,31 @@ describe('#chainflow', () => {
               path: userPath,
               method: 'GET',
             })
-            .reply(200, {
-              name: 'John',
-            });
+            .reply(
+              200,
+              {
+                name: 'John',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: favAnimalPath,
               method: 'GET',
             })
-            .reply(200, {
-              favAnimal: 'dogs',
-            });
+            .reply(
+              200,
+              {
+                favAnimal: 'dogs',
+              },
+              testResponseOptions,
+            );
           client
             .intercept({
               path: notificationPath,
               method: 'POST',
             })
-            .reply(200, {});
+            .reply(200);
           await chainflow().call(getUser).call(getFavAnimal).call(createNotification).run();
 
           expect(tracker).toHaveBeenCalledTimes(3);
@@ -592,7 +661,7 @@ describe('#chainflow', () => {
       name: required(),
     });
 
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
 
     it('should throw a RequiredValueNotFoundError if value is not provided', async () => {
       tracker.mockClear();
@@ -601,7 +670,7 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
       await expect(chainflow().call(createUser).run()).rejects.toThrow(RequiredValuesNotFoundError);
     });
 
@@ -617,15 +686,19 @@ describe('#chainflow', () => {
           path: '/randName',
           method: 'GET',
         })
-        .reply(200, {
-          name: 'Tom',
-        });
+        .reply(
+          200,
+          {
+            name: 'Tom',
+          },
+          testResponseOptions,
+        );
       client
         .intercept({
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
       expect(chainflow().call(getRandName).call(createUser).run).rejects.not;
     });
   });
@@ -643,7 +716,7 @@ describe('#chainflow', () => {
         token: 'default',
       });
 
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
 
     it('should call the endpoint with the given call options', async () => {
       tracker.mockClear();
@@ -655,7 +728,7 @@ describe('#chainflow', () => {
             role: 'someRole',
           },
         })
-        .reply(200, {});
+        .reply(200);
 
       await chainflow()
         .call(addUser, {
@@ -695,7 +768,7 @@ describe('#chainflow', () => {
       link(name, seed.username);
     });
 
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
 
     it('should call the endpoint with the given seed', async () => {
       tracker.mockClear();
@@ -704,7 +777,7 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await chainflow().call(createUser).seed({ username: 'some name' }).run();
       expect(tracker).toHaveBeenCalledTimes(1);
@@ -728,7 +801,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       client
@@ -736,16 +809,20 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          id: 'some-id',
-        });
+        .reply(
+          200,
+          {
+            id: 'some-id',
+          },
+          testResponseOptions,
+        );
 
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await chainflow().call(createUser).call(createRole).run();
 
@@ -770,7 +847,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       client
@@ -778,16 +855,20 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          name: 'Tom',
-        });
+        .reply(
+          200,
+          {
+            name: 'Tom',
+          },
+          testResponseOptions,
+        );
 
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await chainflow().call(createUser).call(createRole).run();
 
@@ -812,7 +893,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
 
       client
@@ -820,16 +901,20 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          name: 'Tom',
-        })
+        .reply(
+          200,
+          {
+            name: 'Tom',
+          },
+          testResponseOptions,
+        )
         .times(2);
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       const flow1 = chainflow().call(createUser);
       await flow1.run();
@@ -855,7 +940,7 @@ describe('#chainflow', () => {
         type: 'ENGINEER',
       });
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
       const flow1 = chainflow().call(createUser);
       const flow2 = chainflow().call(createRole);
@@ -865,15 +950,19 @@ describe('#chainflow', () => {
           path: userPath,
           method: 'POST',
         })
-        .reply(200, {
-          name: 'Tom',
-        });
+        .reply(
+          200,
+          {
+            name: 'Tom',
+          },
+          testResponseOptions,
+        );
       client
         .intercept({
           path: rolePath,
           method: 'POST',
         })
-        .reply(200, {});
+        .reply(200);
 
       await flow1.extend(flow2).run();
       expect(tracker).toHaveBeenCalledTimes(2);
@@ -900,7 +989,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -908,15 +997,19 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            name: 'Tom',
-          });
+          .reply(
+            200,
+            {
+              name: 'Tom',
+            },
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
@@ -949,7 +1042,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -957,15 +1050,19 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            name: 'Tom',
-          });
+          .reply(
+            200,
+            {
+              name: 'Tom',
+            },
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
@@ -997,7 +1094,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -1005,23 +1102,31 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            name: 'Tom',
-          });
+          .reply(
+            200,
+            {
+              name: 'Tom',
+            },
+            testResponseOptions,
+          );
         client
           .intercept({
             path: userPath,
             method: 'GET',
           })
-          .reply(200, {
-            name: 'Jane',
-          });
+          .reply(
+            200,
+            {
+              name: 'Jane',
+            },
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(getUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(3);
@@ -1050,7 +1155,7 @@ describe('#chainflow', () => {
           type: 'ENGINEER',
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -1058,15 +1163,19 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {
-            name: 'Tom',
-          });
+          .reply(
+            200,
+            {
+              name: 'Tom',
+            },
+            testResponseOptions,
+          );
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
@@ -1101,7 +1210,7 @@ describe('#chainflow', () => {
           link(name, store.username.firstName);
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -1109,13 +1218,13 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, { username: undefined });
+          .reply(200, { username: undefined }, testResponseOptions);
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
@@ -1150,7 +1259,7 @@ describe('#chainflow', () => {
           link(name, config(store.username.firstName, { allowUndefined: true }));
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -1158,13 +1267,13 @@ describe('#chainflow', () => {
             path: userPath,
             method: 'POST',
           })
-          .reply(200, { username: undefined });
+          .reply(200, { username: undefined }, testResponseOptions);
         client
           .intercept({
             path: rolePath,
             method: 'POST',
           })
-          .reply(200, {});
+          .reply(200);
 
         await chainflow().call(createUser).call(createRole).run();
         expect(tracker).toHaveBeenCalledTimes(2);
@@ -1188,7 +1297,7 @@ describe('#chainflow', () => {
           username: seed.username,
         });
 
-        const tracker = jest.spyOn(http, 'request');
+        const tracker = jest.spyOn(httpClient, 'request');
         tracker.mockClear();
 
         client
@@ -1196,13 +1305,13 @@ describe('#chainflow', () => {
             path: loginPath,
             method: 'POST',
           })
-          .reply(200, { id: 'admin-id' });
+          .reply(200, { id: 'admin-id' }, testResponseOptions);
         client
           .intercept({
             path: userPath,
             method: 'POST',
           })
-          .reply(200, {})
+          .reply(200)
           .times(3);
 
         const loggedInFlow = await chainflow().call(login).run();
@@ -1240,22 +1349,30 @@ describe('#chainflow', () => {
           path: loginPath,
           method: 'post',
         })
-        .reply(200, {
-          token: 'some-token',
-        });
+        .reply(
+          200,
+          {
+            token: 'some-token',
+          },
+          testResponseOptions,
+        );
       client
         .intercept({
           path: userPath,
           method: 'get',
         })
-        .reply(200, {});
+        .reply(200);
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
       await chainflow().call(testLogin).call(testEndpoint).run();
 
       expect(tracker).toHaveBeenCalledTimes(2);
-      expect(tracker.mock.calls[1][0].headers?.Authorization).toBe('some-token');
+      expect(tracker.mock.calls[1][0].headers).toStrictEqual(
+        expect.objectContaining({
+          Authorization: 'some-token',
+        }),
+      );
     });
   });
 });

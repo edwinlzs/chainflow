@@ -63,9 +63,9 @@ petStoreApp.patch('/pet/:petId', (req, res) => {
   const pet = db.pets[petId as string];
   if (pet) {
     pet.description = description;
-    res.status(200).send({});
+    res.status(200).send();
   } else {
-    res.status(404).send({});
+    res.status(404).send();
   }
 });
 
@@ -79,9 +79,9 @@ petStoreApp.post('/pet/:petId/sell', (req, res) => {
       status: 'available',
       price,
     };
-    res.status(200).send({});
+    res.status(200).send();
   } else {
-    res.status(404).send({});
+    res.status(404).send();
   }
 });
 

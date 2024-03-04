@@ -1,7 +1,8 @@
 import { originServer } from '../originServer';
-import http from '../utils/client';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { RESP_PARSER } from '../endpoint';
+import { httpClient } from '../utils/client';
+import { testResponseOptions } from './_testUtils';
 
 describe('#originServer', () => {
   const agent = new MockAgent();
@@ -20,14 +21,14 @@ describe('#originServer', () => {
         path: '/',
         method: 'GET',
       })
-      .reply(200, {});
+      .reply(200);
     const testOrigin = originServer('127.0.0.1:5000').headers({
       token: 'some-token',
       'content-type': 'application/text',
     });
     const testEndpoint = testOrigin.get('/');
 
-    const tracker = jest.spyOn(http, 'request');
+    const tracker = jest.spyOn(httpClient, 'request');
     tracker.mockClear();
     await testEndpoint.call({});
 
@@ -60,9 +61,13 @@ describe('#originServer', () => {
           path: '/test',
           method: 'GET',
         })
-        .reply(200, {
-          hello: 'world',
-        });
+        .reply(
+          200,
+          {
+            hello: 'world',
+          },
+          testResponseOptions,
+        );
       const { resp } = await testEndpoint.call({});
 
       expect(resp.body).toStrictEqual(
@@ -89,9 +94,9 @@ describe('#originServer', () => {
           path: '/user',
           method: 'GET',
         })
-        .reply(200, {});
+        .reply(200);
 
-      const tracker = jest.spyOn(http, 'request');
+      const tracker = jest.spyOn(httpClient, 'request');
       tracker.mockClear();
       await testEndpoint.call({});
 
