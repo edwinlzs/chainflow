@@ -152,12 +152,12 @@ Chainflow attaches default headers to all requests made by any endpoint with the
 'User-Agent': 'Chainflow/[major.minor version number]',
 ```
 
-If you'd like to change this, pass your default headers to `setDefaultHeaders`.
+If you'd like to change this, pass your default headers to the `defaultHeaders` util.
 
 ```typescript
-import { setDefaultHeaders } from 'chainflow';
+import { defaultHeaders } from 'chainflow';
 
-setDefaultHeaders({ 'content-type': 'application/xml' });
+defaultHeaders({ 'content-type': 'application/xml' });
 ```
 
 Pass in `true` as the second argument if you want to replace the entire set of default headers. Otherwise, the example above only overwrites the `content-type` default header and keeps `User-Agent`.
@@ -383,7 +383,7 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 ### `config`
 
 `respParser`  
-By default, Chainflows will parse response bodies as JSON objects UNLESS the status code is `204` or `application/json` is not found in the `content-type` header (to avoid errors when parsing an empty body), upon which they will instead parse it as text.
+By default, a chainflow parses response bodies as JSON objects UNLESS the status code is `204` or the `content-type` header does not contain `application/json` (to avoid errors when parsing an empty body), upon which they will instead parse it as text.
 
 To set a specific parsing format, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
 
