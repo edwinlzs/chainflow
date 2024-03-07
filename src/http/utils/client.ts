@@ -18,6 +18,16 @@ export const defaultHeaders = (headers?: Record<string, string>, replace?: boole
       });
 };
 
+export interface IHttpClient<T> {
+  request: (params: {
+    addr: string;
+    path: string;
+    method: SUPPORTED_METHOD_UPPERCASE;
+    body?: any;
+    headers?: Record<string, string>;
+  }) => Promise<T>;
+}
+
 /** Sends a HTTP request. */
 const request = async ({
   addr,
@@ -57,7 +67,12 @@ const request = async ({
   }
 };
 
-export const httpClient = { request };
+export let httpClient: IHttpClient<any> = { request } as IHttpClient<Dispatcher.ResponseData>;
+
+/** Allows user to use their own HTTP client */
+export const configureHttpClient = (client: IHttpClient<unknown>) => {
+  httpClient = client;
+};
 
 /**
  * Check required to avoid errors when attempting `json()` on an empty body.
