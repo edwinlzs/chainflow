@@ -1,8 +1,13 @@
 import { getEndpointId } from './utils/id';
 import { InputNode, SourceValues, NODE_VALUE } from '../core/inputNode';
 import { ReqBuilder } from './reqBuilder';
-import { httpClient, SUPPORTED_METHOD_UPPERCASE, checkJsonSafe } from './utils/client';
-import { Dispatcher } from 'undici';
+import {
+  httpClient,
+  SUPPORTED_METHOD_UPPERCASE,
+  IHttpReq,
+  RESP_PARSER,
+  ParsedHttpResp,
+} from './utils/client';
 import {
   InvalidResponseError,
   RequiredValuesNotFoundError,
@@ -37,20 +42,10 @@ export interface HttpInputNodes {
 /** Configurations for the endpoint. */
 export interface EndpointConfig {
   respParser?: `${RESP_PARSER}`;
-  respValidator?: (resp: ParsedResponse) => {
+  respValidator?: (resp: ParsedHttpResp) => {
     valid: boolean;
     msg?: string;
   };
-}
-
-type ParsedResponse = Omit<Dispatcher.ResponseData, 'body'> & { body: unknown };
-
-/** Formats to parse the response body. */
-export enum RESP_PARSER {
-  ARRAY_BUFFER = 'arrayBuffer',
-  BLOB = 'blob',
-  JSON = 'json',
-  TEXT = 'text',
 }
 
 /** Options for configuring an endpoint call. */
@@ -65,9 +60,9 @@ export interface HTTPCallOpts {
  * Manages request and response nodes,
  * as well as calls to that endpoint
  */
-export class Endpoint implements IEndpoint<HTTPCallOpts> {
+export class Endpoint implements IEndpoint<HTTPCallOpts, IHttpReq, ParsedHttpResp> {
   id: string;
-  #addr: string = '127.0.0.1';
+  #addr: string = 'http://127.0.0.1';
   #path: string;
   #method: SUPPORTED_METHOD;
   #req: ReqBuilder;
@@ -150,7 +145,10 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
   }
 
   /** Calls this endpoint with responses provided from earlier requests in the chain. */
-  async call(responses: SourceValues, opts?: HTTPCallOpts): Promise<CallResult> {
+  async call(
+    responses: SourceValues,
+    opts?: HTTPCallOpts,
+  ): Promise<CallResult<IHttpReq, ParsedHttpResp>> {
     const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body;
@@ -185,23 +183,29 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
     callPath = this.#insertPathParams(callPath, pathParams);
     callPath = this.#insertQueryParams(callPath, queryParams);
 
+    const url = `${this.#addr}${callPath}`;
     const resp = await httpClient.request({
-      addr: this.#addr,
-      path: callPath,
+      url,
       method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body,
       headers,
+      respParser: this.#config.respParser,
     });
 
-    if (resp == null) throw new InvalidResponseError('No response received.');
-    const parsedResp = {
-      ...resp,
-      body: await this.#parseResponseBody(resp),
-    };
-    const results = this.#config.respValidator?.(parsedResp) ?? this.#validateResp(parsedResp);
+    const results = this.#config.respValidator?.(resp) ?? this.#validateResp(resp);
     if (!results.valid) throw new InvalidResponseError(results.msg);
 
-    return this.#store.storeValues(parsedResp);
+    return {
+      req: {
+        method,
+        url,
+        body,
+        headers,
+        respParser: this.#config.respParser,
+      },
+      resp,
+      store: this.#store.storeValues(resp),
+    };
   }
 
   /** Passes the request input nodes of this endpoint to a callback. */
@@ -247,7 +251,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
   /** Checks that endpoint call succeeded -
    * i.e. request did not throw error,
    * and status code is not >= 400. */
-  #validateResp(resp: ParsedResponse): { valid: boolean; msg?: string } {
+  #validateResp(resp: ParsedHttpResp): { valid: boolean; msg?: string } {
     if (resp.statusCode >= 400) {
       warn(`Request failed with status code: ${resp.statusCode}`);
       return { valid: false, msg: `Received HTTP status code ${resp.statusCode}` };
@@ -273,22 +277,5 @@ export class Endpoint implements IEndpoint<HTTPCallOpts> {
       }
     }
     return finalMissingValues;
-  }
-
-  /** Parses a response body according to the endpoint config. */
-  async #parseResponseBody(resp: Dispatcher.ResponseData) {
-    switch (this.#config.respParser) {
-      case RESP_PARSER.ARRAY_BUFFER:
-        return await resp.body.arrayBuffer();
-      case RESP_PARSER.BLOB:
-        return await resp.body.blob();
-      case RESP_PARSER.TEXT:
-        return await resp.body.text();
-      case RESP_PARSER.JSON:
-        return await resp.body.json();
-      default:
-        if (checkJsonSafe(resp)) return await resp.body.json();
-        return await resp.body.text();
-    }
   }
 }

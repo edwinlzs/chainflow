@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none;">🌊hainflow</h1>
-<h3 align="center">An Open Source library to create dynamic and composable API call workflows.</h3>
+<h3 align="center">An Open Source library to create dynamic and composable API call workflows in TypeScript.</h3>
 <div align="center">
   
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
@@ -11,15 +11,17 @@
 [![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=flat-square&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
 </div>
 
-## Documentation
+## 📖 Documentation
 
-Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-docs/) to get started!
+### Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-docs/) to get started!
 
-## When might Chainflow be useful?
+## 💭 When might Chainflow be useful?
 
 1. **_Setting up demo data_**
 
-   Say you have an application that you're developing new features for and you'd like to demonstrate those features. You may need your app to be in a certain context and hence your database in a specific state - perhaps a user has to be logged in with certain permissions, and to have already created a "group" in the app and added other users to that group. You may use raw SQL or other DB scripts to put your DB into that state by inserting users, roles, etc.. However, those scripts could miss out on important side effects relevant to the business context of your app that tend to be built into the services exposed by your backend server. Hence, you can use Chainflow to help compose API call workflows to setup the data in your app by calling the revelant service endpoints you have built e.g. `POST /user`, `POST /role`. You can then minimize your use of database scripts to mainly data that is not configurable with existing endpoints.
+   Say you have an application that you're developing new features for and you'd like to demonstrate those features. You may need your app to be in a certain context and hence your database in a specific state - perhaps a user has to be logged in with certain permissions, and to have already created a "group" in the app and added other users to that group. You might manually click into your app and log in as a user to set everything up, but that could be tedious. Alternatively, you may thus use raw SQL or other DB scripts to insert users, roles, etc. However, those scripts could miss out on important side effects relevant to the business context of your app that tend to be built into the services exposed by your backend server.
+
+   Chainflow helps you compose API call workflows to setup the data in your app by calling the relevant service endpoints you have built e.g. `POST /user`, `POST /role`. You can then avoid manual setups and minimize your use of database scripts to just data that is not configurable with existing endpoints!
 
 2. **_Speeding up development_**
 
@@ -28,6 +30,14 @@ Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-do
 3. **_Testing your endpoints_**
 
    An API call workflow could behave as if it were a frontend client calling the backend. In that way, you can create UI-agnostic end-to-end testing of backend endpoints by using API call workflows to simulate how a frontend would interact with the backend.
+
+## ⚠️ (Important!) Note
+
+Chainflow is my first and somewhat experimental open-source project which I started to assist my own development work. It's similar to [Postman Flows](https://learning.postman.com/docs/postman-flows/gs/flows-overview/), but done in code so us engineers have even greater control over the process (+ the ease of writing simple scripts with Chainflow to be run in your CLI or as pipeline jobs etc.).
+
+I am still finding and ironing out pain points in using the library and releases should be considered unstable while I improve the library's usability. It is far from perfect in its current state, but I will continue to improve upon it if I or others find potential in its use. Therefore, your feedback and ideas are very important to me. I welcome thoughts on just about anything - useful dev tools to manage this project, QoL features to support easier coding patterns when using this library or even thoughts on the future direction of this project.
+
+Drop them as a [Github issue](https://github.com/edwinlzs/chainflow/issues) or email me at <edwinlzscode@gmail.com>!
 
 ## Basic Usage
 
@@ -487,23 +497,30 @@ We run a chainflow that calls `login` first to get a response from the login end
 
 Using the `continuesFrom` method, `createGroupFlow` will copy the state of source values (i.e. responses) from `loggedInFlow`. This means `createGroupFlow` will now have the logged in user's `authToken` received from calling `login`, and will use it when calling `createGroup` thrice for each group name in the `groupNames` array.
 
-### `responses`
+### `events`
 
-After running a chainflow, you can retrieve the responses received from endpoint calls via the `responses` property on that chainflow.
+After running a chainflow, you can retrieve the request and response event data from endpoint calls executed during that run via the `events` property on that chainflow.
 
 ```typescript
 const flow = chainflow().run(createUser).run(getRoles);
 
-const responses = flow.responses;
+const events = flow.events;
 ```
 
-The responses will look something like:
+The events will look something like:
 
 ```typescript
 [
   {
-    details: '[POST] /user' // identifies the endpoint called
-    val: { // the response to createUser
+    details: '[POST] /user', // identifies the endpoint called
+    req: {
+      method: 'POST',
+      url: ...,
+      body: ...,
+      headers: ...,
+      respParser: ..., // the format used to parse the response body
+    },
+    resp: {
       statusCode: 200,
       body: ...,
       headers: ...,
@@ -511,8 +528,9 @@ The responses will look something like:
     }
   },
   {
-    details: '[GET] /roles'
-    val: ... // the response to getRoles
+    details: '[GET] /roles',
+    req: ...,
+    resp: ...
   }
 ]
 ```

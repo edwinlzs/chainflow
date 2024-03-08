@@ -1,8 +1,8 @@
 import { IEndpoint, chainflow } from '../../core/chainflow';
 import { SEED_ID, STORE_ID } from '../utils/constants';
 
-const mockEndpoint = (path: string): IEndpoint<unknown> => ({
-  call: jest.fn(async () => ({ resp: {} })),
+const mockEndpoint = (path: string): IEndpoint<unknown, unknown, unknown> => ({
+  call: jest.fn(async () => ({ req: {}, resp: {} })),
   details: path,
   id: path,
 });
@@ -30,7 +30,7 @@ describe('#chainflow', () => {
     const createRole = mockEndpoint('role');
 
     it('should break the chainflow', async () => {
-      (createRole.call as jest.Mock).mockImplementationOnce(() => {
+      (createRole.call as jest.Mock).mockImplementationOnce(async () => {
         throw new Error();
       });
 
@@ -49,36 +49,46 @@ describe('#chainflow', () => {
 
     const testFlow = chainflow().call(createUser).call(createRole);
 
-    it('should return the responses accumulated from the run', async () => {
+    it('should return the call events accumulated from the run', async () => {
       const createUserResp = { userId: 'some-userId' };
       const createRoleResp = { status: 'ok' };
-      (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+      (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-1' },
         resp: createUserResp,
       }));
-      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
+      (createRole.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-2' },
         resp: createRoleResp,
       }));
       await testFlow.run();
 
-      expect(testFlow.responses).toStrictEqual([
+      expect(testFlow.events).toStrictEqual([
         {
           details: 'user',
-          val: createUserResp,
+          req: {
+            value: 'request-1',
+          },
+          resp: createUserResp,
         },
         {
           details: 'role',
-          val: createRoleResp,
+          req: {
+            value: 'request-2',
+          },
+          resp: createRoleResp,
         },
       ]);
     });
 
     it('should reset its state and use a clean slate for the next run', async () => {
       (createRole.call as jest.Mock).mockClear();
-      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
-        resp: { value: 'value A' },
-      }));
-      (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+      (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-3' },
         resp: { userId: 'userId A' },
+      }));
+      (createRole.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-4' },
+        resp: { value: 'value A' },
       }));
       await testFlow.run();
 
@@ -89,10 +99,12 @@ describe('#chainflow', () => {
       expect(sources[createUser.id][0]).toStrictEqual({ userId: 'userId A' });
       (createRole.call as jest.Mock).mockClear();
 
-      (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+      (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-5' },
         resp: { userId: 'userId B' },
       }));
-      (createRole.call as jest.Mock).mockImplementationOnce(() => ({
+      (createRole.call as jest.Mock).mockImplementationOnce(async () => ({
+        req: { value: 'request-6' },
         resp: { value: 'value B' },
       }));
       await testFlow.run();
@@ -102,14 +114,16 @@ describe('#chainflow', () => {
       expect(createRole.call).toHaveBeenCalledTimes(1);
       expect(sources[createUser.id].length).toBe(1);
       expect(sources[createUser.id][0]).toStrictEqual({ userId: 'userId B' });
-      expect(testFlow.responses).toStrictEqual([
+      expect(testFlow.events).toStrictEqual([
         {
           details: 'user',
-          val: { userId: 'userId B' },
+          req: { value: 'request-5' },
+          resp: { userId: 'userId B' },
         },
         {
           details: 'role',
-          val: { value: 'value B' },
+          req: { value: 'request-6' },
+          resp: { value: 'value B' },
         },
       ]);
     });
@@ -184,7 +198,7 @@ describe('#chainflow', () => {
       const createRole = mockEndpoint('role');
 
       it('should pass values through the store', async () => {
-        (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+        (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
           resp: {},
           store: { username: 'Tom' },
         }));
@@ -201,7 +215,7 @@ describe('#chainflow', () => {
       const createUser = mockEndpoint('user');
       const createRole = mockEndpoint('role');
       it('should pass values through the store', async () => {
-        (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+        (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
           resp: {},
           store: {
             user: {
@@ -229,13 +243,13 @@ describe('#chainflow', () => {
       const getUser = mockEndpoint('getUser');
       const createRole = mockEndpoint('role');
       it('should have the later endpoint call override the store value put by the previous call', async () => {
-        (createUser.call as jest.Mock).mockImplementationOnce(() => ({
+        (createUser.call as jest.Mock).mockImplementationOnce(async () => ({
           resp: {},
           store: {
             username: 'Tom',
           },
         }));
-        (getUser.call as jest.Mock).mockImplementationOnce(() => ({
+        (getUser.call as jest.Mock).mockImplementationOnce(async () => ({
           resp: {},
           store: {
             username: 'Jane',
@@ -255,7 +269,7 @@ describe('#chainflow', () => {
     const login = mockEndpoint('login');
     const addUser = mockEndpoint('user');
     it('should keep the stored value', async () => {
-      (login.call as jest.Mock).mockImplementationOnce(() => ({
+      (login.call as jest.Mock).mockImplementationOnce(async () => ({
         resp: { id: 'admin-id' },
       }));
 

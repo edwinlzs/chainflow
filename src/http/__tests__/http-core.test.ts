@@ -20,10 +20,11 @@ const uniquePath = (path: string) => {
 /** @todo Slim down these unit tests based on what is already tested in core */
 
 describe('#http-core', () => {
+  const baseUrl = 'http://127.0.0.1:5000';
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
-  const client = agent.get('http://127.0.0.1:5000');
+  const client = agent.get(baseUrl);
   const origin = originServer('127.0.0.1:5000');
 
   it('should allow API calls', async () => {
@@ -751,7 +752,7 @@ describe('#http-core', () => {
       expect(arg?.body).toStrictEqual({
         name: 'some name',
       });
-      expect(arg?.path).toBe('/someGroup/user?role=someRole');
+      expect(arg?.url).toBe(`${baseUrl}/someGroup/user?role=someRole`);
       expect(arg?.headers).toStrictEqual({
         token: 'some token',
       });

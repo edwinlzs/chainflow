@@ -1,7 +1,6 @@
 import { originServer } from '../originServer';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { RESP_PARSER } from '../endpoint';
-import { httpClient } from '../utils/client';
+import { RESP_PARSER, httpClient } from '../utils/client';
 import { testResponseOptions } from './_testUtils';
 
 describe('#originServer', () => {
