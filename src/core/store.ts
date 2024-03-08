@@ -1,4 +1,3 @@
-import { CallResult } from './chainflow';
 import { SourceNode } from './sourceNode';
 import { nodePath, allowUndefined } from './utils/symbols';
 
@@ -15,7 +14,7 @@ export class Store {
   #store: IStore<unknown> = {};
 
   /** Assigns values to be put in the chainflow's store. */
-  storeValues(resp: unknown): CallResult {
+  storeValues(resp: unknown): IStore<unknown> {
     Object.entries(this.def).map(([key, val]) => {
       if ((val as SourceNode)[nodePath]) {
         // SourceNode
@@ -29,7 +28,7 @@ export class Store {
 
     const store = this.#store;
     this.#store = {}; // resets the store
-    return { resp: resp, store };
+    return store;
   }
 
   /** Looks for a value defined in the store definition. */

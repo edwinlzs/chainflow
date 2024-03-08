@@ -9,9 +9,9 @@
     "flow": "node -r ts-node/register index.ts"
   },
   "devDependencies": {
-    "@types/chainflow": "file:..\\..\\dist",
+    "@types/chainflow": "file:../../dist",
     "@faker-js/faker": "^8.2.0",
-    "chainflow": "file:..\\..\\dist"
+    "chainflow": "file:../../dist"
   },
   "dependencies": {
     "@types/express": "^4.17.21",

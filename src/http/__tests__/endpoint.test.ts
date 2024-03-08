@@ -1,9 +1,9 @@
-import { RESP_PARSER, Endpoint } from '../endpoint';
+import { Endpoint } from '../endpoint';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMerge } from '../../core/utils/link';
 import { gen, required } from '../../core/utils/initializers';
 import { RequiredValuesNotFoundError } from '../errors';
-import { httpClient } from '../utils/client';
+import { RESP_PARSER, httpClient } from '../utils/client';
 import { testResponseOptions } from './_testUtils';
 
 // used to maintain URL paths uniqueness to avoid one test's calls
@@ -15,10 +15,11 @@ const uniquePath = (path: string) => {
 };
 
 describe('#endpoint', () => {
+  const baseUrl = 'http://127.0.0.1:5000';
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
-  const client = agent.get('http://127.0.0.1:5000');
+  const client = agent.get(baseUrl);
   const addr = '127.0.0.1:5000';
 
   const testReqPayload = {
@@ -428,7 +429,7 @@ describe('#endpoint', () => {
         tracker.mockClear();
 
         await testEndpoint.call({});
-        expect(tracker.mock.calls[0][0].path).toBe('/user/user123/pet/pet123/2');
+        expect(tracker.mock.calls[0][0].url).toBe(`${baseUrl}/user/user123/pet/pet123/2`);
       });
     });
 
@@ -474,7 +475,9 @@ describe('#endpoint', () => {
           [login.id]: [{ body: { id: '100' } }],
           [getPet.id]: [{ body: { id: '222' } }],
         });
-        expect(tracker.mock.calls[0][0].path).toBe('/user/user-100/pet/user-100-pet-222/3');
+        expect(tracker.mock.calls[0][0].url).toBe(
+          `${baseUrl}/user/user-100/pet/user-100-pet-222/3`,
+        );
       });
     });
   });
@@ -533,7 +536,7 @@ describe('#endpoint', () => {
 
       await testEndpoint.call({});
       expect(tracker).toHaveBeenCalledTimes(1);
-      expect(tracker.mock.calls[0][0]?.path).toStrictEqual('/pet?cute=true&iq=200');
+      expect(tracker.mock.calls[0][0]?.url).toStrictEqual(`${baseUrl}/pet?cute=true&iq=200`);
     });
   });
 

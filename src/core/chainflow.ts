@@ -7,34 +7,35 @@ import { SEED_ID, STORE_ID } from './utils/constants';
 
 const deepmerge = deepmergeSetup();
 
-export interface CallResult {
-  resp: any;
+export interface CallResult<Req, Resp> {
+  req: Req;
+  resp: Resp;
   store?: IStore<unknown>;
 }
 
 /** Defines an endpoint that a chainflow can call upon. */
-export interface IEndpoint<T> {
+export interface IEndpoint<CallOpts, Req, Resp> {
   /** A value that uniquely identifies this endpoint. */
   id: string;
   /** A string with info describing the endpoint. */
   details: string;
-  call: (sources: SourceValues, opts?: T) => Promise<CallResult>;
+  call: (sources: SourceValues, opts?: CallOpts) => Promise<CallResult<Req, Resp>>;
 }
 
 /** Details on an endpoint call to be made. */
-interface CallNode<T> {
-  endpoint: IEndpoint<T>;
-  opts?: T;
+interface CallNode<CallOpts, Req, Resp> {
+  endpoint: IEndpoint<CallOpts, Req, Resp>;
+  opts?: CallOpts;
 }
 
-type Responses = IResponse[];
-interface IResponse {
+interface CallEvent {
   details: string;
-  val: unknown;
+  req: unknown;
+  resp: unknown;
 }
 
 /** Stores a set of endpoint calls to be made. */
-type Callqueue = CallNode<any>[];
+type Callqueue = CallNode<any, any, any>[];
 
 /** Special object used to link an InputNode to a chainflow seed. */
 export const seed = sourceNode(SEED_ID);
@@ -49,8 +50,8 @@ export class Chainflow {
   /** Stores the sources that this chainflow was initialized with. */
   #initSources: SourceValues = {};
   #callqueue: Callqueue = [];
-  /** Stores accumulated responses. */
-  responses: Responses = [];
+  /** Stores accumulated endpoint call events. */
+  events: CallEvent[] = [];
 
   /** Run the set up chain */
   async run() {
@@ -63,16 +64,14 @@ export class Chainflow {
       // call endpoint
       const id = endpoint.id;
       log(`Calling endpoint with id "${id}"`);
-      try {
-        const { resp, store } = await endpoint.call(this.#sources, opts);
-        if (store && Object.keys(store).length > 0)
-          this.#sources[STORE_ID][0] = deepmerge(this.#sources[STORE_ID][0], store);
-        this.#sources[id] = [resp];
-        this.responses.push({ details: endpoint.details, val: resp });
-      } catch (e) {
-        warn(`Chainflow stopped at endpoint with id "${id}" and error: ${e}`);
-        throw e;
-      }
+      const { req, resp, store } = await endpoint.call(this.#sources, opts).catch((err) => {
+        warn(`Chainflow stopped at endpoint with id "${id}" and error: ${err}`);
+        throw err;
+      });
+      if (store && Object.keys(store).length > 0)
+        this.#sources[STORE_ID][0] = deepmerge(this.#sources[STORE_ID][0], store);
+      this.#sources[id] = [resp];
+      this.events.push({ details: endpoint.details, req, resp });
     }
     log('Finished running chainflow.');
     return this;
@@ -85,7 +84,7 @@ export class Chainflow {
   }
 
   /** Adds an endpoint call to the callchain. */
-  call<T>(endpoint: IEndpoint<T>, opts?: T) {
+  call<CallOpts, Req, Resp>(endpoint: IEndpoint<CallOpts, Req, Resp>, opts?: CallOpts) {
     this.#callqueue.push({ endpoint, opts });
     return this;
   }
@@ -93,7 +92,7 @@ export class Chainflow {
   /** Resets the chainflow's state by clearing its accumulated sources. */
   reset() {
     this.#sources = {};
-    this.responses = [];
+    this.events = [];
   }
 
   /** Creates a clone of this chainflow's callqueue and initial sources
