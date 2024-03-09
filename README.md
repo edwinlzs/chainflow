@@ -581,6 +581,10 @@ Below features are currently not yet supported but are planned in future release
 
 - Creating proxies recursively when defining `SourceNode` paths could hit performance - not rigorously tested yet, so not 100% sure of how significant it is
 
+#### _structuredClone_
+
+- The use of `structuredClone` to clone a Chainflow's source values is causing issues with NodeJS version 16.x (the function was introduced in `17.x`). Can consider polyfilling here (`https://www.npmjs.com/package/@ungap/structured-clone`);
+
 ### Trivia
 
 - You probably noticed that I enjoy using the Builder pattern for its clarity.
