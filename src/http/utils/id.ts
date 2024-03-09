@@ -1,4 +1,4 @@
 /** @todo explore improving this */
-export const getEndpointId = ({ route, method }: { route: string; method: string }): string => {
-  return `[${method.toUpperCase()}] ${route}`;
+export const getEndpointId = ({ url, method }: { url: string; method: string }): string => {
+  return `[${method.toUpperCase()}] ${url}`;
 };

@@ -3,7 +3,7 @@ import { chainflow, seed, store } from '../../core/chainflow';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { link, linkMerge } from '../../core/utils/link';
 import { config } from '../../core/utils/config';
-import { originServer } from '../originServer';
+import { origin } from '../origin';
 import { required } from '../../core/utils/initializers';
 import { RequiredValuesNotFoundError } from '../errors';
 import { httpClient } from '../utils/client';
@@ -25,11 +25,11 @@ describe('#http-core', () => {
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
   const client = agent.get(baseUrl);
-  const origin = originServer('127.0.0.1:5000');
+  const testOrigin = origin('127.0.0.1:5000');
 
   it('should allow API calls', async () => {
     const userPath = uniquePath('/user');
-    const endpoint = origin.get(userPath);
+    const endpoint = testOrigin.get(userPath);
     const tracker = jest.spyOn(endpoint, 'call');
     tracker.mockClear();
     client
@@ -46,8 +46,8 @@ describe('#http-core', () => {
   it('should allow multiple API calls', async () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const getUser = origin.get(userPath);
-    const createRole = origin.post(rolePath);
+    const getUser = testOrigin.get(userPath);
+    const createRole = testOrigin.post(rolePath);
 
     client
       .intercept({
@@ -77,8 +77,8 @@ describe('#http-core', () => {
   describe('when an endpoint call returns an error code', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const getUser = origin.get(userPath);
-    const createRole = origin.post(rolePath);
+    const getUser = testOrigin.get(userPath);
+    const createRole = testOrigin.post(rolePath);
 
     const userTracker = jest.spyOn(getUser, 'call');
     const roleTracker = jest.spyOn(createRole, 'call');
@@ -111,10 +111,10 @@ describe('#http-core', () => {
   describe('when a chainflow has finished a run', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = origin.post(userPath).body({
+    const createUser = testOrigin.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = origin.post(rolePath).body({
+    const createRole = testOrigin.post(rolePath).body({
       userId: 'defaultId',
     });
 
@@ -181,9 +181,9 @@ describe('#http-core', () => {
   describe('when multiple possible sources are linked to an input node', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = origin.post(userPath);
-    const getUser = origin.get(userPath);
-    const createRole = origin.post(rolePath).body({
+    const createUser = testOrigin.post(userPath);
+    const getUser = testOrigin.get(userPath);
+    const createRole = testOrigin.post(rolePath).body({
       name: 'defaultName',
       roleName: 'someRole',
     });
@@ -292,7 +292,7 @@ describe('#http-core', () => {
       });
 
       describe('when undefined values are allowed from the linked response', () => {
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: 'defaultName',
           roleName: 'someRole',
         });
@@ -355,10 +355,10 @@ describe('#http-core', () => {
   describe('when a callback is provided for a linked value', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
-    const createUser = origin.post(userPath).body({
+    const createUser = testOrigin.post(userPath).body({
       name: 'Tom',
     });
-    const createRole = origin.post(rolePath).body({
+    const createRole = testOrigin.post(rolePath).body({
       userId: 'defaultId',
     });
 
@@ -409,9 +409,9 @@ describe('#http-core', () => {
 
         const testCallback = ({ userName, favAnimal }: { userName: string; favAnimal: string }) =>
           `${userName} likes ${favAnimal}.`;
-        const getUser = origin.get(userPath);
-        const getFavAnimal = origin.get(favAnimalPath);
-        const createNotification = origin.post(notificationPath).body({
+        const getUser = testOrigin.get(userPath);
+        const getFavAnimal = testOrigin.get(favAnimalPath);
+        const createNotification = testOrigin.post(notificationPath).body({
           msg: linkMerge(
             {
               userName: getUser.resp.body.name,
@@ -473,9 +473,9 @@ describe('#http-core', () => {
 
         const testCallback = ([name, favAnimal]: [string, string]) => `${name} likes ${favAnimal}.`;
 
-        const getUser = origin.get(userPath);
-        const getFavAnimal = origin.get(favAnimalPath);
-        const createNotification = origin.post(notificationPath).body({
+        const getUser = testOrigin.get(userPath);
+        const getFavAnimal = testOrigin.get(favAnimalPath);
+        const createNotification = testOrigin.post(notificationPath).body({
           msg: linkMerge([getUser.resp.body.name, getFavAnimal.resp.body.favAnimal], testCallback),
         });
 
@@ -531,9 +531,9 @@ describe('#http-core', () => {
         const favAnimalPath = uniquePath('/favAnimal');
         const notificationPath = uniquePath('/notification');
 
-        const getUser = origin.get(userPath);
-        const getFavAnimal = origin.get(favAnimalPath);
-        const createNotification = origin.post(notificationPath).body({
+        const getUser = testOrigin.get(userPath);
+        const getFavAnimal = testOrigin.get(favAnimalPath);
+        const createNotification = testOrigin.post(notificationPath).body({
           msg: 'default msg',
         });
 
@@ -599,9 +599,9 @@ describe('#http-core', () => {
         const favAnimalPath = uniquePath('/favAnimal');
         const notificationPath = uniquePath('/notification');
 
-        const getUser = origin.get(userPath);
-        const getFavAnimal = origin.get(favAnimalPath);
-        const createNotification = origin.post(notificationPath).body({
+        const getUser = testOrigin.get(userPath);
+        const getFavAnimal = testOrigin.get(favAnimalPath);
+        const createNotification = testOrigin.post(notificationPath).body({
           msg: ['default msg'],
         });
 
@@ -658,7 +658,7 @@ describe('#http-core', () => {
 
   describe('when a value is marked as required', () => {
     const userPath = uniquePath('/user');
-    const createUser = origin.post(userPath).body({
+    const createUser = testOrigin.post(userPath).body({
       name: required(),
     });
 
@@ -677,7 +677,7 @@ describe('#http-core', () => {
 
     it('should not throw an error if the value is provided', async () => {
       tracker.mockClear();
-      const getRandName = origin.get('/randName');
+      const getRandName = testOrigin.get('/randName');
       createUser.set(({ body: { name } }) => {
         link(name, getRandName.resp.body.name);
       });
@@ -705,7 +705,7 @@ describe('#http-core', () => {
   });
 
   describe('when call options are provided', () => {
-    const addUser = origin
+    const addUser = testOrigin
       .post('/{groupId}/user')
       .body({
         name: 'default',
@@ -761,7 +761,7 @@ describe('#http-core', () => {
 
   describe('when run options are provided', () => {
     const userPath = uniquePath('/user');
-    const createUser = origin.post(userPath).body({
+    const createUser = testOrigin.post(userPath).body({
       name: 'default',
     });
 
@@ -793,11 +793,11 @@ describe('#http-core', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = origin.post(userPath).body({
+      const createUser = testOrigin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = origin.post(rolePath).body({
+      const createRole = testOrigin.post(rolePath).body({
         userId: createUser.resp.body.id,
         type: 'ENGINEER',
       });
@@ -839,11 +839,11 @@ describe('#http-core', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('should take the value from the specified source', async () => {
-      const createUser = origin.post(userPath).body({
+      const createUser = testOrigin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = origin.post(rolePath).body({
+      const createRole = testOrigin.post(rolePath).body({
         name: link(createUser.resp.body.name, (name: string) => name.toUpperCase()),
         type: 'ENGINEER',
       });
@@ -885,11 +885,11 @@ describe('#http-core', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('the cloned flow can be extended without changing the original', async () => {
-      const createUser = origin.post(userPath).body({
+      const createUser = testOrigin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = origin.post(rolePath).body({
+      const createRole = testOrigin.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
@@ -932,11 +932,11 @@ describe('#http-core', () => {
     const userPath = uniquePath('/user');
     const rolePath = uniquePath('/role');
     it('the original flow should append the callqueue of the extending flow', async () => {
-      const createUser = origin.post(userPath).body({
+      const createUser = testOrigin.post(userPath).body({
         name: 'Tom',
       });
 
-      const createRole = origin.post(rolePath).body({
+      const createRole = testOrigin.post(rolePath).body({
         name: createUser.resp.body.name,
         type: 'ENGINEER',
       });
@@ -976,7 +976,7 @@ describe('#http-core', () => {
       const rolePath = uniquePath('/role');
 
       it('should pass values through the store', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -985,7 +985,7 @@ describe('#http-core', () => {
             username: resp.body.name,
           }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: store.username,
           type: 'ENGINEER',
         });
@@ -1025,7 +1025,7 @@ describe('#http-core', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should pass values through the store', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1038,7 +1038,7 @@ describe('#http-core', () => {
             },
           }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: store.user.profile.firstName,
           type: 'ENGINEER',
         });
@@ -1078,7 +1078,7 @@ describe('#http-core', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should have the later endpoint call override the store value put by the previous call', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1086,11 +1086,11 @@ describe('#http-core', () => {
           .store((resp) => ({
             username: resp.body.name,
           }));
-        const getUser = origin.get(userPath).store((resp) => ({
+        const getUser = testOrigin.get(userPath).store((resp) => ({
           username: resp.body.name,
         }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: store.username,
           type: 'ENGINEER',
         });
@@ -1142,7 +1142,7 @@ describe('#http-core', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should allow the entire response object to be put in the store', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1151,7 +1151,7 @@ describe('#http-core', () => {
             createUserResponse: resp,
           }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: store.createUserResponse.body.name,
           type: 'ENGINEER',
         });
@@ -1191,7 +1191,7 @@ describe('#http-core', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should not store the value', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1202,7 +1202,7 @@ describe('#http-core', () => {
             },
           }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: 'default-name',
           type: 'ENGINEER',
         });
@@ -1240,7 +1240,7 @@ describe('#http-core', () => {
       const userPath = uniquePath('/user');
       const rolePath = uniquePath('/role');
       it('should not store the value', async () => {
-        const createUser = origin
+        const createUser = testOrigin
           .post(userPath)
           .body({
             name: 'Tom',
@@ -1251,7 +1251,7 @@ describe('#http-core', () => {
             },
           }));
 
-        const createRole = origin.post(rolePath).body({
+        const createRole = testOrigin.post(rolePath).body({
           name: 'default-name',
           type: 'ENGINEER',
         });
@@ -1289,11 +1289,11 @@ describe('#http-core', () => {
       const loginPath = uniquePath('/login');
       const userPath = uniquePath('/user');
       it('should keep the stored value', async () => {
-        const login = origin.post(loginPath).body({
+        const login = testOrigin.post(loginPath).body({
           name: 'admin',
         });
 
-        const addUser = origin.post(userPath).body({
+        const addUser = testOrigin.post(userPath).body({
           id: login.resp.body.id,
           username: seed.username,
         });
@@ -1337,12 +1337,12 @@ describe('#http-core', () => {
   describe('when origin base headers are defined with links', () => {
     const loginPath = uniquePath('/login');
     const userPath = uniquePath('/user');
-    const origin = originServer('127.0.0.1:5000');
-    const testLogin = origin.post(loginPath);
-    origin.headers({
+    const testOrigin = origin('127.0.0.1:5000');
+    const testLogin = testOrigin.post(loginPath);
+    testOrigin.headers({
       Authorization: testLogin.resp.body.token,
     });
-    const testEndpoint = origin.get(userPath);
+    const testEndpoint = testOrigin.get(userPath);
 
     it('should merge headers with endpoint headers overriding conflicting origin headers', async () => {
       client

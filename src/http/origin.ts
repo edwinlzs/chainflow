@@ -2,13 +2,14 @@ import { Endpoint, EndpointConfig, INodeWithValue } from './endpoint';
 import { InputNode } from '../core/inputNode';
 import { SUPPORTED_METHODS } from './utils/constants';
 
-/** Convenience function for creating an endpoint builder with supported methods defined on it. */
-export const originServer = (addr?: string) => new OriginBase(addr) as OriginServer;
+/** Convenience function for creating an endpoint builder
+ * with supported HTTP methods defined on it. */
+export const origin = (origin?: string) => new OriginBase(origin) as Origin;
 
-/** Function for making a new endpoint. */
+/** Function for defining a new endpoint. */
 type MakeEndpoint = (path: string) => Endpoint;
 
-export type OriginServer = OriginBase & {
+export type Origin = OriginBase & {
   get: MakeEndpoint;
   post: MakeEndpoint;
   put: MakeEndpoint;
@@ -17,9 +18,9 @@ export type OriginServer = OriginBase & {
   options: MakeEndpoint;
 };
 
-/** Stores the base address and defines methods to build endpoints with methods. */
+/** Stores the base url and defines methods to build endpoints with methods. */
 class OriginBase {
-  #addr: string;
+  #origin?: string;
   #headers: InputNode;
   #config: EndpointConfig = {};
 
@@ -43,14 +44,14 @@ class OriginBase {
     return this;
   }
 
-  constructor(addr: string = 'http://127.0.0.1') {
-    this.#addr = addr;
+  constructor(origin?: string) {
+    this.#origin = origin;
     this.#headers = new InputNode(undefined);
     SUPPORTED_METHODS.forEach((method) => {
       // define methods to create endpoints from HTTP methods
       Reflect.defineProperty(this, method, {
         value: (path: string) => {
-          return new Endpoint({ addr: this.#addr, method, path })
+          return new Endpoint({ url: `${this.#origin ?? ''}${path}`, method })
             .baseHeaders(this.#headers)
             .config(this.#config);
         },

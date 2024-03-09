@@ -2,42 +2,42 @@
 <h3 align="center">An Open Source library to create dynamic and composable API call workflows in TypeScript.</h3>
 <div align="center">
   
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
 &nbsp;
-[![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=flat-square)](https://www.npmjs.com/package/chainflow)
+[![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=for-the-badge)](https://www.npmjs.com/package/chainflow)
 &nbsp;
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=for-the-badge&branch=main)](https://github.com/edwinlzs/chainflow/actions)
 &nbsp;
-[![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=flat-square&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
+[![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=for-the-badge&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
 </div>
 
 ## 📖 Documentation
 
 ### Read the guides over at [Chainflow Docs](https://edwinlzs.github.io/chainflow-docs/) to get started!
 
-## 💭 When might Chainflow be useful?
-
-1. **_Setting up demo data_**
-
-   Say you have an application that you're developing new features for and you'd like to demonstrate those features. You may need your app to be in a certain context and hence your database in a specific state - perhaps a user has to be logged in with certain permissions, and to have already created a "group" in the app and added other users to that group. You might manually click into your app and log in as a user to set everything up, but that could be tedious. Alternatively, you may thus use raw SQL or other DB scripts to insert users, roles, etc. However, those scripts could miss out on important side effects relevant to the business context of your app that tend to be built into the services exposed by your backend server.
-
-   Chainflow helps you compose API call workflows to setup the data in your app by calling the relevant service endpoints you have built e.g. `POST /user`, `POST /role`. You can then avoid manual setups and minimize your use of database scripts to just data that is not configurable with existing endpoints!
-
-2. **_Speeding up development_**
-
-   Similar to setting up demo data, often while coding new features you may want to test out how they behave in your app, and again you may want your app to be in a specific state locally for that. You can write API call workflow scripts built with Chainflow to help move your app into those states quickly.
-
-3. **_Testing your endpoints_**
-
-   An API call workflow could behave as if it were a frontend client calling the backend. In that way, you can create UI-agnostic end-to-end testing of backend endpoints by using API call workflows to simulate how a frontend would interact with the backend.
-
 ## ⚠️ (Important!) Note
 
-Chainflow is my first and somewhat experimental open-source project which I started to assist my own development work. It's similar to [Postman Flows](https://learning.postman.com/docs/postman-flows/gs/flows-overview/), but done in code so us engineers have even greater control over the process (+ the ease of writing simple scripts with Chainflow to be run in your CLI or as pipeline jobs etc.).
+Chainflow is my first and somewhat experimental open-source project which I started to assist my own dev work. It's similar to [Postman Flows](https://learning.postman.com/docs/postman-flows/gs/flows-overview/), but done in code so us engineers have more control to weave logic in between API endpoint calls (+ the ease of writing simple scripts with Chainflow to be run in your CLI or as pipeline jobs etc.).
 
 I am still finding and ironing out pain points in using the library and releases should be considered unstable while I improve the library's usability. It is far from perfect in its current state, but I will continue to improve upon it if I or others find potential in its use. Therefore, your feedback and ideas are very important to me. I welcome thoughts on just about anything - useful dev tools to manage this project, QoL features to support easier coding patterns when using this library or even thoughts on the future direction of this project.
 
 Drop them as a [Github issue](https://github.com/edwinlzs/chainflow/issues) or email me at <edwinlzscode@gmail.com>!
+
+## 💭 When might Chainflow be useful?
+
+1. **_Setting up demo data_**
+
+   Say you have an app that you're developing new features for and you'd like to demo those features. You need your app to be in a certain context and your database in a specific state - perhaps that context requires that a user has logged in with certain permissions, has created a "group" in the app and has added other users to that group. To create that context, you could manually click through your app to log in as a user and set everything up, but that could be tedious. Alternatively, you may use raw SQL or other DB scripts to directly manipulate the DB and insert users, roles, etc. However, those scripts could miss out on important side effects relevant to the business context of your app - side effects that tend to be triggered by services exposed by your backend server.
+
+   Instead, you can setup the context in your app by calling the relevant service endpoints you have built (`POST /user`, `POST /role`, etc.) and triggering their business logic to make your data setup adhere closely to the way your app truly behaves - as if a user was _really_ logging in and doing everything. Chainflow helps you do this by providing tools to compose API call workflows. You can then avoid manual setups and minimize your use of database scripts to just data that is not configurable with existing endpoints!
+
+2. **_Speeding up development_**
+
+   Similar to setting up demo data, while coding new features you may often want to test out how they behave in your app, and again you may want your app to be in a specific state locally for that. You can write API call workflow scripts built with Chainflow to help move your app into those states quickly.
+
+3. **_Testing your endpoints_**
+
+   An API call workflow could behave as if it were a frontend client calling the backend. In that way, you can run UI-agnostic end-to-end testing of backend endpoints by using API call workflows to simulate how a frontend would interact with the backend.
 
 ## Basic Usage
 
@@ -45,26 +45,26 @@ Drop them as a [Github issue](https://github.com/edwinlzs/chainflow/issues) or e
 npm install --save-dev chainflow
 ```
 
-Use `originServer` to define your endpoints and their request/response signatures with the `endpoint` method.
+Use `origin` as a template define your API endpoints by calling a method corresponding to the endpoint's HTTP method verb (e.g. `post`, `patch`).
 
 ```typescript
-import { originServer } from chainflow;
+import { origin } from chainflow;
 
-const origin = originServer('127.0.0.1:5000');
+const backend = origin('127.0.0.1:5000');
 
-const createUser = origin.post('/user').body({
+const createUser = backend.post('/user').body({
   name: 'Tom',
   details: {
     age: 40,
   },
 });
 
-const createRole = origin.post('/role').body({
+const createRole = backend.post('/role').body({
   type: 'Engineer',
   userId: createUser.resp.body.id,
 });
 
-const getUser = origin.get('/user').query({
+const getUser = backend.get('/user').query({
   roleType: createRole.resp.body.type,
 });
 ```
@@ -85,7 +85,7 @@ flow.run();
 ---
 
 \
-The above setup will result in the following API calls:
+The above setup will result in the following endpoint calls:
 
 1. `POST` Request to `/user` with body:
 
@@ -118,7 +118,7 @@ The above setup will result in the following API calls:
 Define query params with the `query` method on an endpoint.
 
 ```typescript
-const getUsersInGroup = origin.get('/user').query({ groupId: 'some-id' });
+const getUsersInGroup = backend.get('/user').query({ groupId: 'some-id' });
 ```
 
 ### Path params
@@ -126,13 +126,13 @@ const getUsersInGroup = origin.get('/user').query({ groupId: 'some-id' });
 Define path params by wrapping a param name with `{}` in the endpoint path.
 
 ```typescript
-const getGroupsWithUser = origin.get('/groups/{userId}');
+const getGroupsWithUser = backend.get('/groups/{userId}');
 ```
 
 You can specify values for your path params by calling `pathParams`. Note that path params which do not actually exist in the path will be discarded.
 
 ```typescript
-const getGroupsWithUser = origin.get('/groups/{userId}').pathParams({
+const getGroupsWithUser = backend.get('/groups/{userId}').pathParams({
   userId: 'user123',
 });
 ```
@@ -142,15 +142,15 @@ const getGroupsWithUser = origin.get('/groups/{userId}').pathParams({
 Specify headers with `headers` method on endpoints.
 
 ```typescript
-const getInfo = origin.get('/info').headers({ token: 'some-token' });
+const getInfo = backend.get('/info').headers({ token: 'some-token' });
 ```
 
-You can also use `headers` on an `OriginServer` to have all endpoints made for that origin bear those headers.
+You can also use `headers` on an `Origin` to have all endpoints made for that origin bear those headers.
 
 ```typescript
-const origin = originServer('127.0.0.1:3001').headers({ token: 'some-token' });
+const backend = origin('127.0.0.1:3001').headers({ token: 'some-token' });
 
-const getInfo = origin.get('/info'); // getInfo endpoint will have the headers defined above
+const getInfo = backend.get('/info'); // getInfo endpoint will have the headers defined above
 ```
 
 ### Default headers
@@ -183,7 +183,7 @@ However, you can also use the following features to more flexibly define the val
 Marks a value as required but without a default. The chainflow will expect this value to be sourced from another node. If no such source is available, the endpoint call will throw an error.
 
 ```typescript
-const createUser = origin.post('/user').body({
+const createUser = backend.post('/user').body({
   name: required(),
 });
 ```
@@ -195,7 +195,7 @@ Provide a callback that generates values for building requests.
 ```typescript
 const randAge = () => Math.floor(Math.random() * 100);
 
-const createUser = origin.post('/user').body({
+const createUser = backend.post('/user').body({
   name: 'Tom',
   details: {
     age: gen(randAge),
@@ -210,7 +210,7 @@ You can use the `link` function to specify a callback to transform the response 
 ```typescript
 const addGreeting = (name: string) => `Hello ${name}`;
 
-const createMessage = origin.post('message').body({
+const createMessage = backend.post('message').body({
   msg: link(getUser.resp.body.name, addGreeting);
 });
 ```
@@ -248,7 +248,7 @@ For the argument containing the source nodes, you can either pass an _array_ of 
 const mergeValues = ([name, favAnimal]: [string, string]) =>
   `${name} likes ${favAnimal}.`;
 
-const createMessage = origin.post('message').body({
+const createMessage = backend.post('message').body({
   msg: linkMerge(
     // array of source nodes
     [getUser.resp.body.name, getFavAnimal.resp.body.favAnimal],
@@ -270,7 +270,7 @@ const mergeValues = ({
 }) => `${userName} likes ${favAnimal}.`;
 
 
-const createMessage = origin.post('message').body({
+const createMessage = backend.post('message').body({
   msg: linkMerge(
     // object of source nodes
     {
@@ -320,7 +320,7 @@ You can declare manual values for an endpoint call in the chainflow itself, shou
 `body`, `pathParams`, `query` and `headers` can be set this way.
 
 ```typescript
-const createUser = origin.post('/user').body({
+const createUser = backend.post('/user').body({
   name: 'Tom',
 });
 
@@ -336,7 +336,7 @@ You can specify request nodes to take values from the chainflow 'seed' by import
 ```typescript
 import { chainflow, link seed, } from 'chainflow';
 
-const createUser = origin.post('/user').body({
+const createUser = backend.post('/user').body({
   name: required(),
 });
 
@@ -395,12 +395,12 @@ flow1.extend(flow2).run(); // calls endpoint 1, 2 and 3
 `respParser`  
 By default, a chainflow parses response bodies as JSON objects UNLESS the status code is `204` or the `content-type` header does not contain `application/json` (to avoid errors when parsing an empty body), upon which they will instead parse it as text.
 
-To set a specific parsing format, you can call `.config` to change that configuration on an `endpoint` (or on an `OriginServer`, to apply it to all endpoints created from it) like so:
+To set a specific parsing format, you can call `.config` to change that configuration on an `endpoint` (or on an `Origin`, to apply it to all endpoints created from it) like so:
 
 ```typescript
 import { RESP_PARSER } from 'chainflow';
 
-const getUser = origin.get('/user').config({
+const getUser = backend.get('/user').config({
   respParser: RESP_PARSER.TEXT,
 });
 ```
@@ -408,18 +408,18 @@ const getUser = origin.get('/user').config({
 or with camelcase in JavaScript:
 
 ```javascript
-const getUser = origin.get('/user').config({
+const getUser = backend.get('/user').config({
   respParser: 'text',
 });
 ```
 
-There are 4 supported ways to parse response bodies (as provided by the underlying HTTP client, `undici`): `arrayBuffer`, `blob`, `json` and `text`.
+There are 4 supported ways to parse response bodies (provided by the underlying HTTP client `undici`): `arrayBuffer`, `blob`, `json` and `text`.
 
 `respValidator`  
 Another configuration option is how to validate the response to an endpoint. By default, Chainflow rejects responses that have HTTP status code 400 and above and throws an error. You can pass in a custom `respValidator` to change when a response is rejected.
 
 ```typescript
-const getUser = origin.get('/user').config({
+const getUser = backend.get('/user').config({
   respValidator: (resp) => {
     if (resp.statusCode !== 201) return { valid: false, msg: 'Failed to retrieve users.' };
     if (!Object.keys(resp.body as Record<string, unknown>).includes('id'))
@@ -445,7 +445,7 @@ Instead of direct links between endpoints, you can use a central store to keep v
 ```typescript
 import { store } from 'chainflow';
 
-const createUser = origin
+const createUser = backend
   .post('/user')
   .body({
     name: 'Tom',
@@ -455,7 +455,7 @@ const createUser = origin
     userId: resp.body.id,
   }));
 
-const addRole = origin.post('/role').body({
+const addRole = backend.post('/role').body({
   // this endpoint will take `userId` from the store, if available
   userId: store.userId,
   role: 'Engineer',
@@ -471,7 +471,7 @@ This is usually useful when you have endpoints that could take a value from any 
 Say we have 2 endpoints, `login` and `createGroup`. We want to login as a user once, then proceed to proceed 3 groups as that same user without having to login 3 times.
 
 ```typescript
-const createGroup = origin
+const createGroup = backend
   .post('/group')
   .headers({
     Authorization: login.resp.body.authToken,
@@ -558,7 +558,7 @@ If an input node on `createGroup` requires a value from a response to `getUser`,
 Below features are currently not yet supported but are planned in future releases.
 
 1. More flexibility to log and return responses
-2. Conditional calls - execute an endpoint call only if some condition is met.
+2. Conditional calls - execute an endpoint call only if some condition is met
 3. (Exploratory) API performance measurement
 4. (Exploratory) Possibly some sort of UI/diagram generation
 
@@ -576,6 +576,10 @@ Below features are currently not yet supported but are planned in future release
 
 - Should further explore appropriate degree of detail for logging
 - Truncation of requests/responses with extremely large payloads
+
+#### _Proxy performance_
+
+- Creating proxies recursively when defining `SourceNode` paths could hit performance - not rigorously tested yet, so not 100% sure of how significant it is
 
 ### Trivia
 

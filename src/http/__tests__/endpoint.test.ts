@@ -20,7 +20,6 @@ describe('#endpoint', () => {
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
   const client = agent.get(baseUrl);
-  const addr = '127.0.0.1:5000';
 
   const testReqPayload = {
     id: 'some-id',
@@ -31,21 +30,12 @@ describe('#endpoint', () => {
     },
   };
 
-  describe('when an unsupported method is passed to an endpoint', () => {
-    it('should throw an error', () => {
-      expect(() => new Endpoint({ addr, method: 'NOnSeNsE', path: '/' })).toThrow(
-        /Method "nonsense" is not supported.$/,
-      );
-    });
-  });
-
   describe('when the endpoint is configured', () => {
     describe('when the response parser is configured', () => {
       it('should parse a response body as a string when parser is set to text', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/text-parser-test',
+          method: 'post',
+          url: `${baseUrl}/text-parser-test`,
         }).config({ respParser: RESP_PARSER.TEXT });
         client
           .intercept({
@@ -69,7 +59,7 @@ describe('#endpoint', () => {
       });
 
       it('should parse a response body as an object when parser is set to json', async () => {
-        const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/json-parser-test' });
+        const testEndpoint = new Endpoint({ method: 'post', url: `${baseUrl}/json-parser-test` });
         client
           .intercept({
             path: '/json-parser-test',
@@ -91,9 +81,8 @@ describe('#endpoint', () => {
 
       it('should parse a response body as a blob when parser is set to blob', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/blob-parser-test',
+          method: 'post',
+          url: `${baseUrl}/blob-parser-test`,
         }).config({ respParser: RESP_PARSER.BLOB });
         client
           .intercept({
@@ -116,9 +105,8 @@ describe('#endpoint', () => {
 
       it('should parse a response body as an arrayBuffer when parser is set to arrayBuffer', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/arrayBuffer-parser-test',
+          method: 'post',
+          url: `${baseUrl}/arrayBuffer-parser-test`,
         }).config({ respParser: RESP_PARSER.ARRAY_BUFFER });
         client
           .intercept({
@@ -145,9 +133,8 @@ describe('#endpoint', () => {
 
       it('should parse a response body as JSON when parser is set to json, regardless of headers', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/arrayBuffer-parser-test',
+          method: 'post',
+          url: `${baseUrl}/arrayBuffer-parser-test`,
         }).config({ respParser: RESP_PARSER.JSON });
         client
           .intercept({
@@ -168,9 +155,8 @@ describe('#endpoint', () => {
     describe('when a response validator is configured', () => {
       it('should validate responses with the given validator', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/validator-config-test',
+          method: 'post',
+          url: `${baseUrl}/validator-config-test`,
         }).config({ respValidator: () => ({ valid: true }) });
         client
           .intercept({
@@ -190,9 +176,8 @@ describe('#endpoint', () => {
       });
       it('should validate responses with a given custom error message', async () => {
         const testEndpoint = new Endpoint({
-          addr,
-          method: 'POST',
-          path: '/error-config-test',
+          method: 'post',
+          url: `${baseUrl}/error-config-test`,
         }).config({
           respValidator: (resp) => {
             if (resp.statusCode === 404) return { valid: false, msg: 'Failed to retrieve users.' };
@@ -240,7 +225,7 @@ describe('#endpoint', () => {
 
   describe('when a response is received for an endpoint call', () => {
     it('should contain standard HTTP response information', async () => {
-      const testEndpoint = new Endpoint({ addr, method: 'POST', path: '/response-test' });
+      const testEndpoint = new Endpoint({ method: 'post', url: `${baseUrl}/response-test` });
       client
         .intercept({
           path: '/response-test',
@@ -257,10 +242,10 @@ describe('#endpoint', () => {
 
   describe('when a request payload is assigned to an endpoint', () => {
     const userPath = uniquePath('/user');
-    const testEndpoint = new Endpoint({ addr, method: 'POST', path: userPath }).body(
+    const testEndpoint = new Endpoint({ method: 'post', url: `${baseUrl}${userPath}` }).body(
       testReqPayload,
     );
-    const respEndpoint = new Endpoint({ addr, method: 'GET', path: '/age' });
+    const respEndpoint = new Endpoint({ method: 'get', url: `${baseUrl}/age` });
     const respPayload = {
       age: 10,
     };
@@ -354,7 +339,7 @@ describe('#endpoint', () => {
 
   describe('#pathParams', () => {
     describe('when a path has one param', () => {
-      const testEndpoint = new Endpoint({ addr, path: '/pet/{petId}', method: 'get' });
+      const testEndpoint = new Endpoint({ url: `${baseUrl}/pet/{petId}`, method: 'get' });
 
       it('should expose its path params for setting up links', () => {
         testEndpoint.set((nodes) => {
@@ -379,8 +364,7 @@ describe('#endpoint', () => {
 
     describe('when the path has multiple params', () => {
       const testEndpoint = new Endpoint({
-        addr,
-        path: '/user/{userId}/pet/{petId}/1',
+        url: `${baseUrl}/user/{userId}/pet/{petId}/1`,
         method: 'get',
       });
 
@@ -407,8 +391,7 @@ describe('#endpoint', () => {
 
     describe('when the endpoint calls the pathParams method with default values', () => {
       const testEndpoint = new Endpoint({
-        addr,
-        path: '/user/{userId}/pet/{petId}/2',
+        url: `${baseUrl}/user/{userId}/pet/{petId}/2`,
         method: 'get',
       });
 
@@ -437,18 +420,15 @@ describe('#endpoint', () => {
       const loginPath = uniquePath('/login');
       const petPath = uniquePath('/pet');
       const login = new Endpoint({
-        addr,
-        path: loginPath,
+        url: `${baseUrl}${loginPath}`,
         method: 'post',
       });
       const getPet = new Endpoint({
-        addr,
-        path: petPath,
+        url: `${baseUrl}${petPath}`,
         method: 'post',
       });
       const testEndpoint = new Endpoint({
-        addr,
-        path: '/user/{userId}/pet/{petId}/3',
+        url: `${baseUrl}/user/{userId}/pet/{petId}/3`,
         method: 'get',
       });
 
@@ -486,7 +466,7 @@ describe('#endpoint', () => {
     const testQuery = {
       cute: true,
     };
-    const testEndpoint = new Endpoint({ addr, path: '/pet', method: 'get' });
+    const testEndpoint = new Endpoint({ url: `${baseUrl}/pet`, method: 'get' });
     testEndpoint.query(testQuery);
 
     it('should expose its path params for setting up links', () => {
@@ -515,7 +495,7 @@ describe('#endpoint', () => {
       cute: true,
       iq: 200,
     };
-    const testEndpoint = new Endpoint({ addr, path: '/pet', method: 'get' });
+    const testEndpoint = new Endpoint({ url: `${baseUrl}/pet`, method: 'get' });
     testEndpoint.query(testQuery);
 
     it('should expose its path params for setting up links', () => {
@@ -545,7 +525,7 @@ describe('#endpoint', () => {
       token: 'some-token',
       'content-type': 'application/nonsense',
     };
-    const testEndpoint = new Endpoint({ addr, path: '/auth', method: 'get' });
+    const testEndpoint = new Endpoint({ url: `${baseUrl}/auth`, method: 'get' });
     testEndpoint.headers(testHeaders);
 
     it('should expose its headers for setting up links', () => {
@@ -576,7 +556,7 @@ describe('#endpoint', () => {
 
   describe('when provided call opts do not cover all the required values', () => {
     const userPath = uniquePath('/user');
-    const testEndpoint = new Endpoint({ addr, path: userPath, method: 'post' }).body({
+    const testEndpoint = new Endpoint({ url: `${baseUrl}${userPath}`, method: 'post' }).body({
       details: {
         age: required(),
         name: required(),

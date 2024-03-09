@@ -15,9 +15,9 @@ export interface CallResult<Req, Resp> {
 
 /** Defines an endpoint that a chainflow can call upon. */
 export interface IEndpoint<CallOpts, Req, Resp> {
-  /** A value that uniquely identifies this endpoint. */
+  /** Uniquely identifies this endpoint. */
   id: string;
-  /** A string with info describing the endpoint. */
+  /** Describes the endpoint. */
   details: string;
   call: (sources: SourceValues, opts?: CallOpts) => Promise<CallResult<Req, Resp>>;
 }

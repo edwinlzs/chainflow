@@ -5,6 +5,6 @@ export * from './core/utils/link';
 export * from './core/utils/config';
 export * from './http/endpoint';
 export * from './http/reqBuilder';
-export * from './http/originServer';
+export * from './http/origin';
 export { enableLogs } from './http/logger';
 export { defaultHeaders } from './http/utils/client';
