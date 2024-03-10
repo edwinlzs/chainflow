@@ -2,13 +2,13 @@
 <h3 align="center">An Open Source library to create dynamic and composable API call workflows in TypeScript.</h3>
 <div align="center">
   
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/edwinlzs/chainflow/blob/main/LICENSE)
 &nbsp;
-[![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=for-the-badge)](https://www.npmjs.com/package/chainflow)
+[![NPM version](https://img.shields.io/npm/v/chainflow.svg?style=flat-square)](https://www.npmjs.com/package/chainflow)
 &nbsp;
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=for-the-badge&branch=main)](https://github.com/edwinlzs/chainflow/actions)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/edwinlzs/chainflow/ci.yml?style=flat-square&branch=main)](https://github.com/edwinlzs/chainflow/actions)
 &nbsp;
-[![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=for-the-badge&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
+[![codecov](https://img.shields.io/codecov/c/gh/edwinlzs/chainflow?token=O55JNRTCM5&style=flat-square&color=23a133)](https://codecov.io/gh/edwinlzs/chainflow)
 </div>
 
 ## 📖 Documentation
@@ -40,6 +40,8 @@ Drop them as a [Github issue](https://github.com/edwinlzs/chainflow/issues) or e
    An API call workflow could behave as if it were a frontend client calling the backend. In that way, you can run UI-agnostic end-to-end testing of backend endpoints by using API call workflows to simulate how a frontend would interact with the backend.
 
 ## Basic Usage
+
+_Note: Chainflow may not be compatible with Node versions past end-of-life (v16.x and below)._
 
 ```console
 npm install --save-dev chainflow
