@@ -886,11 +886,10 @@ describe('#http-core', () => {
     const rolePath = uniquePath('/role');
     it('the cloned flow can be extended without changing the original', async () => {
       const createUser = testOrigin.post(userPath).body({
-        name: 'Tom',
+        name: seed.username,
       });
-
       const createRole = testOrigin.post(rolePath).body({
-        name: createUser.resp.body.name,
+        id: createUser.resp.body.id,
         type: 'ENGINEER',
       });
 
@@ -905,11 +904,11 @@ describe('#http-core', () => {
         .reply(
           200,
           {
-            name: 'Tom',
+            id: 123,
           },
           testResponseOptions,
         )
-        .times(2);
+        .times(3);
       client
         .intercept({
           path: rolePath,
@@ -917,14 +916,28 @@ describe('#http-core', () => {
         })
         .reply(200);
 
-      const flow1 = chainflow().call(createUser);
+      const flow1 = chainflow().call(createUser).seed({ username: 'Tom' });
       await flow1.run();
       expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0].body).toStrictEqual({
+        name: 'Tom',
+      });
 
       tracker.mockClear();
-      const flow2 = flow1.clone().call(createRole);
+      const flow2 = flow1.clone().call(createRole).seed({ username: 'Jane' });
       await flow2.run();
       expect(tracker).toHaveBeenCalledTimes(2);
+      expect(tracker.mock.calls[0][0].body).toStrictEqual({
+        name: 'Jane',
+      });
+
+      // check flow1's callqueue and init source values are not changed
+      tracker.mockClear();
+      await flow1.run();
+      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker.mock.calls[0][0].body).toStrictEqual({
+        name: 'Tom',
+      });
     });
   });
 

@@ -99,7 +99,13 @@ export class Chainflow {
    *  which can be extended and run independently. */
   clone(): Chainflow {
     const clone = new Chainflow();
-    clone.#initSources = structuredClone(this.#initSources);
+    clone.#initSources = Object.entries(this.#initSources).reduce(
+      (acc, [sourceId, sourceValues]) => {
+        acc[sourceId] = [...sourceValues];
+        return acc;
+      },
+      {} as SourceValues,
+    );
     clone.#callqueue = [...this.#callqueue];
     return clone;
   }
