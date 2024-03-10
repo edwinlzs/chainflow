@@ -1,26 +1,26 @@
 import { faker } from '@faker-js/faker';
-import { gen, originServer, seed, link } from 'chainflow';
+import { gen, origin, seed, link } from 'chainflow';
 import { Pet } from '../servers/types';
 
 const petStoreAddr = '127.0.0.1:3030';
 
-const origin = originServer(petStoreAddr);
+const petStoreBackend = origin(petStoreAddr);
 
-export const createUser = origin.post('/user').body({
+export const createUser = petStoreBackend.post('/user').body({
   username: seed.username,
   password: seed.password,
 });
 
-export const login = origin.get('/user/login').query({
+export const login = petStoreBackend.get('/user/login').query({
   username: seed.username,
   password: seed.password,
 });
 
-originServer(petStoreAddr).headers({
+petStoreBackend.headers({
   Authorization: login.resp.body.id,
 });
 
-export const addPet = origin
+export const addPet = petStoreBackend
   .post('/pet')
   .body({
     name: seed.pet.name,
@@ -28,20 +28,20 @@ export const addPet = origin
   })
   .store((resp) => ({ petId: resp.body.id }));
 
-export const updatePetInfo = origin.patch('/pet/{petId}').body({
+export const updatePetInfo = petStoreBackend.patch('/pet/{petId}').body({
   description: gen(() => faker.lorem.sentence()),
 });
 
-export const listPetForSale = origin.post('/pet/{petId}/sell').body({
+export const listPetForSale = petStoreBackend.post('/pet/{petId}/sell').body({
   price: seed.pet.price,
 });
 
-export const findAvailablePets = origin.get('/pet').query({
+export const findAvailablePets = petStoreBackend.get('/pet').query({
   status: 'available',
 });
 
 const getDog = (pets: Pet[]) => pets.filter((pet: Pet) => pet.category === 'Dogs')[0].id;
 
-export const placeOrder = origin.post('/store/order').body({
+export const placeOrder = petStoreBackend.post('/store/order').body({
   petId: link(findAvailablePets.resp.body, getDog),
 });

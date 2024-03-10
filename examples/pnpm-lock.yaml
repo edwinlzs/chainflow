@@ -16,16 +16,13 @@ importers:
         version: 4.18.2
       ts-node:
         specifier: ^10.9.1
-        version: 10.9.1(@types/node@20.11.24)(typescript@5.3.3)
+        version: 10.9.1(@types/node@20.11.25)(typescript@5.4.2)
     devDependencies:
       '@faker-js/faker':
         specifier: ^8.2.0
         version: 8.2.0
-      '@types/chainflow':
-        specifier: file:..\..\dist
-        version: file:../dist
       chainflow:
-        specifier: file:..\..\dist
+        specifier: file:../../dist
         version: file:../dist
 
   simple:
@@ -38,13 +35,10 @@ importers:
         version: 4.18.2
       ts-node:
         specifier: ^10.9.1
-        version: 10.9.1(@types/node@20.11.24)(typescript@5.3.3)
+        version: 10.9.1(@types/node@20.11.25)(typescript@5.4.2)
     devDependencies:
-      '@types/chainflow':
-        specifier: file:..\..\dist
-        version: file:../dist
       chainflow:
-        specifier: file:..\..\dist
+        specifier: file:../../dist
         version: file:../dist
 
 packages:
@@ -142,8 +136,8 @@ packages:
       undici-types: 5.26.5
     dev: false
 
-  /@types/node@20.11.24:
-    resolution: {integrity: sha512-Kza43ewS3xoLgCEpQrsT+xRo/EJej1y0kVYGiLFE1NEODXGzTfwiC6tXTLMQskn1X4/Rjlh0MQUvx9W+L9long==}
+  /@types/node@20.11.25:
+    resolution: {integrity: sha512-TBHyJxk2b7HceLVGFcpAUjsa5zIdsPWlR6XHfyGzd0SFu+/NFgQgMAl96MSDZgQDvJAvV6BKsFOrt6zIL09JDw==}
     dependencies:
       undici-types: 5.26.5
     dev: false
@@ -628,7 +622,7 @@ packages:
     engines: {node: '>=0.6'}
     dev: false
 
-  /ts-node@10.9.1(@types/node@20.11.24)(typescript@5.3.3):
+  /ts-node@10.9.1(@types/node@20.11.25)(typescript@5.4.2):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -647,14 +641,14 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 20.11.24
+      '@types/node': 20.11.25
       acorn: 8.11.3
       acorn-walk: 8.3.2
       arg: 4.1.3
       create-require: 1.1.1
       diff: 4.0.2
       make-error: 1.3.6
-      typescript: 5.3.3
+      typescript: 5.4.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     dev: false
@@ -667,8 +661,8 @@ packages:
       mime-types: 2.1.35
     dev: false
 
-  /typescript@5.3.3:
-    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
+  /typescript@5.4.2:
+    resolution: {integrity: sha512-+2/g0Fds1ERlP6JsakQQDXjZdZMM+rqpamFZJEKh4kwTIn3iDkgKtby0CeNd5ATNZ4Ry1ax15TMx0W2V+miizQ==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: false

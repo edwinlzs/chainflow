@@ -1,4 +1,4 @@
-import { chainflow } from 'chainflow';
+import { chainflow, enableLogs } from 'chainflow';
 import {
   createProject,
   createRole,
@@ -8,7 +8,7 @@ import {
   getUser,
 } from './src/endpoints';
 
-console.log('Running chainflows');
+enableLogs();
 
 // run the chainflows
 const flow = chainflow()

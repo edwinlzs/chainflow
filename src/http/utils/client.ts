@@ -50,11 +50,11 @@ const request = async ({ url, method, body, headers, respParser }: IHttpReq) => 
     ...headers,
   };
 
-  log(
-    `[${method}] [${url}] with headers %O${body ? ' and payload %O' : ''}`,
-    finalHeaders,
-    body ?? '',
-  );
+  if (log.enabled) {
+    log(`[${method}] [${url}]`);
+    log('headers: %O', finalHeaders);
+    body != null && log('body: %O', body);
+  }
 
   const resp = await undiciRequest(url, {
     method,
@@ -64,12 +64,21 @@ const request = async ({ url, method, body, headers, respParser }: IHttpReq) => 
     throw new RequestFailedError(`${err}`);
   });
 
-  return {
+  const parsedResp = {
     ...resp,
     body: await parseResponse(resp, respParser).catch((err) => {
       throw new ParseResponseError(err);
     }),
   };
+
+  if (log.enabled) {
+    log('response: %O', {
+      statusCode: parsedResp.statusCode,
+      body: parsedResp.body,
+    });
+  }
+
+  return parsedResp;
 };
 
 /** Parses a response body according to the specified parser. */
