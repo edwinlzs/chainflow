@@ -47,7 +47,7 @@ _Note: Chainflow may not be compatible with Node versions past end-of-life (v16.
 npm install --save-dev chainflow
 ```
 
-Use `origin` as a template define your API endpoints by calling a method corresponding to the endpoint's HTTP method verb (e.g. `post`, `patch`).
+`origin` creates a template on which you define your API endpoints by calling the endpoint's HTTP method verb (e.g. `post`, `patch`) as methods.
 
 ```typescript
 import { origin } from chainflow;
