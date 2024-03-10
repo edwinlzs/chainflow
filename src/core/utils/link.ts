@@ -8,7 +8,7 @@ export interface SourceInfo {
   callback: ((val: any) => any) | undefined;
 }
 
-/** Overload signatures for `linkMerge` function. */
+/** Overload signatures for `link` function. */
 interface Link {
   /**
    * Link a Source node to an Input node.

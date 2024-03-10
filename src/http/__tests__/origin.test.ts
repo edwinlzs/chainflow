@@ -1,17 +1,30 @@
-import { originServer } from '../originServer';
+import { origin } from '../origin';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { RESP_PARSER, httpClient } from '../utils/client';
 import { testResponseOptions } from './_testUtils';
 
-describe('#originServer', () => {
+describe('#origin', () => {
   const agent = new MockAgent();
   setGlobalDispatcher(agent);
   agent.disableNetConnect();
   const client = agent.get('http://127.0.0.1:5000');
 
-  it('should create endpoints with HTTP methods based on the class method used', () => {
-    const testOrigin = originServer();
-    expect(testOrigin.get('/').method).toBe('get');
+  describe('when creating an endpoint from an origin', () => {
+    const testEndpoint = origin().get('127.0.0.1:5000/');
+    const testHttpsEndpoint = origin().post('https://127.0.0.1:5000/');
+
+    it('should create endpoints with HTTP methods based on the class method used', () => {
+      expect(testEndpoint.method).toBe('get');
+      expect(testHttpsEndpoint.method).toBe('post');
+    });
+
+    it('should default to base HTTP protocol if not specified', () => {
+      expect(testEndpoint.url).toBe('http://127.0.0.1:5000/');
+    });
+
+    it('should create endpoints with HTTPS if specified', () => {
+      expect(testHttpsEndpoint.url).toBe('https://127.0.0.1:5000/');
+    });
   });
 
   it('should create endpoints with any custom headers it has', async () => {
@@ -21,7 +34,7 @@ describe('#originServer', () => {
         method: 'GET',
       })
       .reply(200);
-    const testOrigin = originServer('127.0.0.1:5000').headers({
+    const testOrigin = origin('127.0.0.1:5000').headers({
       token: 'some-token',
       'content-type': 'application/text',
     });
@@ -39,7 +52,7 @@ describe('#originServer', () => {
   });
 
   it('should allow exposing headers to link resp nodes to them', () => {
-    const testOrigin = originServer('127.0.0.1:5000').headers({
+    const testOrigin = origin('127.0.0.1:5000').headers({
       token: 'some-token',
       'content-type': 'application/text',
     });
@@ -49,7 +62,7 @@ describe('#originServer', () => {
   });
 
   describe('when a config is defined on the origin', () => {
-    const testOrigin = originServer('127.0.0.1:5000').config({
+    const testOrigin = origin('127.0.0.1:5000').config({
       respParser: RESP_PARSER.TEXT,
     });
     const testEndpoint = testOrigin.get('/test');
@@ -78,7 +91,7 @@ describe('#originServer', () => {
   });
 
   describe('when headers are defined both on the origin and endpoint itself', () => {
-    const testOrigin = originServer('127.0.0.1:5000').headers({
+    const testOrigin = origin('127.0.0.1:5000').headers({
       token: 'some-token',
       'content-type': 'application/text',
     });

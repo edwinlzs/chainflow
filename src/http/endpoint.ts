@@ -8,11 +8,7 @@ import {
   RESP_PARSER,
   ParsedHttpResp,
 } from './utils/client';
-import {
-  InvalidResponseError,
-  RequiredValuesNotFoundError,
-  UnsupportedMethodError,
-} from './errors';
+import { InvalidResponseError, RequiredValuesNotFoundError } from './errors';
 import { CallResult, IEndpoint } from '../core/chainflow';
 import deepmergeSetup from '@fastify/deepmerge';
 import { SourceNode, sourceNode } from '../core/sourceNode';
@@ -20,7 +16,7 @@ import { getNodeValue, nodeValueIdentifier } from '../core/utils/symbols';
 import { required } from '../core/utils/initializers';
 import { IStore, Store } from '../core/store';
 import { warn } from './logger';
-import { SUPPORTED_METHOD, SUPPORTED_METHODS } from './utils/constants';
+import { SUPPORTED_METHOD } from './utils/constants';
 import { MergeSourcesInfo, SourceInfo } from '../core/utils/link';
 
 const deepmerge = deepmergeSetup();
@@ -62,30 +58,22 @@ export interface HTTPCallOpts {
  */
 export class Endpoint implements IEndpoint<HTTPCallOpts, IHttpReq, ParsedHttpResp> {
   id: string;
-  #addr: string = 'http://127.0.0.1';
-  #path: string;
-  #method: SUPPORTED_METHOD;
+  url: string;
+  method: SUPPORTED_METHOD;
   #req: ReqBuilder;
   #resp: SourceNode;
   #config: EndpointConfig = {};
   #store: Store = new Store();
 
-  constructor({ addr, method, path }: { addr: string; method: string; path: string }) {
-    method = method.toLowerCase();
-    if (!SUPPORTED_METHODS.includes(method as SUPPORTED_METHOD))
-      throw new UnsupportedMethodError(method);
-    !(addr.startsWith('http://') || addr.startsWith('https://')) && (addr = `http://${addr}`);
-    this.#addr = addr;
-    this.#path = path;
-    this.#method = method as SUPPORTED_METHOD;
-    this.id = getEndpointId({ method: this.#method, route: this.#path });
+  constructor({ url, method }: { url: string; method: SUPPORTED_METHOD }) {
+    /** @todo consider validating url */
+    !(url.startsWith('http://') || url.startsWith('https://')) && (url = `http://${url}`);
+    this.url = url;
+    this.method = method as SUPPORTED_METHOD;
+    this.id = getEndpointId({ method, url });
     this.#req = new ReqBuilder();
     this.#extractPathParams();
     this.#resp = sourceNode(this.id);
-  }
-
-  get method() {
-    return this.#method;
   }
 
   /** @todo Update this when there is a better implementation of id. */
@@ -149,13 +137,11 @@ export class Endpoint implements IEndpoint<HTTPCallOpts, IHttpReq, ParsedHttpRes
     responses: SourceValues,
     opts?: HTTPCallOpts,
   ): Promise<CallResult<IHttpReq, ParsedHttpResp>> {
-    const method = this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
+    const method = this.method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE;
 
     let body;
     const missingValues: string[][] = []; // contains path of missing required values
     if (method !== 'GET') body = this.#req.body[getNodeValue](responses, missingValues, ['body']);
-
-    let callPath = this.#path;
 
     let pathParams = {};
     if (Object.keys(this.#req.pathParams).length > 0) {
@@ -180,13 +166,13 @@ export class Endpoint implements IEndpoint<HTTPCallOpts, IHttpReq, ParsedHttpRes
     if (opts?.query) queryParams = deepmerge(queryParams, opts.query);
     if (opts?.headers) headers = deepmerge(headers, opts.headers);
 
-    callPath = this.#insertPathParams(callPath, pathParams);
-    callPath = this.#insertQueryParams(callPath, queryParams);
+    let url = this.url;
+    url = this.#insertPathParams(url, pathParams);
+    url = this.#insertQueryParams(url, queryParams);
 
-    const url = `${this.#addr}${callPath}`;
     const resp = await httpClient.request({
       url,
-      method: this.#method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
+      method: this.method.toUpperCase() as SUPPORTED_METHOD_UPPERCASE,
       body,
       headers,
       respParser: this.#config.respParser,
@@ -224,7 +210,7 @@ export class Endpoint implements IEndpoint<HTTPCallOpts, IHttpReq, ParsedHttpRes
     const pathParamRegex = new RegExp(PATH_PARAM_REGEX);
     let param;
     const params: Record<string, object> = {};
-    while ((param = pathParamRegex.exec(this.#path)) !== null && typeof param[1] === 'string') {
+    while ((param = pathParamRegex.exec(this.url)) !== null && typeof param[1] === 'string') {
       const paramName = param[1].replace('{', '').replace('}', '');
       params[paramName] = required();
     }
