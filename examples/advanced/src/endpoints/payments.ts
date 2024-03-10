@@ -1,9 +1,9 @@
-import { originServer, required } from 'chainflow';
+import { origin, required } from 'chainflow';
 
 const paymentsAddr = '127.0.0.1:5050';
 
-const paymentsOrigin = originServer(paymentsAddr);
+const paymentsBackend = origin(paymentsAddr);
 
-export const makePayment = paymentsOrigin.post('/payment/{orderId}').body({
+export const makePayment = paymentsBackend.post('/payment/{orderId}').body({
   creditCardNumber: required(),
 });

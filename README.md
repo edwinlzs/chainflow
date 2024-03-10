@@ -541,7 +541,13 @@ The responses in the array follow the order in which the respective endpoints ar
 
 ### `logging`
 
-Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables, or by simply importing and calling the `enableLogs` function.
+Log requests/responses in your console by setting `ENABLE_CHAINFLOW_LOGS=true` in your environment variables, or by simply importing and calling the `enableLogs` function.
+
+```typescript
+import { enableLogs } from 'chainflow';
+
+enableLogs();
+```
 
 ### Misc Behaviors
 
@@ -550,10 +556,14 @@ Enable logs from Chainflow by setting `ENABLE_CHAINFLOW_LOGS=true` in your envir
 For example:
 
 ```typescript
-chainflow().call(getUser).call(addRole).call(getUser).call(createGroup);
+chainflow()
+  .call(getUser) // 1st call
+  .call(addRole)
+  .call(getUser) // 2nd call
+  .call(createGroup);
 ```
 
-If an input node on `createGroup` requires a value from a response to `getUser`, then `createGroup` will take that value from the last call to `getUser` (i.e. from the response to the 2nd call to `getUser` that happens _after_ the call to `addRole`).
+If an input node on `createGroup` requires a value from a response to `getUser`, then `createGroup` will take that value from the latest call to `getUser` (i.e. from the response to the 2nd call to `getUser` _after_ the call to `addRole`).
 
 ## Future Updates
 
