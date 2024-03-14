@@ -1,0 +1,20 @@
+{
+  "name": "chainflow-tui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ts-node index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "terminal-kit": "^3.1.1"
+  },
+  "devDependencies": {
+    "chainflow": "file:../dist",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
+  }
+}

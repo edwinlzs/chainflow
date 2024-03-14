@@ -5,3 +5,5 @@ export const sourceId = Symbol('sourceId');
 export const nodePath = Symbol('nodePath');
 export const nodeValueIdentifier = Symbol('nodeValueIdentifier');
 export const allowUndefined = Symbol('allowUndefined');
+export const cfid = Symbol('cfid');
+export const internals = Symbol('internals');

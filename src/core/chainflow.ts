@@ -4,6 +4,7 @@ import deepmergeSetup from '@fastify/deepmerge';
 import { IStore } from './store';
 import { log, warn } from './logger';
 import { SEED_ID, STORE_ID } from './utils/constants';
+import { cfid, internals } from './utils/symbols';
 
 const deepmerge = deepmergeSetup();
 
@@ -44,12 +45,13 @@ export const seed = sourceNode(SEED_ID);
 export const store = sourceNode(STORE_ID);
 
 export class Chainflow {
-  /** Stores sources such as the seed or values accumulated from
-   * endpoint calls in the current flow. */
-  #sources: SourceValues = {};
+  readonly [cfid] = true;
   /** Stores the sources that this chainflow was initialized with. */
   #initSources: SourceValues = {};
   #callqueue: Callqueue = [];
+  /** Stores sources such as the seed or values accumulated from
+   * endpoint calls in the current flow. */
+  #sources: SourceValues = {};
   /** Stores accumulated endpoint call events. */
   events: CallEvent[] = [];
 
@@ -121,6 +123,12 @@ export class Chainflow {
   continuesFrom(cf: Chainflow) {
     this.#initSources = { ...this.#initSources, ...cf.#sources };
     return this;
+  }
+
+  [internals]() {
+    return {
+      callqueue: this.#callqueue,
+    };
   }
 }
 
