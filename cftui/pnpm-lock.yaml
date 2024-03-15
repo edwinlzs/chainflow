@@ -10,6 +10,9 @@ dependencies:
     version: 3.1.1
 
 devDependencies:
+  '@types/terminal-kit':
+    specifier: ^2.5.6
+    version: 2.5.6
   chainflow:
     specifier: file:../dist
     version: file:../dist
@@ -72,10 +75,20 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
+  /@types/nextgen-events@1.1.4:
+    resolution: {integrity: sha512-YczHp+887i3MpHUOCOztk7y10SklNZ3aQlToKnu0LON0ZdFpgwq8POtnATAoFz8V1IxyR6d8pp8ZyYkUIy26Cw==}
+    dev: true
+
   /@types/node@20.11.27:
     resolution: {integrity: sha512-qyUZfMnCg1KEz57r7pzFtSGt49f6RPkPBis3Vo4PbS7roQEDn22hiHzl/Lo1q4i4hDEgBJmBF/NTNg2XR0HbFg==}
     dependencies:
       undici-types: 5.26.5
+    dev: true
+
+  /@types/terminal-kit@2.5.6:
+    resolution: {integrity: sha512-S5kRC7wzduRj/Wrc8BCRPfQBSWi3bj3CCUBIkmrzBzrc0sjgxPqYZPvdDxhuBGCsOPZFJiDSrzUa9mYXVOOm4g==}
+    dependencies:
+      '@types/nextgen-events': 1.1.4
     dev: true
 
   /acorn-walk@8.3.2:

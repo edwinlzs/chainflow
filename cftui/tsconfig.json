@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "strict": true,
+    "strictNullChecks": true,
+    // "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "lib": ["ES2022"],
+    "resolveJsonModule": true
+  },
+  "exclude": ["node_modules", "fixtures", "src/**/__tests__", "src/**/*.test.ts"]
+}
