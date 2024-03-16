@@ -1,6 +1,11 @@
-import { terminal as term } from "terminal-kit";
+import { terminal as term } from 'terminal-kit';
+import { cursorIndex, devLogRow } from '..';
 
-export const safeLog = (_: string) => {
-  // term.saveCursor().green(val);
-  term(term.height);
-}
+export const devLog =
+  (...args: (string | number | boolean)[]) => {
+    term
+      .saveCursor()
+      .nextLine(devLogRow)
+      .eraseLine()(args.join(' '))
+      .restoreCursor();
+  };

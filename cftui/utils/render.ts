@@ -1,15 +1,14 @@
 import { terminal as term } from 'terminal-kit';
+import { cursorIndex, sideMenuRow } from '..';
 
-/** Renders a menu from an array of strings */
+/** Renders a menu displaying given options. */
 export const renderMenu = ({
   options,
   title,
-  cursorIndex,
   formatter,
 }: {
   options: string[];
   title: string;
-  cursorIndex: number;
   formatter?: (val: string) => string;
 }) => {
   term.saveCursor();
@@ -23,16 +22,26 @@ export const renderMenu = ({
   term.restoreCursor();
 };
 
+/** Renders a side menu displaying given options. */
+export const renderSideMenu = ({ options }: { options: string[] }) => {
+  term.saveCursor();
+  term.nextLine(sideMenuRow)(options.join(' '));
+  term.restoreCursor();
+};
+
 /** Handles moving the custom cursor through a menu */
-export const handleDirections = (name: string, yMin: number, yMax: number, cursorIndex: number) => {
-  let scrollUp = false, scrollDown = false;
+export const handleDirections = (name: string, numRows: number, cursorIndex: number) => {
+  let scrollUp = false,
+    scrollDown = false;
 
   if (name === 'UP') {
-    if (cursorIndex > yMin) {
+    if (cursorIndex > 0) {
       cursorIndex -= 1;
-    } else { scrollUp = true };
+    } else {
+      scrollUp = true;
+    }
   } else if (name === 'DOWN') {
-    if (cursorIndex < yMax - 2) {
+    if (cursorIndex < numRows - 1) {
       cursorIndex += 1;
     } else {
       scrollDown = true;

@@ -1,58 +1,87 @@
 import { loadCf } from './utils/loadCf';
 import { terminal as term } from 'terminal-kit';
-import { handleDirections, renderMenu } from './utils/render';
-import { safeLog } from './utils/log';
+import { handleDirections, renderMenu, renderSideMenu } from './utils/render';
+import { Chainflow } from 'chainflow';
+import { devLog } from './utils/log';
 
 export const CHAINFLOWS_FILE = '../fixtures/index.ts';
 
-const run = async () => {
-  // term.on('terminal', (name: string, arg: unknown) => {
-  //   if (name === 'CURSOR_LOCATION') {
-  //     const location = arg as { x: number, y: number };
-  //     term(location.x, location.y);
-  //   }
-  // }).requestCursorLocation().nextLine(1);
+enum MENU {
+  CHAINFLOW = 'CHAINFLOWS',
+  ENDPOINT = 'ENDPOINTS',
+}
 
-  const flows = await loadCf();
+export enum SUBMENU {
+  MAIN,
+  SIDE,
+}
+
+let topRow = 0;
+const numRows = 5;
+export const sideMenuRow = 7;
+export const devLogRow = 8;
+export let cursorIndex = 0;
+let currentMenu = MENU.CHAINFLOW;
+let submenu = SUBMENU.MAIN;
+
+const run = async () => {
+  term.clear();
+
+  let flows = await loadCf();
   term(`Loaded chainflows from ${CHAINFLOWS_FILE}:`).nextLine(1);
 
-  // let selectedFlow: string | null = null;
-  const flowNames = Object.keys(flows);
+  let selected: string | null = null;
+  let { options } = loadMenu(flows);
+  let optionsDisplayed = getDisplayRows(options, topRow, numRows);
 
-  let topRow = 0;
-  let numRows = 5;
-  let cursorIndex = 0;
-  let flowNamesDisplayed = getDisplayRows(flowNames, topRow, numRows);
-
-  const renderFlowsMenu = () =>
-    renderMenu({
-      options: flowNamesDisplayed,
-      cursorIndex,
-      title: 'CHAINFLOWS',
-    });
-
-  renderFlowsMenu();
+  renderMenu({
+    options: optionsDisplayed,
+    title: currentMenu,
+  });
   term.hideCursor().grabInput({});
   term.on('key', (name: string, _matches: unknown, _data: unknown) => {
     if (name === 'CTRL_C') term.processExit(0);
 
-    const result = handleDirections(name, topRow, topRow + numRows, cursorIndex);
+    const result = handleDirections(name, numRows, cursorIndex);
     cursorIndex = result.cursorIndex;
     if (result.scrollUp && topRow > 0) {
       topRow -= 1;
-      flowNamesDisplayed = getDisplayRows(flowNames, topRow, numRows);
-    } else if (result.scrollDown && flowNames.length > topRow + numRows - 1) {
+      optionsDisplayed = getDisplayRows(options, topRow, numRows);
+    } else if (result.scrollDown && options.length > topRow + numRows) {
       topRow += 1;
-      flowNamesDisplayed = getDisplayRows(flowNames, topRow, numRows);
+      optionsDisplayed = getDisplayRows(options, topRow, numRows);
     }
-    console.log(flowNames.length, topRow + numRows);
-    renderFlowsMenu();
-  });
 
-  safeLog('');
+    if (['ENTER', 'KP_ENTER'].includes(name)) {
+      selected = optionsDisplayed[cursorIndex];
+
+      submenu = SUBMENU.SIDE;
+      renderSideMenu(loadSideMenu());
+      devLog(selected);
+    }
+
+    renderMenu({
+      options: optionsDisplayed,
+      title: currentMenu,
+    });
+  });
 };
 
-const getDisplayRows = (rows: string[], topRow: number, numRows: number) => 
-  rows.length > topRow + numRows ? rows.slice(topRow, topRow + numRows) : rows
+const loadMenu = (flows: Record<string, Chainflow>) => {
+  if (currentMenu === MENU.CHAINFLOW) {
+    return { options: Object.keys(flows) };
+  }
+  return { options: [] };
+};
+
+const loadSideMenu = () => {
+  if (currentMenu === MENU.CHAINFLOW) {
+    return { options: ['RUN', 'OPTS', 'BACK'] };
+  }
+  return { options: [] };
+};
+
+const getDisplayRows = (rows: string[], topRow: number, numRows: number) =>
+  rows.length > numRows ? rows.slice(topRow, topRow + numRows) : rows;
 
 run();
