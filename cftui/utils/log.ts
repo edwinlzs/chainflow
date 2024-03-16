@@ -1,11 +1,10 @@
 import { terminal as term } from 'terminal-kit';
-import { cursorIndex, devLogRow } from '..';
+import { devLogRow } from '..';
 
-export const devLog =
-  (...args: (string | number | boolean)[]) => {
-    term
-      .saveCursor()
-      .nextLine(devLogRow)
-      .eraseLine()(args.join(' '))
-      .restoreCursor();
-  };
+export const devLog = (...args: unknown[]) => {
+  term
+    .saveCursor()
+    .nextLine(devLogRow)
+    .eraseLine()(args.map((arg) => `${arg}`).join(' '))
+    .restoreCursor();
+};

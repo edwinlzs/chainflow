@@ -1,8 +1,9 @@
 import { terminal as term } from 'terminal-kit';
-import { cursorIndex, sideMenuRow } from '..';
+import { guideRow, numRows, sideMenuRow, state } from '..';
+import { loadGuide } from './data';
 
 /** Renders a menu displaying given options. */
-export const renderMenu = ({
+export const renderMainMenu = ({
   options,
   title,
   formatter,
@@ -13,40 +14,48 @@ export const renderMenu = ({
 }) => {
   term.saveCursor();
   term.eraseLine().red(title).nextLine(1);
-  options.forEach((name, i) => {
-    term.eraseLine()(' ');
+  for (let i = 0; i < numRows; i++) {
+    const name = options[i];
+    term.eraseLine();
+    if (name === undefined) {
+      term.nextLine(1);
+      continue;
+    }
     const text = formatter ? formatter(name) : name;
-    if (i === cursorIndex) return term.bgBrightWhite(text).defaultColor().nextLine(1);
-    term(text).nextLine(1);
-  });
+    term(' ');
+    if (i === state.cursor.main)
+      term.bgBrightWhite().black(text).defaultColor().bgDefaultColor().nextLine(1);
+    else term(text).nextLine(1);
+  }
   term.restoreCursor();
 };
 
 /** Renders a side menu displaying given options. */
-export const renderSideMenu = ({ options }: { options: string[] }) => {
+export const renderSideMenu = (options: string[]) => {
   term.saveCursor();
-  term.nextLine(sideMenuRow)(options.join(' '));
-  term.restoreCursor();
+  term.nextLine(sideMenuRow);
+  options.forEach((option, i) =>
+    i === state.cursor.side
+      ? term.bgBrightWhite().black(option).defaultColor().bgDefaultColor()(' ')
+      : term(`${option} `),
+  );
+  term.delete(1).restoreCursor();
 };
 
-/** Handles moving the custom cursor through a menu */
-export const handleDirections = (name: string, numRows: number, cursorIndex: number) => {
-  let scrollUp = false,
-    scrollDown = false;
+/** Renders the guide */
+export const renderGuide = () => {
+  term
+    .saveCursor()
+    .nextLine(guideRow)
+    .eraseLine()(
+      loadGuide()
+        .map((val) => `[${val}]`)
+        .join(' '),
+    )
+    .restoreCursor();
+};
 
-  if (name === 'UP') {
-    if (cursorIndex > 0) {
-      cursorIndex -= 1;
-    } else {
-      scrollUp = true;
-    }
-  } else if (name === 'DOWN') {
-    if (cursorIndex < numRows - 1) {
-      cursorIndex += 1;
-    } else {
-      scrollDown = true;
-    }
-  }
-
-  return { cursorIndex, scrollUp, scrollDown };
+/** Erases a rendered side menu. */
+export const eraseSideMenu = () => {
+  term.saveCursor().nextLine(sideMenuRow).eraseLine().restoreCursor();
 };
