@@ -1,4 +1,4 @@
-import { MENU, State } from '..';
+import { MENU, State } from '../utils/index legacy';
 import { renderSideMenu } from '../utils/render';
 
 /** Handles a selection in the Chainflow main menu. */

@@ -1,6 +1,6 @@
 import { Chainflow } from 'chainflow';
 import { cfid } from 'chainflow/core/utils/symbols';
-import { CHAINFLOWS_FILE } from '..';
+import { CHAINFLOWS_FILE } from './state';
 
 export const loadCf = async (): Promise<Record<string, Chainflow>> => {
   const cfModule = await import(CHAINFLOWS_FILE);

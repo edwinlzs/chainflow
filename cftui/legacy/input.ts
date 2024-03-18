@@ -1,4 +1,4 @@
-import { MENU, State, numRows } from '..';
+import { MENU, State, numRows } from './index legacy';
 
 export const handleDirections = (action: string, state: State): State => {
   if (state.currentMenu === MENU.MAIN) return handleMainMenuDirections(action, state);

@@ -1,5 +1,5 @@
 import { terminal as term } from 'terminal-kit';
-import { guideRow, numRows, sideMenuRow, state } from '..';
+import { guideRow, numRows, sideMenuRow, state } from './index legacy';
 import { loadGuide } from './data';
 
 /** Renders a menu displaying given options. */

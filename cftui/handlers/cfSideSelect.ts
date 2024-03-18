@@ -1,4 +1,4 @@
-import { MENU, State, flows } from '..';
+import { MENU, State, flows } from '../utils/index legacy';
 import { eraseSideMenu, } from '../utils/render';
 
 /** @todo Handles a selection in the Chainflow side menu. */

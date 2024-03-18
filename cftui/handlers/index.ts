@@ -1,4 +1,4 @@
-import { MENU, MENU_TITLE, State } from '..';
+import { MENU, MENU_TITLE, State } from '../utils/index legacy';
 import { cfMainSelect } from './cfMainSelect';
 import { cfSideSelect } from './cfSideSelect';
 

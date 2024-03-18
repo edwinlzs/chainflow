@@ -1,4 +1,4 @@
-import { MENU, MENU_TITLE, state } from '..';
+import { MENU, MENU_TITLE, state } from './index legacy';
 import { Chainflow } from 'chainflow';
 
 export const loadMenu = (flows: Record<string, Chainflow>) => {
@@ -17,7 +17,7 @@ export const loadSideMenu = () => {
 
 export const loadGuide = () => {
   if (state.currentMenu === MENU.MAIN) {
-    return ['▲ ▼ Move Cursor', '◀ ▶ Switch Pages', '↵ Select'];
+    return ['▲ ▼ Move Cursor', '◀ ▶ Switch Pages', '↵ Select', 'Ctrl+C Exit'];
   } else if (state.currentMenu === MENU.SIDE) {
     return ['◀ ▶ Move Cursor', '↵ Select']
   }
